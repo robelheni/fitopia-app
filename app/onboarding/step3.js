@@ -7,7 +7,7 @@ import { useOnboarding } from '../../context/OnboardingContext';
 import { useState } from 'react';
 import { onboardingStyles as styles } from '../../components/onboardingStyles';
 
-export default function step3() {
+export default function Step3() {
     const [selected, setSelected] = useState('');
     const {updateAnswer} = useOnboarding();
 

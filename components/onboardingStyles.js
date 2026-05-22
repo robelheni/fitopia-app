@@ -82,4 +82,18 @@ export const onboardingStyles = StyleSheet.create({
     fontSize: 15,
     color: colors.grey,
   },
+
+
+otherInput: {
+  borderWidth: 1.5,
+  borderColor: colors.blue,
+  borderRadius: 12,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+  fontSize: 14,
+  color: colors.black,
+  marginTop: 4,
+  minHeight: 80,
+  textAlignVertical: 'top',
+},
 });

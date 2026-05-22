@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback} from 'react-native';
 import { router } from 'expo-router';
 import {colors} from '../constants/colors';
 import {useState } from 'react';
@@ -39,10 +39,25 @@ export default function SignupScreen() {
     if (hasErrors) return;
 
     // No errors - go to onboarding
-    router.navigate('/onboarding');
+    router.navigate('/onboarding-intro');
     }
     return (
-        <View style = {styles.container}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <KeyboardAvoidingView
+            style={{ flex: 1, backgroundColor: colors.white }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            >
+            <ScrollView
+                contentContainerStyle={{
+                paddingHorizontal: 24,
+                paddingTop: 60,
+                paddingBottom: 40,
+                backgroundColor: colors.white,
+                }}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                showsVerticalScrollIndicator={false}
+            >
             <View style={styles.header}>
                 <Text style={styles.title}>Create your account</Text>
                 <Text style={styles.subtitle}>Join thousands of Ethiopians on their fitness journey</Text>
@@ -121,7 +136,9 @@ export default function SignupScreen() {
             <TouchableOpacity onPress = {() => router.navigate('/login')}>
                 <Text style = {styles.loginLink}>Already have an account?<Text style ={styles.loginLinkBlue}>Log in</Text>  </Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
+    </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
 
     );
 }
