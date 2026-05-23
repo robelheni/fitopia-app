@@ -19,7 +19,7 @@ export default function LoginScreen () {
             return;
         }
 
-        router.replace('/home');
+        router.replace('/(tabs');
     }
 
     return(

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 
 export default function LanguageScreen() {
   function selectLanguage(lang) {
-    router.replace('/welcome');
+    router.replace('/onboarding-intro');
   }
 
   return (

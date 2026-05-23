@@ -64,6 +64,12 @@ export const onboardingStyles = StyleSheet.create({
     borderRadius: 100,
     alignItems: 'center',
     marginBottom: 12,
+    // Elevated shadow — makes it feel like it floats
+    shadowColor: colors.blue,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
   },
   buttonDisabled: {
     backgroundColor: colors.greyBorder,

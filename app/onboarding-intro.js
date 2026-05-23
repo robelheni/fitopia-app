@@ -1,5 +1,6 @@
 import {View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 
 import {colors} from '../constants/colors'
 
@@ -9,7 +10,7 @@ export default function OnboardingScreen(){
     
         {/* Top section - icon and messaging */}
         <View style={styles.top}>
-            <Text style={styles.emoji}>👋</Text>
+            <Feather name="user-check" size={98} color={colors.blue} />
             <Text style={styles.title}>Let's get to know you.</Text>
             <Text style={styles.subtitle}>
             A few quick questions so we can build a plan that actually works for you.
