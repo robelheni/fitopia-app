@@ -5,6 +5,8 @@ import ProgressBar from '../../components/ProgressBar';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useState } from 'react';
 import { onboardingStyles as styles } from '../../components/onboardingStyles';
+import BackgroundCircles from '../../components/BackgroundCircles';
+import ScreenWrapper, { FadeUpItem } from '../../components/ScreenWrapper';
 
 
 export default function step9(){
@@ -22,7 +24,7 @@ export default function step9(){
 
     function handleContinue(){
         updateAnswer('injuries', {selected, other});
-        router.replace('onboarding/complete');
+        router.replace('/signup');
     }
 
     return (
@@ -42,6 +44,7 @@ export default function step9(){
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             >
+                <BackgroundCircles variant="topLeft" />
     
                 <ProgressBar currentStep={9} totalSteps={9} />
             
@@ -49,52 +52,61 @@ export default function step9(){
                 <Text style={styles.subtitle}>We'll make sure your plan works around them. Skip if none.</Text>
             
                 <View style={styles.options}>
-            
-                    <TouchableOpacity
-                    style={[styles.option, selected.includes('back') && styles.optionSelected]}
-                    onPress={() => toggleOption('back')}
-                    >
-                    <Text style={styles.optionEmoji}>🔙</Text>
-                    <View>
-                        <Text style={[styles.optionTitle, selected.includes('back') && styles.optionTitleSelected]}>Back pain</Text>
-                        <Text style={styles.optionSub}>Lower or upper back issues</Text>
-                    </View>
-                    </TouchableOpacity>
-            
-                    <TouchableOpacity
-                    style={[styles.option, selected.includes('knee') && styles.optionSelected]}
-                    onPress={() => toggleOption('knee')}
-                    >
-                    <Text style={styles.optionEmoji}>🦵</Text>
-                    <View>
-                        <Text style={[styles.optionTitle, selected.includes('knee') && styles.optionTitleSelected]}>Knee problems</Text>
-                        <Text style={styles.optionSub}>Pain or previous injury</Text>
-                    </View>
-                    </TouchableOpacity>
-            
-                    <TouchableOpacity
-                    style={[styles.option, selected.includes('shoulder') && styles.optionSelected]}
-                    onPress={() => toggleOption('shoulder')}
-                    >
-                    <Text style={styles.optionEmoji}>💪</Text>
-                    <View>
-                        <Text style={[styles.optionTitle, selected.includes('shoulder') && styles.optionTitleSelected]}>Shoulder issues</Text>
-                        <Text style={styles.optionSub}>Rotator cuff or joint pain</Text>
-                    </View>
-                    </TouchableOpacity>
-            
-                    <TouchableOpacity
-                    style={[styles.option, selected.includes('none') && styles.optionSelected]}
-                    onPress={() => toggleOption('none')}
-                    >
-                    <Text style={styles.optionEmoji}>✅</Text>
-                    <View>
-                        <Text style={[styles.optionTitle, selected.includes('none') && styles.optionTitleSelected]}>No injuries</Text>
-                        <Text style={styles.optionSub}>I'm good to go</Text>
-                    </View>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity
+                    <FadeUpItem delay={100}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('back') && styles.optionSelected]}
+                        onPress={() => toggleOption('back')}
+                        >
+                        <Text style={styles.optionEmoji}>🔙</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('back') && styles.optionTitleSelected]}>Back pain</Text>
+                            <Text style={styles.optionSub}>Lower or upper back issues</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+                
+                    <FadeUpItem delay={200}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('knee') && styles.optionSelected]}
+                        onPress={() => toggleOption('knee')}
+                        >
+                        <Text style={styles.optionEmoji}>🦵</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('knee') && styles.optionTitleSelected]}>Knee problems</Text>
+                            <Text style={styles.optionSub}>Pain or previous injury</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+
+                    <FadeUpItem delay={300}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('shoulder') && styles.optionSelected]}
+                        onPress={() => toggleOption('shoulder')}
+                        >
+                        <Text style={styles.optionEmoji}>💪</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('shoulder') && styles.optionTitleSelected]}>Shoulder issues</Text>
+                            <Text style={styles.optionSub}>Rotator cuff or joint pain</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+
+                    <FadeUpItem delay={400}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('none') && styles.optionSelected]}
+                        onPress={() => toggleOption('none')}
+                        >
+                        <Text style={styles.optionEmoji}>✅</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('none') && styles.optionTitleSelected]}>No injuries</Text>
+                            <Text style={styles.optionSub}>I'm good to go</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+
+                    <FadeUpItem delay={300}>
+                        <TouchableOpacity
                         style={[styles.option, selected.includes('other') && styles.optionSelected]}
                         onPress={() => toggleOption('other')}
                         >
@@ -104,6 +116,7 @@ export default function step9(){
                             <Text style={styles.optionSub}>Tap to describe your limitation</Text>
                         </View>
                         </TouchableOpacity>
+                    </FadeUpItem>
 
                         {/* Text input only shows when Other is selected */}
                         {selected.includes('other') && (
@@ -123,16 +136,18 @@ export default function step9(){
                 </View>
             
                 {/* Continue is always enabled on this step — injuries are optional */}
-                <TouchableOpacity
-                    style={[styles.button, { marginTop: 24 }]}
-                    onPress={handleContinue}
-                >
-                    <Text style={styles.buttonText}>Finish</Text>
-                </TouchableOpacity>
-            
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Text style={styles.backText}>Back</Text>
-                </TouchableOpacity>
+                <FadeUpItem delay={300}>
+                    <TouchableOpacity
+                        style={[styles.button, { marginTop: 24 }]}
+                        onPress={handleContinue}
+                    >
+                        <Text style={styles.buttonText}>Finish</Text>
+                    </TouchableOpacity>
+                
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <Text style={styles.backText}>Back</Text>
+                    </TouchableOpacity>
+                </FadeUpItem>
         
             </ScrollView>
         </KeyboardAvoidingView>

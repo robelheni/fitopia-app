@@ -1,8 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../constants/colors';
 
-// Shared styles used across all onboarding steps
-// Import this in every step instead of rewriting the same styles
 export const onboardingStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -10,96 +8,126 @@ export const onboardingStyles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
   },
+
+  // Question title — bigger and bolder
   question: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: '700',
     color: colors.black,
-    letterSpacing: -0.5,
+    letterSpacing: -1,
     marginBottom: 8,
+    lineHeight: 34,
   },
+
   subtitle: {
     fontSize: 14,
     color: colors.grey,
     marginBottom: 32,
     fontWeight: '300',
+    lineHeight: 20,
   },
+
   options: {
     flex: 1,
-    gap: 12,
+    gap: 10,
   },
+
+  // More refined card
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    padding: 20,
+    padding: 18,
     borderRadius: 16,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: colors.greyBorder,
     backgroundColor: colors.white,
+    // Subtle shadow
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
+
+  // Selected card gets blue border and light blue background
   optionSelected: {
     borderColor: colors.blue,
     backgroundColor: colors.blueLight,
+    borderWidth: 1.5,
+    shadowColor: colors.blue,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
-  optionEmoji: {
-    fontSize: 28,
+
+  // Icon container instead of raw emoji
+  optionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: colors.greyCard,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+
+  optionIconContainerSelected: {
+    backgroundColor: colors.blue,
+  },
+
   optionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.black,
     marginBottom: 2,
+    letterSpacing: -0.3,
   },
+
   optionTitleSelected: {
     color: colors.blue,
   },
+
   optionSub: {
     fontSize: 13,
     color: colors.grey,
     fontWeight: '300',
   },
+
   button: {
     backgroundColor: colors.blue,
     paddingVertical: 16,
     borderRadius: 100,
     alignItems: 'center',
     marginBottom: 12,
-    // Elevated shadow — makes it feel like it floats
     shadowColor: colors.blue,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 8,
   },
+
   buttonDisabled: {
     backgroundColor: colors.greyBorder,
+    shadowOpacity: 0,
+    elevation: 0,
   },
+
   buttonText: {
     color: colors.white,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: -0.3,
   },
+
   backButton: {
     alignItems: 'center',
     paddingVertical: 12,
     marginBottom: 20,
   },
+
   backText: {
     fontSize: 15,
     color: colors.grey,
+    fontWeight: '400',
   },
-
-
-otherInput: {
-  borderWidth: 1.5,
-  borderColor: colors.blue,
-  borderRadius: 12,
-  paddingHorizontal: 16,
-  paddingVertical: 12,
-  fontSize: 14,
-  color: colors.black,
-  marginTop: 4,
-  minHeight: 80,
-  textAlignVertical: 'top',
-},
 });

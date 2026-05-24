@@ -5,6 +5,8 @@ import ProgressBar from '../../components/ProgressBar';
 import { useOnboarding } from '../../context/OnboardingContext';
 import {useState} from  'react';
 import { onboardingStyles as styles } from '../../components/onboardingStyles';
+import BackgroundCircles from '../../components/BackgroundCircles';
+import ScreenWrapper, { FadeUpItem } from '../../components/ScreenWrapper';
 
 
 export default function Step6(){
@@ -29,7 +31,8 @@ export default function Step6(){
     }
 
     return (
-        <View style={styles.container}>
+        <ScreenWrapper style={styles.container}>
+            <BackgroundCircles variant="topLeft" />
     
             <ProgressBar currentStep={6} totalSteps={9} />
         
@@ -37,64 +40,74 @@ export default function Step6(){
             <Text style={styles.subtitle}>Select all that apply to you.</Text>
         
             <View style={styles.options}>
-        
-                <TouchableOpacity
-                style={[styles.option, selected.includes('meat') && styles.optionSelected]}
-                onPress={() => toggleOption('meat')}
-                >
-                <Text style={styles.optionEmoji}>🥩</Text>
-                <View>
-                    <Text style={[styles.optionTitle, selected.includes('meat') && styles.optionTitleSelected]}>Meat eater</Text>
-                    <Text style={styles.optionSub}>I eat meat regularly</Text>
-                </View>
-                </TouchableOpacity>
-        
-                <TouchableOpacity
-                style={[styles.option, selected.includes('vegetarian') && styles.optionSelected]}
-                onPress={() => toggleOption('vegetarian')}
-                >
-                <Text style={styles.optionEmoji}>🥗</Text>
-                <View>
-                    <Text style={[styles.optionTitle, selected.includes('vegetarian') && styles.optionTitleSelected]}>Vegetarian</Text>
-                    <Text style={styles.optionSub}>I don't eat meat</Text>
-                </View>
-                </TouchableOpacity>
-        
-                <TouchableOpacity
-                style={[styles.option, selected.includes('fasting') && styles.optionSelected]}
-                onPress={() => toggleOption('fasting')}
-                >
-                <Text style={styles.optionEmoji}>🌙</Text>
-                <View>
-                    <Text style={[styles.optionTitle, selected.includes('fasting') && styles.optionTitleSelected]}>I fast regularly</Text>
-                    <Text style={styles.optionSub}>Weekly or seasonal fasting</Text>
-                </View>
-                </TouchableOpacity>
-        
-                <TouchableOpacity
-                style={[styles.option, selected.includes('ethiopian') && styles.optionSelected]}
-                onPress={() => toggleOption('ethiopian')}
-                >
-                <Text style={styles.optionEmoji}>🍽</Text>
-                <View>
-                    <Text style={[styles.optionTitle, selected.includes('ethiopian') && styles.optionTitleSelected]}>Ethiopian diet</Text>
-                    <Text style={styles.optionSub}>Injera, shiro, tibs and more</Text>
-                </View>
-                </TouchableOpacity>
+
+                <FadeUpItem delay={150}>
+                    <TouchableOpacity
+                    style={[styles.option, selected.includes('meat') && styles.optionSelected]}
+                    onPress={() => toggleOption('meat')}
+                    >
+                    <Text style={styles.optionEmoji}>🥩</Text>
+                    <View>
+                        <Text style={[styles.optionTitle, selected.includes('meat') && styles.optionTitleSelected]}>Meat eater</Text>
+                        <Text style={styles.optionSub}>I eat meat regularly</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
+
+                <FadeUpItem delay={250}>
+                    <TouchableOpacity
+                    style={[styles.option, selected.includes('vegetarian') && styles.optionSelected]}
+                    onPress={() => toggleOption('vegetarian')}
+                    >
+                    <Text style={styles.optionEmoji}>🥗</Text>
+                    <View>
+                        <Text style={[styles.optionTitle, selected.includes('vegetarian') && styles.optionTitleSelected]}>Vegetarian</Text>
+                        <Text style={styles.optionSub}>I don't eat meat</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
+
+                <FadeUpItem delay={350}>
+                    <TouchableOpacity
+                    style={[styles.option, selected.includes('fasting') && styles.optionSelected]}
+                    onPress={() => toggleOption('fasting')}
+                    >
+                    <Text style={styles.optionEmoji}>🌙</Text>
+                    <View>
+                        <Text style={[styles.optionTitle, selected.includes('fasting') && styles.optionTitleSelected]}>I fast regularly</Text>
+                        <Text style={styles.optionSub}>Weekly or seasonal fasting</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
+
+                <FadeUpItem delay={450}>
+                    <TouchableOpacity
+                    style={[styles.option, selected.includes('ethiopian') && styles.optionSelected]}
+                    onPress={() => toggleOption('ethiopian')}
+                    >
+                    <Text style={styles.optionEmoji}>🍽</Text>
+                    <View>
+                        <Text style={[styles.optionTitle, selected.includes('ethiopian') && styles.optionTitleSelected]}>Ethiopian diet</Text>
+                        <Text style={styles.optionSub}>Injera, shiro, tibs and more</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
         
             </View>
+
+            <FadeUpItem delay={600}>
+                <TouchableOpacity
+                    style={[styles.button, selected.length === 0 && styles.buttonDisabled]}
+                    onPress={handleContinue}
+                >
+                    <Text style={styles.buttonText}>Continue</Text>
+                </TouchableOpacity>
+            
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Text style={styles.backText}>Back</Text>
+                </TouchableOpacity>
+            </FadeUpItem>
         
-            <TouchableOpacity
-                style={[styles.button, selected.length === 0 && styles.buttonDisabled]}
-                onPress={handleContinue}
-            >
-                <Text style={styles.buttonText}>Continue</Text>
-            </TouchableOpacity>
-        
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                <Text style={styles.backText}>Back</Text>
-            </TouchableOpacity>
-        
-        </View>
+        </ScreenWrapper>
     );
 }

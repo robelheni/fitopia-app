@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Keyboa
 import { router } from 'expo-router';
 import {colors} from '../constants/colors';
 import {useState } from 'react';
+import BackgroundCircles from '../components/BackgroundCircles';
+import { FadeUpItem } from '../components/ScreenWrapper';
 
 export default function SignupScreen() {
     const [name, setName] = useState('');
@@ -39,7 +41,7 @@ export default function SignupScreen() {
     if (hasErrors) return;
 
     // No errors - go to onboarding
-    router.navigate('/onboarding-intro');
+    router.navigate('/onboarding/complete');
     }
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -58,12 +60,14 @@ export default function SignupScreen() {
                 keyboardDismissMode="on-drag"
                 showsVerticalScrollIndicator={false}
             >
+                <BackgroundCircles variant="default" />
             <View style={styles.header}>
-                <Text style={styles.title}>Create your account</Text>
-                <Text style={styles.subtitle}>Join thousands of Ethiopians on their fitness journey</Text>
+                <Text style={styles.title}>Almost there.</Text>
+                <Text style={styles.subtitle}>Create your account to save your plan and get started.</Text>
             </View>
-
+            
             <View style = {styles.inputs}>
+            <FadeUpItem delay={100}>
                 <TextInput
                     style = {styles.input}
                     placeholder = "Full name"
@@ -72,9 +76,11 @@ export default function SignupScreen() {
                     value ={name}
                     onChangeText={setName}
                 />
+            </FadeUpItem>
 
                 {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
 
+            <FadeUpItem delay={200}>
                 <TextInput
                     style = {styles.input}
                     placeholder="Email address"
@@ -85,16 +91,21 @@ export default function SignupScreen() {
                     onChangeText={setEmail}
                 
                 />
+            </FadeUpItem>
                 {errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="Password"
-                    placeholderTextColor={colors.greyLight}
-                    secureTextEntry={true}
-                    value = {password}
-                    onChangeText={setPassword}
-                />
+                <FadeUpItem delay={300}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor={colors.greyLight}
+                        secureTextEntry={true}
+                        value = {password}
+                        onChangeText={setPassword}
+                    />
+                </FadeUpItem>
+
+                <FadeUpItem delay={400}>
                 <View style={styles.requirements}>
                     <Text style={styles.requirementText}>Password must have:</Text>
                     <Text style={[
@@ -110,7 +121,9 @@ export default function SignupScreen() {
                         /[A-Z]/.test(password) ? styles.requirementMet : styles.requirementNotMet
                     ]}>• At least one capital letter</Text>
                 </View>
+                </FadeUpItem>
 
+                <FadeUpItem delay={500}>
                 {/* Optional referral code for affiliate tracking */}
                 <TextInput
                     style={styles.input}
@@ -120,22 +133,24 @@ export default function SignupScreen() {
                     value={referral}
                     onChangeText={setReferral}
                 />
+                </FadeUpItem>
 
 
             </View>
 
-            
-            <TouchableOpacity 
-                style = {styles.button}
-                onPress = {handleSignup}
-            >
-                <Text style = {styles.buttonText}>Create account</Text>
-                
-            </TouchableOpacity>
+            <FadeUpItem delay={650}>
+                <TouchableOpacity 
+                    style = {styles.button}
+                    onPress = {handleSignup}
+                >
+                    <Text style = {styles.buttonText}>Create account</Text>
+                    
+                </TouchableOpacity>
 
-            <TouchableOpacity onPress = {() => router.navigate('/login')}>
-                <Text style = {styles.loginLink}>Already have an account?<Text style ={styles.loginLinkBlue}>Log in</Text>  </Text>
-            </TouchableOpacity>
+                <TouchableOpacity onPress = {() => router.push('/login')}>
+                    <Text style = {styles.loginLink}>Already have an account?<Text style ={styles.loginLinkBlue}>Log in</Text>  </Text>
+                </TouchableOpacity>
+            </FadeUpItem>
         </ScrollView>
     </KeyboardAvoidingView>
     </TouchableWithoutFeedback>

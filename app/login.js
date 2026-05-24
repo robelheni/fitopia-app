@@ -2,6 +2,8 @@ import {View, Text, TouchableOpacity, StyleSheet, TextInput} from 'react-native'
 import  { router }from 'expo-router';
 import {colors} from '../constants/colors';
 import { useState } from 'react';
+import BackgroundCircles from '../components/BackgroundCircles';
+import { FadeUpItem } from '../components/ScreenWrapper';
 
 
 export default function LoginScreen () {
@@ -19,11 +21,12 @@ export default function LoginScreen () {
             return;
         }
 
-        router.replace('/(tabs');
+        router.replace('/(tabs)');
     }
 
     return(
         <View style={styles.container}>
+            <BackgroundCircles variant="topLeft" />
 
         {/* Header */}
         <View style={styles.header}>
@@ -31,8 +34,10 @@ export default function LoginScreen () {
             <Text style={styles.subtitle}>Log in to continue your journey</Text>
             </View>
 
+            
             {/* Input fields */}
             <View style={styles.inputs}>
+            <FadeUpItem delay={100}>
             <TextInput
                 style={styles.input}
                 placeholder="Email address"
@@ -42,7 +47,9 @@ export default function LoginScreen () {
                 value={email}
                 onChangeText={setEmail}
             />
-
+            </FadeUpItem>
+            
+            <FadeUpItem delay={100}>
             <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -51,12 +58,14 @@ export default function LoginScreen () {
                 value={password}
                 onChangeText={setPassword}
             />
+            </FadeUpItem>
 
             {/* Error message - only shows if there is an error */}
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             </View>
 
+            <FadeUpItem delay={100}>
             {/* Login button */}
             <TouchableOpacity
                 style={styles.button}
@@ -72,6 +81,7 @@ export default function LoginScreen () {
                     <Text style={styles.signupLinkBlue}>Sign up</Text>
                 </Text>
             </TouchableOpacity>
+            </FadeUpItem>
 
     </View>
 );

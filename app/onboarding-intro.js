@@ -1,32 +1,46 @@
 import {View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import BackgroundCircles from '../components/BackgroundCircles';
+import ScreenWrapper,{FadeUpItem} from '../components/ScreenWrapper';
 
 import {colors} from '../constants/colors'
 
 export default function OnboardingScreen(){
     return (
-        <View style={styles.container}>
+        <ScreenWrapper style={styles.container}>
+
+        <BackgroundCircles variant="centered" />
     
         {/* Top section - icon and messaging */}
         <View style={styles.top}>
+        <FadeUpItem delay={0}>
             <Feather name="user-check" size={98} color={colors.blue} />
+        </FadeUpItem>
+
+        <FadeUpItem delay={150}>
             <Text style={styles.title}>Let's get to know you.</Text>
+        </FadeUpItem>
+
+        <FadeUpItem delay={350}>
             <Text style={styles.subtitle}>
             A few quick questions so we can build a plan that actually works for you.
             </Text>
+        </FadeUpItem>
         </View>
 
 
         {/* Let's go button */}
+        <FadeUpItem delay={450}>
         <TouchableOpacity
         style={styles.button}
         onPress={() => router.navigate('/onboarding/step1')}
         >
         <Text style={styles.buttonText}>Let's go</Text>
         </TouchableOpacity>
+        </FadeUpItem>
 
-    </View>
+    </ScreenWrapper>
     );
 }
 

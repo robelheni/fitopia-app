@@ -1,21 +1,30 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import BackgroundCircles from '../components/BackgroundCircles';
+import ScreenWrapper, { FadeUpItem }from '../components/ScreenWrapper';
 
 export default function LanguageScreen() {
   function selectLanguage(lang) {
-    router.replace('/onboarding-intro');
+    router.replace('/welcome');
   }
 
   return (
-    <View style={styles.container}>
+    <ScreenWrapper style={styles.container}>
+      <BackgroundCircles variant="topLeft" />
+      
 
       <View style={styles.header}>
-        <Text style={styles.title}>Choose your language</Text>
+        <FadeUpItem delay={0}>
+          <Text style={styles.title}>Choose your language</Text>
+        </FadeUpItem>
+        <FadeUpItem delay={150}>
         <Text style={styles.subtitle}>You can change this later in settings</Text>
+        </FadeUpItem>
       </View>
 
       <View style={styles.options}>
 
+      <FadeUpItem delay={350}>
         <TouchableOpacity
           style={styles.optionCard}
           onPress={() => selectLanguage('amharic')}
@@ -28,7 +37,9 @@ export default function LanguageScreen() {
             <Text style={styles.optionBadgeText}>Recommended</Text>
           </View>
         </TouchableOpacity>
+        </FadeUpItem>
 
+        <FadeUpItem delay={550}>
         <TouchableOpacity
           style={styles.optionCardPlain}
           onPress={() => selectLanguage('english')}
@@ -38,10 +49,11 @@ export default function LanguageScreen() {
             <Text style={styles.optionSub}>Full app in English</Text>
           </View>
         </TouchableOpacity>
+        </FadeUpItem>
 
       </View>
 
-    </View>
+    </ScreenWrapper>
   );
 }
 
