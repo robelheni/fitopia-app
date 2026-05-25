@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import {Feather} from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
@@ -11,19 +12,26 @@ import Animated, {
     import { FadeUpItem } from '../../components/ScreenWrapper';
 
     export default function HomeScreen() {
-    const opacity = useSharedValue(0);
-    const translateY = useSharedValue(8);
+        const [contentKey, setContentKey] = useState(0);
+        const opacity = useSharedValue(0);
+        const translateY = useSharedValue(8);
 
-    useEffect(() => {
-        opacity.value = withTiming(1, { duration: 250 });
-        translateY.value = withTiming(0, { duration: 250 });
-    }, []);
+        useFocusEffect(
+            useCallback(() => {
+              setContentKey(prev => prev + 1);
+              opacity.value = 0;
+              translateY.value = 8;
+              requestAnimationFrame(() => {
+                opacity.value = withTiming(1, { duration: 300 });
+                translateY.value = withTiming(0, { duration: 300 });
+              });
+            }, [])
+          );
 
-    const animatedStyle = useAnimatedStyle(() => ({
+      const animatedStyle = useAnimatedStyle(() => ({
         opacity: opacity.value,
         transform: [{ translateY: translateY.value }],
-    }));
-
+      }));
     function getGreeting(){
         const hour = new Date().getHours()
         if(hour<12) return 'Good morning';
@@ -40,6 +48,7 @@ import Animated, {
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
+            <View key = {contentKey}>
             <FadeUpItem delay={100}>
                 <View style={styles.header}>
                     <View>
@@ -173,6 +182,7 @@ import Animated, {
                 </View>
                 </View>
             </FadeUpItem>
+            </View>
         </ScrollView>
         </Animated.View>
 
