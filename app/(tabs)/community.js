@@ -1,31 +1,73 @@
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
+import { Feather } from '@expo/vector-icons';
+import { colors } from '../../constants/colors';
+import BackgroundCircles from '../../components/BackgroundCircles';
+import { FadeUpItem } from '../../components/ScreenWrapper';
 
-export default function HomeScreen() {
+export default function CommunityScreen() {
+  const [contentKey, setContentKey] = useState(0);
+  const [activeFilter, setActiveFilter] = useState('all');
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(8);
+
+  const filters = [
+    { key: 'all', label: 'All' },
+    { key: 'progress', label: 'Progress' },
+    { key: 'questions', label: 'Questions' },
+    { key: 'challenges', label: 'Challenges' },
+  ];
+
+  useFocusEffect(
+    useCallback(() => {
+      setContentKey(prev => prev + 1);
+      opacity.value = 0;
+      translateY.value = 8;
+      requestAnimationFrame(() => {
+        opacity.value = withTiming(1, { duration: 300 });
+        translateY.value = withTiming(0, { duration: 300 });
+      });
+    }, [])
+  );
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={[styles.circle, { top: 50, left: 20, width: 250, height: 250, backgroundColor: '#2563EB' }]} />
-      <View style={[styles.circle, { top: 150, right: 10, width: 200, height: 200, backgroundColor: '#D4A843' }]} />
-      <View style={[styles.circle, { top: 350, left: 50, width: 300, height: 300, backgroundColor: '#FF6B6B' }]} />
-      <View style={[styles.circle, { top: 600, right: 20, width: 220, height: 220, backgroundColor: '#2563EB' }]} />
-      <View style={[styles.circle, { top: 800, left: 10, width: 280, height: 280, backgroundColor: '#A855F7' }]} />
-      <View style={[styles.circle, { top: 1000, right: 30, width: 200, height: 200, backgroundColor: '#D4A843' }]} />
-      <View style={[styles.circle, { top: 1200, left: 40, width: 260, height: 260, backgroundColor: '#FF6B6B' }]} />
-    </ScrollView>
+    <Animated.View style={[styles.container, animatedStyle]}>
+      <BackgroundCircles variant="bottomRight" />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View key={contentKey}>
+          <Text>Community</Text>
+        </View>
+      </ScrollView>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.white,
+  },
+  scroll: {
+    flex: 1,
   },
   content: {
-    height: 1600,
-    position: 'relative',
-  },
-  circle: {
-    position: 'absolute',
-    borderRadius: 999,
-    opacity: 0.4,
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 120,
   },
 });

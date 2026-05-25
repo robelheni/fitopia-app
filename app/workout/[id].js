@@ -243,7 +243,10 @@ const workoutData = {
 
             {/* Start workout button */}
             <FadeUpItem delay={300}>
-            <TouchableOpacity style={styles.startButton}>
+            <TouchableOpacity
+                style={styles.startButton}
+                onPress={() => router.push(`/workout/active?id=${id}`)}
+                >
                 <Text style={styles.startButtonText}>Start workout</Text>
                 <Feather name="arrow-right" size={18} color={colors.white} />
             </TouchableOpacity>

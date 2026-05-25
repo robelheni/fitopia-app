@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
 import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
@@ -8,6 +8,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import { useTabBar } from '../context/TabBarContext';
+import { useEffect } from 'react';
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width - 48;
@@ -21,22 +23,39 @@ const tabs = [
 ];
 
 export default function TabBar({ state, navigation }) {
+  // All hooks at the top level
+  const { collapsed } = useTabBar();
+
   const bubbleX = useSharedValue(state.index * TAB_WIDTH);
   const bubbleWidth = useSharedValue(TAB_WIDTH - 16);
   const containerBounce = useSharedValue(1);
+  const containerWidth = useSharedValue(TAB_BAR_WIDTH);
 
   const pressScale0 = useSharedValue(1);
   const pressScale1 = useSharedValue(1);
   const pressScale2 = useSharedValue(1);
   const pressScale3 = useSharedValue(1);
   const pressScales = [pressScale0, pressScale1, pressScale2, pressScale3];
+  const bubbleOpacity = useSharedValue(1);
 
+  // React to collapsed state
+  useEffect(() => {
+    if (collapsed) {
+      containerWidth.value = withSpring(96, { damping: 18, stiffness: 180 });
+      // Fade bubble out when collapsing
+      bubbleOpacity.value = withTiming(0, { duration: 200 });
+    } else {
+      containerWidth.value = withSpring(TAB_BAR_WIDTH, { damping: 18, stiffness: 180 });
+      // Restore bubble position then fade back in
+      bubbleX.value = withSpring(state.index * TAB_WIDTH, { damping: 18, stiffness: 180 });
+      bubbleOpacity.value = withTiming(1, { duration: 200 });
+    }
+  }, [collapsed, state.index]);
   function handlePress(index, routeName) {
     const currentX = bubbleX.value;
     const targetX = index * TAB_WIDTH;
     const distance = Math.abs(targetX - currentX);
 
-    // Whole pill bounces on tap
     containerBounce.value = withSpring(1.06, {
       damping: 3,
       stiffness: 200,
@@ -51,13 +70,11 @@ export default function TabBar({ state, navigation }) {
       });
     });
 
-    // Bubble stretches based on distance
     bubbleWidth.value = withSpring(
       TAB_WIDTH - 16 + distance * 0.12,
       { damping: 8, stiffness: 120 }
     );
 
-    // Bubble slides to new position
     bubbleX.value = withSpring(targetX, {
       damping: 18,
       stiffness: 180,
@@ -69,20 +86,19 @@ export default function TabBar({ state, navigation }) {
       });
     });
 
-    // Icon bounces on tap
     pressScales[index].value = withSpring(1.3, {
-        damping: 12,
+      damping: 12,
+      stiffness: 350,
+      mass: 0.4,
+      overshootClamping: true,
+    }, () => {
+      pressScales[index].value = withSpring(1, {
+        damping: 14,
         stiffness: 350,
         mass: 0.4,
         overshootClamping: true,
-      }, () => {
-        pressScales[index].value = withSpring(1, {
-          damping: 14,
-          stiffness: 350,
-          mass: 0.4,
-          overshootClamping: true,
-        });
       });
+    });
 
     navigation.navigate(routeName);
   }
@@ -94,6 +110,11 @@ export default function TabBar({ state, navigation }) {
   const bubbleStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: bubbleX.value + 8 }],
     width: bubbleWidth.value,
+    opacity: bubbleOpacity.value,
+  }));
+
+  const containerStyle = useAnimatedStyle(() => ({
+    width: containerWidth.value,
   }));
 
   const iconStyle0 = useAnimatedStyle(() => ({ transform: [{ scale: pressScales[0].value }] }));
@@ -104,7 +125,7 @@ export default function TabBar({ state, navigation }) {
 
   return (
     <Animated.View style={[styles.wrapper, wrapperBounceStyle]}>
-      <View style={styles.container}>
+      <Animated.View style={[styles.container, containerStyle]}>
 
         <View style={styles.innerContainer}>
           <BlurView
@@ -119,6 +140,7 @@ export default function TabBar({ state, navigation }) {
 
         {tabs.map((tab, index) => {
           const isFocused = state.index === index;
+          if (collapsed && !isFocused) return null;
           return (
             <TouchableOpacity
               key={tab.name}
@@ -137,7 +159,7 @@ export default function TabBar({ state, navigation }) {
           );
         })}
 
-      </View>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -147,8 +169,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 28,
     left: 24,
-    right: 24,
-    alignItems: 'center',
+    
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.15,
@@ -158,11 +179,11 @@ const styles = StyleSheet.create({
 
   container: {
     flexDirection: 'row',
-    width: TAB_BAR_WIDTH,
     height: 64,
     borderRadius: 32,
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.02)',
+    overflow: 'hidden',
   },
 
   innerContainer: {

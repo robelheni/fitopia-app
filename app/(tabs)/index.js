@@ -10,11 +10,19 @@ import Animated, {
     } from 'react-native-reanimated';
     import { colors } from '../../constants/colors';
     import { FadeUpItem } from '../../components/ScreenWrapper';
+    import { useTabBar } from '../../context/TabBarContext';
+
 
     export default function HomeScreen() {
         const [contentKey, setContentKey] = useState(0);
         const opacity = useSharedValue(0);
         const translateY = useSharedValue(8);
+        const { setCollapsed } = useTabBar();
+        let lastScrollY = 0;
+
+        
+
+        
 
         useFocusEffect(
             useCallback(() => {
@@ -38,12 +46,30 @@ import Animated, {
         if(hour<17) return 'Good afternoon';
         return 'Good evening';
         
+
+        
     }
+
+    
+
+    function handleScroll(event) {
+        const currentY = event.nativeEvent.contentOffset.y;
+        if (currentY > lastScrollY && currentY > 50) {
+          // Scrolling up — collapse
+          setCollapsed(true);
+        } else {
+          // Scrolling down — expand
+          setCollapsed(false);
+        }
+        lastScrollY = currentY;
+      }
 
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
             <BackgroundCircles variant="default" />
         <ScrollView
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}

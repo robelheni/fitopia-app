@@ -12,6 +12,66 @@ import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import MyPlanModal from '../../components/MyPlanModal';
 import { router } from 'expo-router';
+import { useTabBar } from '../../context/TabBarContext';
+
+// Expandable weekly plan card
+function WeeklyPlanCard({ item, isExpanded, onToggle }) {
+    
+    return (
+      <View style={styles.weeklyPlanCardContainer}>
+        <TouchableOpacity
+          style={[styles.weeklyPlanCard, item.active && styles.weeklyPlanCardActive]}
+          onPress={onToggle}
+          activeOpacity={0.8}
+        >
+          <View style={styles.weeklyPlanLeft}>
+            <Text style={[styles.weeklyPlanDay, item.active && styles.weeklyPlanDayActive]}>
+              {item.day}
+            </Text>
+            <Text style={[styles.weeklyPlanWorkout, item.active && styles.weeklyPlanWorkoutActive]}>
+              {item.workout}
+            </Text>
+            {item.active && (
+              <View style={styles.todayBadge}>
+                <Text style={styles.todayBadgeText}>Today</Text>
+              </View>
+            )}
+          </View>
+          <Feather
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={item.active ? 'rgba(255,255,255,0.7)' : colors.greyLight}
+          />
+        </TouchableOpacity>
+  
+        {isExpanded && (
+          <View style={[styles.weeklyPlanExpanded, item.active && styles.weeklyPlanExpandedActive]}>
+            {item.exercises.map((exercise, i) => (
+              <View key={i} style={styles.weeklyExerciseItem}>
+                <View style={[styles.weeklyExerciseDot, item.active && styles.weeklyExerciseDotActive]} />
+                <Text style={[styles.weeklyExerciseText, item.active && styles.weeklyExerciseTextActive]}>
+                  {exercise}
+                </Text>
+              </View>
+            ))}
+            <TouchableOpacity
+              style={[styles.weeklyStartButton, item.active && styles.weeklyStartButtonActive]}
+              onPress={() => router.push(`/workout/${item.workout.toLowerCase().replace(/ /g, '-')}`)}
+            >
+              <Text style={[styles.weeklyStartText, item.active && styles.weeklyStartTextActive]}>
+                Start {item.workout}
+              </Text>
+              <Feather
+                name="arrow-right"
+                size={14}
+                color={item.active ? colors.blue : colors.white}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    );
+  }
 
 export default function WorkoutsScreen() {
     const [contentKey, setContentKey] = useState(0);
@@ -19,6 +79,7 @@ export default function WorkoutsScreen() {
     const [myPlanVisible, setMyPlanVisible] = useState(false);
     const opacity = useSharedValue(0);
     const translateY = useSharedValue(8);
+    const [expandedDay, setExpandedDay] = useState(null);
 
     const filters = [
         { key: 'forYou', label: 'For You' },
@@ -40,6 +101,19 @@ export default function WorkoutsScreen() {
         : workouts.filter(w => w.type === activeFilter);
 
     const featuredWorkout = workouts.find(w => w.featured);
+
+    const { setCollapsed } = useTabBar();
+    let lastScrollY = 0;
+
+    function handleScroll(event) {
+    const currentY = event.nativeEvent.contentOffset.y;
+    if (currentY > lastScrollY && currentY > 50) {
+        setCollapsed(true);
+    } else {
+        setCollapsed(false);
+    }
+    lastScrollY = currentY;
+    }
 
     useFocusEffect(
         useCallback(() => {
@@ -63,6 +137,8 @@ export default function WorkoutsScreen() {
         <Animated.View style={[styles.container, animatedStyle]}>
         <BackgroundCircles variant="topLeft" />
         <ScrollView
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
@@ -148,29 +224,37 @@ export default function WorkoutsScreen() {
                 <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Your week</Text>
                 </View>
+                {/* Weekly plan with expandable exercises */}
+                
+
                 <View style={styles.weeklyPlan}>
                 {[
-                    { day: 'Mon', workout: 'Upper Body', active: true },
-                    { day: 'Wed', workout: 'Lower Body', active: false },
-                    { day: 'Fri', workout: 'Full Body', active: false },
-                ].map((item, index) => (
-                    <View
-                    key={index}
-                    style={[styles.weeklyPlanCard, item.active && styles.weeklyPlanCardActive]}
-                    >
-                    <Text style={[styles.weeklyPlanDay, item.active && styles.weeklyPlanDayActive]}>
-                        {item.day}
-                    </Text>
-                    <Text style={[styles.weeklyPlanWorkout, item.active && styles.weeklyPlanWorkoutActive]}>
-                        {item.workout}
-                    </Text>
-                    {item.active && (
-                        <View style={styles.todayBadge}>
-                        <Text style={styles.todayBadgeText}>Today</Text>
-                        </View>
-                    )}
-                    </View>
-                ))}
+  {
+    day: 'Mon',
+    workout: 'Upper Body',
+    active: true,
+    exercises: ['Dumbbell Chest Press', 'Shoulder Press', 'Dumbbell Row', 'Bicep Curl', 'Tricep Dips'],
+  },
+  {
+    day: 'Wed',
+    workout: 'Lower Body',
+    active: false,
+    exercises: ['Dumbbell Squat', 'Bodyweight Squat', 'Plank', 'Bicycle Crunch'],
+  },
+  {
+    day: 'Fri',
+    workout: 'Full Body',
+    active: false,
+    exercises: ['Push Up', 'Bodyweight Squat', 'Dumbbell Row', 'Plank', 'Bicep Curl'],
+  },
+].map((item, index) => (
+  <WeeklyPlanCard
+    key={index}
+    item={item}
+    isExpanded={expandedDay === index}
+    onToggle={() => setExpandedDay(expandedDay === index ? null : index)}
+  />
+))}
                 </View>
             </FadeUpItem>
             )}
@@ -321,68 +405,9 @@ export default function WorkoutsScreen() {
     cardStatText: { fontSize: 11, color: colors.grey },
     cardStartButton: { backgroundColor: colors.blue, borderRadius: 100, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, shadowColor: colors.blue, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 3 },
     cardStartText: { fontSize: 12, color: colors.white, fontWeight: '600' },
-    weeklyPlan: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
-    },
     
-    weeklyPlanCard: {
-    flex: 1,
-    backgroundColor: colors.greyCard,
-    borderRadius: 16,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    },
     
-    weeklyPlanCardActive: {
-    backgroundColor: colors.blue,
-    borderColor: colors.blue,
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-    },
     
-    weeklyPlanDay: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.grey,
-    marginBottom: 4,
-    },
-    
-    weeklyPlanDayActive: {
-    color: 'rgba(255,255,255,0.7)',
-    },
-    
-    weeklyPlanWorkout: {
-    fontSize: 11,
-    color: colors.grey,
-    fontWeight: '300',
-    textAlign: 'center',
-    },
-    
-    weeklyPlanWorkoutActive: {
-    color: colors.white,
-    fontWeight: '500',
-    },
-    
-    todayBadge: {
-    marginTop: 6,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 100,
-    },
-    
-    todayBadgeText: {
-    fontSize: 9,
-    color: colors.white,
-    fontWeight: '500',
-    },
     
     categoryGrid: {
     gap: 10,
@@ -436,4 +461,130 @@ export default function WorkoutsScreen() {
     color: colors.grey,
     fontWeight: '300',
     },
+
+    weeklyPlanCardContainer: {
+        marginBottom: 10,
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: colors.greyBorder,
+      },
+      weeklyPlan: {
+        gap: 0,
+        marginBottom: 24,
+      },
+      
+      weeklyPlanCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: colors.greyCard,
+        padding: 16,
+      },
+      
+      weeklyPlanCardActive: {
+        backgroundColor: colors.blue,
+        borderColor: colors.blue,
+      },
+      
+      weeklyPlanLeft: {
+        gap: 4,
+      },
+      
+      weeklyPlanDay: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: colors.grey,
+      },
+      
+      weeklyPlanDayActive: {
+        color: 'rgba(255,255,255,0.7)',
+      },
+      
+      weeklyPlanWorkout: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.black,
+      },
+      
+      weeklyPlanWorkoutActive: {
+        color: colors.white,
+      },
+      
+      todayBadge: {
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 100,
+        alignSelf: 'flex-start',
+      },
+      
+      todayBadgeText: {
+        fontSize: 9,
+        color: colors.white,
+        fontWeight: '500',
+      },
+      
+      weeklyPlanExpanded: {
+        backgroundColor: colors.greyCard,
+        padding: 16,
+        gap: 10,
+      },
+      
+      weeklyPlanExpandedActive: {
+        backgroundColor: colors.blueLight,
+      },
+      
+      weeklyExerciseItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+      },
+      
+      weeklyExerciseDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: colors.greyLight,
+      },
+      
+      weeklyExerciseDotActive: {
+        backgroundColor: colors.blue,
+      },
+      
+      weeklyExerciseText: {
+        fontSize: 14,
+        color: colors.grey,
+        fontWeight: '300',
+      },
+      
+      weeklyExerciseTextActive: {
+        color: colors.black,
+        fontWeight: '400',
+      },
+      
+      weeklyStartButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: colors.black,
+        paddingVertical: 10,
+        borderRadius: 100,
+        marginTop: 4,
+      },
+      
+      weeklyStartButtonActive: {
+        backgroundColor: colors.white,
+      },
+      
+      weeklyStartText: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: colors.white,
+      },
+      
+      weeklyStartTextActive: {
+        color: colors.blue,
+      },
 });
