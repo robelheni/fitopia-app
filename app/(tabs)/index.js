@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useState, useCallback } from 'react';
+
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import {Feather} from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
@@ -11,6 +11,8 @@ import Animated, {
     import { colors } from '../../constants/colors';
     import { FadeUpItem } from '../../components/ScreenWrapper';
     import { useTabBar } from '../../context/TabBarContext';
+    import { useCallback, useState, useRef } from 'react';
+    import { router} from 'expo-router';
 
 
     export default function HomeScreen() {
@@ -18,7 +20,7 @@ import Animated, {
         const opacity = useSharedValue(0);
         const translateY = useSharedValue(8);
         const { setCollapsed } = useTabBar();
-        let lastScrollY = 0;
+        const lastScrollY = useRef(0);
 
         
 
@@ -50,42 +52,52 @@ import Animated, {
         
     }
 
+        const headerOpacity = useSharedValue(1);
+        const headerTranslateY = useSharedValue(0);
+
+        const headerAnimStyle = useAnimatedStyle(() => ({
+        opacity: headerOpacity.value,
+        transform: [{ translateY: headerTranslateY.value }],
+        }));
+
     
 
-    function handleScroll(event) {
-        const currentY = event.nativeEvent.contentOffset.y;
-        if (currentY > lastScrollY && currentY > 50) {
-          // Scrolling up — collapse
-          setCollapsed(true);
-        } else {
-          // Scrolling down — expand
-          setCollapsed(false);
-        }
-        lastScrollY = currentY;
-      }
+function handleScrollBegin(event) {
+    const currentY = event.nativeEvent.contentOffset.y;
+    if (currentY > lastScrollY.current) {
+      setCollapsed(true);
+      headerOpacity.value = withTiming(0, { duration: 200 });
+      headerTranslateY.value = withTiming(-20, { duration: 200 });
+    } else {
+      setCollapsed(false);
+      headerOpacity.value = withTiming(1, { duration: 200 });
+      headerTranslateY.value = withTiming(0, { duration: 200 });
+    }
+    lastScrollY.current = currentY;
+  }
 
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
             <BackgroundCircles variant="default" />
+
+            {/* Fixed header */}
+        <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
+        <View>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.name}>Welcome back</Text>
+        </View>
+        
+        </Animated.View>
         <ScrollView
-            onScroll={handleScroll}
+            onScrollBeginDrag={handleScrollBegin}
+            onMomentumScrollBegin={handleScrollBegin}
             scrollEventThrottle={16}
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
         >
             <View key = {contentKey}>
-            <FadeUpItem delay={100}>
-                <View style={styles.header}>
-                    <View>
-                        <Text style={styles.greeting}>{getGreeting()}</Text>
-                        <Text style={styles.name}>Welcome back</Text>
-                    </View>
-                    <TouchableOpacity style={styles.settingsButton}>
-                        <Feather name="settings" size={20} color={colors.black} />
-                    </TouchableOpacity>
-                </View>
-            </FadeUpItem>
+           
             
             <FadeUpItem delay={200}>
                 {/* Streak card */}
@@ -115,7 +127,7 @@ import Animated, {
             <FadeUpItem delay={300}>
                 <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's workout</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress = {() => router.navigate('/(tabs)/workouts')}>
                     <Text style={styles.sectionLink}>See all</Text>
                 </TouchableOpacity>
                 </View>
@@ -142,10 +154,14 @@ import Animated, {
                     <Feather name="activity" size={12} color={colors.grey} />
                     <Text style={styles.workoutStatText}>6 exercises</Text>
                     </View>
-                    <View style={styles.startButton}>
-                    <Text style={styles.startButtonText}>Start</Text>
-                    <Feather name="arrow-right" size={14} color={colors.white} />
-                    </View>
+                    <TouchableOpacity
+                    style={styles.startButton}
+                    onPress = {() => router.push('/workout/upper-body')}
+                    >
+                        <Text style={styles.startButtonText}>Start</Text>
+                        <Feather name="arrow-right" size={14} color={colors.white} />
+
+                    </TouchableOpacity>
                 </View>
                 </TouchableOpacity>
             </FadeUpItem>
@@ -551,4 +567,26 @@ import Animated, {
             backgroundColor: colors.greyBorder,
             marginVertical: 14,
         },
+
+        fixedHeader: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 24,
+            paddingTop: 52,
+            paddingBottom: 16,
+            zIndex: 10,
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            borderBottomWidth: 0.5,
+            borderBottomColor: colors.greyBorder,
+          },
+          content: {
+            paddingHorizontal: 24,
+            paddingTop: 120,
+            paddingBottom: 120,
+          },
 });

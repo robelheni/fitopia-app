@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,6 +13,7 @@ import { FadeUpItem } from '../../components/ScreenWrapper';
 import MyPlanModal from '../../components/MyPlanModal';
 import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
+import { useCallback, useState, useRef } from 'react';
 
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
@@ -103,17 +104,30 @@ export default function WorkoutsScreen() {
     const featuredWorkout = workouts.find(w => w.featured);
 
     const { setCollapsed } = useTabBar();
-    let lastScrollY = 0;
+    const lastScrollY = useRef(0);
 
-    function handleScroll(event) {
-    const currentY = event.nativeEvent.contentOffset.y;
-    if (currentY > lastScrollY && currentY > 50) {
-        setCollapsed(true);
-    } else {
-        setCollapsed(false);
-    }
-    lastScrollY = currentY;
-    }
+    const headerOpacity = useSharedValue(1);
+    const headerTranslateY = useSharedValue(0);
+
+    const headerAnimStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+    transform: [{ translateY: headerTranslateY.value }],
+    }));
+
+    function handleScrollBegin(event) {
+        const currentY = event.nativeEvent.contentOffset.y;
+        if (currentY > lastScrollY.current) {
+          setCollapsed(true);
+          headerOpacity.value = withTiming(0, { duration: 200 });
+          headerTranslateY.value = withTiming(-20, { duration: 200 });
+        } else {
+          setCollapsed(false);
+          headerOpacity.value = withTiming(1, { duration: 200 });
+          headerTranslateY.value = withTiming(0, { duration: 200 });
+        }
+        lastScrollY.current = currentY;
+      }
+      
 
     useFocusEffect(
         useCallback(() => {
@@ -136,8 +150,27 @@ export default function WorkoutsScreen() {
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
         <BackgroundCircles variant="topLeft" />
+
+        
+        <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
+            <Text style={styles.title}>Workouts</Text>
+            <TouchableOpacity
+                style={styles.myPlanButton}
+                onPress={() => setMyPlanVisible(true)}
+                activeOpacity={0.7}
+            >
+                <View style={styles.myPlanInitials}>
+                <Text style={styles.myPlanInitialsText}>HE</Text>
+                </View>
+                <Text style={styles.myPlanText}>My Plan</Text>
+                <Feather name="chevron-right" size={14} color={colors.grey} />
+            </TouchableOpacity>
+        </Animated.View>
+            
+
         <ScrollView
-            onScroll={handleScroll}
+            onScrollBeginDrag={handleScrollBegin}
+            onMomentumScrollBegin={handleScrollBegin}
             scrollEventThrottle={16}
             style={styles.scroll}
             contentContainerStyle={styles.content}
@@ -146,23 +179,7 @@ export default function WorkoutsScreen() {
             {/* key forces all FadeUpItems to remount and replay on focus */}
             <View key={contentKey}>
 
-            <FadeUpItem delay={0}>
-                <View style={styles.header}>
-                <Text style={styles.title}>Workouts</Text>
-                <TouchableOpacity
-                    style={styles.myPlanButton}
-                    onPress={() => setMyPlanVisible(true)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.myPlanInitials}>
-                    <Text style={styles.myPlanInitialsText}>HE</Text>
-                    </View>
-                    <Text style={styles.myPlanText}>My Plan</Text>
-                    <Feather name="chevron-right" size={14} color={colors.grey} />
-                </TouchableOpacity>
-                </View>
-            </FadeUpItem>
-
+            
             <FadeUpItem delay={100}>
                 <ScrollView
                 horizontal
@@ -586,5 +603,28 @@ export default function WorkoutsScreen() {
       
       weeklyStartTextActive: {
         color: colors.blue,
+      },
+
+      fixedHeader: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        paddingTop: 52,
+        paddingBottom: 16,
+        zIndex: 10,
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderBottomWidth: 0.5,
+        borderBottomColor: colors.greyBorder,
+      },
+
+      content: {
+        paddingHorizontal: 24,
+        paddingTop: 120,
+        paddingBottom: 120,
       },
 });

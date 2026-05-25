@@ -1,0 +1,290 @@
+import { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+import { colors } from '../constants/colors';
+
+const tags = [
+  { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
+  { key: 'questions', label: 'Question', color: '#7C3AED', bg: '#EDE9FE' },
+  { key: 'challenges', label: 'Challenge', color: '#059669', bg: '#D1FAE5' },
+];
+
+export default function ComposeScreen() {
+  const [text, setText] = useState('');
+  const [selectedTag, setSelectedTag] = useState(null);
+
+  const canPost = text.trim().length > 0 && selectedTag !== null;
+
+  return (
+    <View style={styles.container}>
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>New post</Text>
+        <TouchableOpacity
+          style={[styles.postButton, !canPost && styles.postButtonDisabled]}
+          disabled={!canPost}
+          onPress={() => router.back()}
+        >
+          <Text style={[styles.postButtonText, !canPost && styles.postButtonTextDisabled]}>
+            Post
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+
+        {/* User avatar and text input */}
+        <View style={styles.inputRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>HE</Text>
+          </View>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Share your progress, ask a question, or start a challenge..."
+            placeholderTextColor={colors.greyLight}
+            multiline
+            autoFocus
+            value={text}
+            onChangeText={setText}
+            maxLength={500}
+          />
+        </View>
+
+        {/* Character count */}
+        <Text style={styles.charCount}>{text.length}/500</Text>
+
+        {/* Photo placeholder */}
+        <TouchableOpacity style={styles.photoPlaceholder}>
+          <Feather name="camera" size={24} color={colors.greyLight} />
+          <Text style={styles.photoPlaceholderText}>Add a photo</Text>
+          <Text style={styles.photoPlaceholderSub}>Coming soon</Text>
+        </TouchableOpacity>
+
+        {/* Tag selector */}
+        <Text style={styles.tagLabel}>Tag your post</Text>
+        <View style={styles.tags}>
+          {tags.map(tag => (
+            <TouchableOpacity
+              key={tag.key}
+              style={[
+                styles.tag,
+                { backgroundColor: tag.bg },
+                selectedTag === tag.key && styles.tagSelected,
+                selectedTag === tag.key && { borderColor: tag.color },
+              ]}
+              onPress={() => setSelectedTag(tag.key)}
+            >
+              {selectedTag === tag.key && (
+                <Feather name="check" size={12} color={tag.color} />
+              )}
+              <Text style={[styles.tagText, { color: tag.color }]}>
+                {tag.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Guidelines */}
+        <View style={styles.guidelines}>
+          <Feather name="info" size={14} color={colors.greyLight} />
+          <Text style={styles.guidelinesText}>
+            Be respectful and supportive. This is a community built on encouragement.
+          </Text>
+        </View>
+
+      </ScrollView>
+
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.white,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 16,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.greyBorder,
+  },
+
+  cancelButton: {
+    paddingVertical: 8,
+  },
+
+  cancelText: {
+    fontSize: 16,
+    color: colors.grey,
+  },
+
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.black,
+  },
+
+  postButton: {
+    backgroundColor: colors.blue,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 100,
+    shadowColor: colors.blue,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+
+  postButtonDisabled: {
+    backgroundColor: colors.greyBorder,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+
+  postButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.white,
+  },
+
+  postButtonTextDisabled: {
+    color: colors.grey,
+  },
+
+  content: {
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 40,
+  },
+
+  inputRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  avatarText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
+  },
+
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.black,
+    lineHeight: 24,
+    minHeight: 120,
+    textAlignVertical: 'top',
+  },
+
+  charCount: {
+    fontSize: 12,
+    color: colors.greyLight,
+    textAlign: 'right',
+    marginBottom: 24,
+  },
+
+  photoPlaceholder: {
+    height: 120,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: colors.greyBorder,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+    backgroundColor: colors.greyCard,
+  },
+
+  photoPlaceholderText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.grey,
+  },
+
+  photoPlaceholderSub: {
+    fontSize: 12,
+    color: colors.greyLight,
+  },
+
+  tagLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.black,
+    marginBottom: 12,
+  },
+
+  tags: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
+  },
+
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+
+  tagSelected: {
+    borderWidth: 1.5,
+  },
+
+  tagText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  guidelines: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+    backgroundColor: colors.greyCard,
+    padding: 16,
+    borderRadius: 12,
+  },
+
+  guidelinesText: {
+    fontSize: 13,
+    color: colors.grey,
+    lineHeight: 20,
+    flex: 1,
+    fontWeight: '300',
+  },
+});
