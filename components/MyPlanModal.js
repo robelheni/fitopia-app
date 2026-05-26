@@ -1,8 +1,14 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal } from 'react-native';
+
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
+import { useState } from 'react';
 
 export default function MyPlanModal({ visible, onClose }) {
+
+    const [editingWeight, setEditingWeight] = useState(false);
+    const [newWeight, setNewWeight] = useState('');
+    const [currentWeight, setCurrentWeight] = useState('75');
   return (
     <Modal
       visible={visible}
@@ -71,6 +77,18 @@ export default function MyPlanModal({ visible, onClose }) {
                 </View>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
               </View>
+              <View style={styles.planDivider} />
+
+                <View style={styles.planItem}>
+                <View style={styles.planIconContainer}>
+                    <Feather name="calendar" size={16} color={colors.blue} />
+                </View>
+                <View style={styles.planItemContent}>
+                    <Text style={styles.planItemLabel}>Training days</Text>
+                    <Text style={styles.planItemValue}>Mon, Wed, Fri</Text>
+                </View>
+                <Feather name="chevron-right" size={16} color={colors.greyLight} />
+                </View>
 
               <View style={styles.planDivider} />
 
@@ -84,6 +102,58 @@ export default function MyPlanModal({ visible, onClose }) {
                 </View>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
               </View>
+
+              <View style={styles.planDivider} />
+
+                {/* Weight — editable */}
+                <View style={styles.planItem}>
+                <View style={styles.planIconContainer}>
+                    <Feather name="trending-up" size={16} color={colors.blue} />
+                </View>
+                <View style={styles.planItemContent}>
+                    <Text style={styles.planItemLabel}>Current weight</Text>
+                    {editingWeight ? (
+                    <View style={styles.weightEditRow}>
+                        <TextInput
+                        style={styles.weightInput}
+                        value={newWeight}
+                        onChangeText={setNewWeight}
+                        keyboardType="number-pad"
+                        placeholder={currentWeight}
+                        placeholderTextColor={colors.greyLight}
+                        maxLength={3}
+                        autoFocus
+                        />
+                        <Text style={styles.weightUnit}>kg</Text>
+                        <TouchableOpacity
+                        style={styles.weightSaveButton}
+                        onPress={() => {
+                            if (newWeight) setCurrentWeight(newWeight);
+                            setEditingWeight(false);
+                            setNewWeight('');
+                        }}
+                        >
+                        <Text style={styles.weightSaveText}>Save</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                        onPress={() => {
+                            setEditingWeight(false);
+                            setNewWeight('');
+                        }}
+                        >
+                        <Feather name="x" size={16} color={colors.greyLight} />
+                        </TouchableOpacity>
+                    </View>
+                    ) : (
+                    <Text style={styles.planItemValue}>{currentWeight} kg</Text>
+                    )}
+                </View>
+                {!editingWeight && (
+                    <TouchableOpacity onPress={() => setEditingWeight(true)}>
+                    <Feather name="edit-2" size={16} color={colors.blue} />
+                    </TouchableOpacity>
+                )}
+                </View>
 
             </View>
           </View>
@@ -280,5 +350,41 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
+  },
+  weightEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  
+  weightInput: {
+    borderWidth: 1.5,
+    borderColor: colors.blue,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    fontSize: 15,
+    color: colors.black,
+    width: 60,
+  },
+  
+  weightUnit: {
+    fontSize: 14,
+    color: colors.grey,
+    fontWeight: '300',
+  },
+  
+  weightSaveButton: {
+    backgroundColor: colors.blue,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 100,
+  },
+  
+  weightSaveText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.white,
   },
 });

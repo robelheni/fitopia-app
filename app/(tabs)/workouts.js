@@ -17,60 +17,81 @@ import { useCallback, useState, useRef } from 'react';
 
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
-    
     return (
-      <View style={styles.weeklyPlanCardContainer}>
-        <TouchableOpacity
-          style={[styles.weeklyPlanCard, item.active && styles.weeklyPlanCardActive]}
-          onPress={onToggle}
-          activeOpacity={0.8}
-        >
-          <View style={styles.weeklyPlanLeft}>
-            <Text style={[styles.weeklyPlanDay, item.active && styles.weeklyPlanDayActive]}>
-              {item.day}
-            </Text>
-            <Text style={[styles.weeklyPlanWorkout, item.active && styles.weeklyPlanWorkoutActive]}>
-              {item.workout}
-            </Text>
-            {item.active && (
-              <View style={styles.todayBadge}>
-                <Text style={styles.todayBadgeText}>Today</Text>
-              </View>
-            )}
-          </View>
-          <Feather
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={16}
-            color={item.active ? 'rgba(255,255,255,0.7)' : colors.greyLight}
-          />
-        </TouchableOpacity>
-  
-        {isExpanded && (
-          <View style={[styles.weeklyPlanExpanded, item.active && styles.weeklyPlanExpandedActive]}>
-            {item.exercises.map((exercise, i) => (
-              <View key={i} style={styles.weeklyExerciseItem}>
-                <View style={[styles.weeklyExerciseDot, item.active && styles.weeklyExerciseDotActive]} />
-                <Text style={[styles.weeklyExerciseText, item.active && styles.weeklyExerciseTextActive]}>
-                  {exercise}
-                </Text>
-              </View>
-            ))}
+        <View style={styles.weeklyPlanCardContainer}>
             <TouchableOpacity
-              style={[styles.weeklyStartButton, item.active && styles.weeklyStartButtonActive]}
-              onPress={() => router.push(`/workout/${item.workout.toLowerCase().replace(/ /g, '-')}`)}
+            style={[
+                styles.weeklyPlanCard,
+                item.isToday && styles.weeklyPlanCardActive,
+                item.isPast && styles.weeklyPlanCardPast,
+            ]}
+            onPress={onToggle}
+            activeOpacity={item.isPast ? 1 : 0.8}
             >
-              <Text style={[styles.weeklyStartText, item.active && styles.weeklyStartTextActive]}>
-                Start {item.workout}
-              </Text>
-              <Feather
-                name="arrow-right"
-                size={14}
-                color={item.active ? colors.blue : colors.white}
-              />
+            <View style={styles.weeklyPlanLeft}>
+                <Text style={[styles.weeklyPlanDay, item.isToday && styles.weeklyPlanDayActive]}>
+                {item.day}
+                </Text>
+                <Text style={[styles.weeklyPlanWorkout, item.isToday && styles.weeklyPlanWorkoutActive]}>
+                {item.workout}
+                </Text>
+                {item.isToday && (
+                <View style={styles.todayBadge}>
+                    <Text style={styles.todayBadgeText}>Today</Text>
+                </View>
+                )}
+            </View>
+    
+            {/* Right side — status for past, chevron for today and future */}
+            {item.isPast ? (
+                <View style={[
+                styles.statusBadge,
+                item.completed ? styles.statusBadgeCompleted : styles.statusBadgeMissed
+                ]}>
+                <Text style={[
+                    styles.statusBadgeText,
+                    item.completed ? styles.statusBadgeTextCompleted : styles.statusBadgeTextMissed
+                ]}>
+                    {item.completed ? 'Completed' : 'Missed'}
+                </Text>
+                </View>
+            ) : (
+                <Feather
+                name={isExpanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={item.isToday ? 'rgba(255,255,255,0.7)' : colors.greyLight}
+                />
+            )}
+    
             </TouchableOpacity>
-          </View>
-        )}
-      </View>
+    
+            {isExpanded && !item.isPast && (
+            <View style={[styles.weeklyPlanExpanded, item.isToday && styles.weeklyPlanExpandedActive]}>
+                {item.exercises.map((exercise, i) => (
+                <View key={i} style={styles.weeklyExerciseItem}>
+                    <View style={[styles.weeklyExerciseDot, item.isToday && styles.weeklyExerciseDotActive]} />
+                    <Text style={[styles.weeklyExerciseText, item.isToday && styles.weeklyExerciseTextActive]}>
+                    {exercise}
+                    </Text>
+                </View>
+                ))}
+                <TouchableOpacity
+                style={[styles.weeklyStartButton, item.isToday && styles.weeklyStartButtonActive]}
+                onPress={() => router.push(`/workout/${item.workout.toLowerCase().replace(/ /g, '-')}`)}
+                >
+                <Text style={[styles.weeklyStartText, item.isToday && styles.weeklyStartTextActive]}>
+                    Start {item.workout}
+                </Text>
+                <Feather
+                    name="arrow-right"
+                    size={14}
+                    color={item.isToday ? colors.blue : colors.white}
+                />
+                </TouchableOpacity>
+            </View>
+            )}
+    
+        </View>
     );
   }
 
@@ -147,6 +168,41 @@ export default function WorkoutsScreen() {
         transform: [{ translateY: translateY.value }],
     }));
 
+        // Same logic as home screen
+    const trainingDays = ['mon', 'wed', 'fri'];
+    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const todayIndex = new Date().getDay();
+    const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+    const todayKey = dayKeys[reorderedIndex];
+    const isTrainingDay = trainingDays.includes(todayKey);
+
+    const nextTrainingDay = (() => {
+    for (let i = 1; i <= 7; i++) {
+        const nextIndex = (reorderedIndex + i) % 7;
+        if (trainingDays.includes(dayKeys[nextIndex])) {
+        return dayNames[nextIndex];
+        }
+    }
+    return 'soon';
+    })();
+
+    const weeklyWorkouts = [
+        { day: 'Mon', workout: 'Upper Body', dayKey: 'mon', completed: true, exercises: ['Dumbbell Chest Press', 'Shoulder Press', 'Dumbbell Row', 'Bicep Curl', 'Tricep Dips'] },
+        { day: 'Wed', workout: 'Lower Body', dayKey: 'wed', completed: false, exercises: ['Dumbbell Squat', 'Bodyweight Squat', 'Plank', 'Bicycle Crunch'] },
+        { day: 'Fri', workout: 'Full Body', dayKey: 'fri', completed: false, exercises: ['Push Up', 'Bodyweight Squat', 'Dumbbell Row', 'Plank', 'Bicep Curl'] },
+      ];
+      
+      const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const todayPosition = dayOrder.indexOf(todayKey);
+      
+      const weeklyPlanItems = weeklyWorkouts.map(item => {
+        const itemPosition = dayOrder.indexOf(item.dayKey);
+        const isPast = itemPosition < todayPosition;
+        const isToday = item.dayKey === todayKey;
+        return { ...item, isPast, isToday, active: isToday };
+      });
+
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
         <BackgroundCircles variant="topLeft" />
@@ -202,76 +258,68 @@ export default function WorkoutsScreen() {
 
             {/* Content changes based on active filter */}
             {activeFilter === 'forYou' && (
-            <FadeUpItem delay={200}>
-                {/* Featured workout */}
-                <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Today's pick</Text>
-                </View>
-                <TouchableOpacity style={styles.featuredCard}>
-                <View style={styles.featuredTop}>
-                    <View style={styles.featuredIconContainer}>
-                    <Feather name="zap" size={22} color={colors.white} />
-                    </View>
-                    <View style={styles.featuredBadge}>
-                    <Text style={styles.featuredBadgeText}>Crafted for you</Text>
-                    </View>
-                </View>
-                <Text style={styles.featuredName}>{featuredWorkout.name}</Text>
-                <View style={styles.featuredStats}>
-                    <View style={styles.featuredStat}>
-                    <Feather name="clock" size={12} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.featuredStatText}>{featuredWorkout.duration}</Text>
-                    </View>
-                    <View style={styles.featuredStat}>
-                    <Feather name="activity" size={12} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.featuredStatText}>{featuredWorkout.exercises} exercises</Text>
-                    </View>
-                    <View style={styles.featuredStat}>
-                    <Feather name="bar-chart-2" size={12} color="rgba(255,255,255,0.7)" />
-                    <Text style={styles.featuredStatText}>{featuredWorkout.difficulty}</Text>
-                    </View>
-                </View>
-                <View style={styles.featuredStartButton}>
-                    <Text style={styles.featuredStartText}>Start workout</Text>
-                    <Feather name="arrow-right" size={16} color={colors.blue} />
-                </View>
-                </TouchableOpacity>
+                <FadeUpItem delay={200}>
 
-                {/* Weekly plan preview */}
-                <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Your week</Text>
-                </View>
+                    <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Today's pick</Text>
+                    </View>
+
+                    {isTrainingDay ? (
+                    <TouchableOpacity style={styles.featuredCard}>
+                        <View style={styles.featuredTop}>
+                        <View style={styles.featuredIconContainer}>
+                            <Feather name="zap" size={22} color={colors.white} />
+                        </View>
+                        <View style={styles.featuredBadge}>
+                            <Text style={styles.featuredBadgeText}>Crafted for you</Text>
+                        </View>
+                        </View>
+                        <Text style={styles.featuredName}>{featuredWorkout.name}</Text>
+                        <View style={styles.featuredStats}>
+                        <View style={styles.featuredStat}>
+                            <Feather name="clock" size={12} color="rgba(255,255,255,0.7)" />
+                            <Text style={styles.featuredStatText}>{featuredWorkout.duration}</Text>
+                        </View>
+                        <View style={styles.featuredStat}>
+                            <Feather name="activity" size={12} color="rgba(255,255,255,0.7)" />
+                            <Text style={styles.featuredStatText}>{featuredWorkout.exercises} exercises</Text>
+                        </View>
+                        <View style={styles.featuredStat}>
+                            <Feather name="bar-chart-2" size={12} color="rgba(255,255,255,0.7)" />
+                            <Text style={styles.featuredStatText}>{featuredWorkout.difficulty}</Text>
+                        </View>
+                        </View>
+                        <View style={styles.featuredStartButton}>
+                        <Text style={styles.featuredStartText}>Start workout</Text>
+                        <Feather name="arrow-right" size={16} color={colors.blue} />
+                        </View>
+                    </TouchableOpacity>
+                    ) : (
+                    <View style={styles.restDayCard}>
+                        <View style={styles.restDayIcon}>
+                        <Feather name="moon" size={24} color={colors.blue} />
+                        </View>
+                        <View style={styles.restDayContent}>
+                        <Text style={styles.restDayTitle}>Rest day</Text>
+                        <Text style={styles.restDaySub}>
+                            Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
+                        </Text>
+                        </View>
+                    </View>
+                    )}
+
                 {/* Weekly plan with expandable exercises */}
                 
 
                 <View style={styles.weeklyPlan}>
-                {[
-  {
-    day: 'Mon',
-    workout: 'Upper Body',
-    active: true,
-    exercises: ['Dumbbell Chest Press', 'Shoulder Press', 'Dumbbell Row', 'Bicep Curl', 'Tricep Dips'],
-  },
-  {
-    day: 'Wed',
-    workout: 'Lower Body',
-    active: false,
-    exercises: ['Dumbbell Squat', 'Bodyweight Squat', 'Plank', 'Bicycle Crunch'],
-  },
-  {
-    day: 'Fri',
-    workout: 'Full Body',
-    active: false,
-    exercises: ['Push Up', 'Bodyweight Squat', 'Dumbbell Row', 'Plank', 'Bicep Curl'],
-  },
-].map((item, index) => (
-  <WeeklyPlanCard
-    key={index}
-    item={item}
-    isExpanded={expandedDay === index}
-    onToggle={() => setExpandedDay(expandedDay === index ? null : index)}
-  />
-))}
+                {weeklyPlanItems.map((item, index) => (
+                <WeeklyPlanCard
+                    key={index}
+                    item={item}
+                    isExpanded={expandedDay === index}
+                    onToggle={() => !item.isPast && setExpandedDay(expandedDay === index ? null : index)}
+                />
+                ))}
                 </View>
             </FadeUpItem>
             )}
@@ -626,5 +674,73 @@ export default function WorkoutsScreen() {
         paddingHorizontal: 24,
         paddingTop: 120,
         paddingBottom: 120,
+      },
+
+      restDayCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        backgroundColor: colors.blueLight,
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,0.15)',
+      },
+      
+      restDayIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: colors.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      },
+      
+      restDayTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.black,
+        letterSpacing: -0.3,
+        marginBottom: 4,
+      },
+      
+      restDaySub: {
+        fontSize: 13,
+        color: colors.grey,
+        lineHeight: 18,
+        fontWeight: '300',
+      },
+      
+      restDayContent: {
+        flex: 1,
+      },
+
+      statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 100,
+      },
+      
+      statusBadgeCompleted: {
+        backgroundColor: '#D1FAE5',
+      },
+      
+      statusBadgeMissed: {
+        backgroundColor: '#FEE2E2',
+      },
+      
+      statusBadgeText: {
+        fontSize: 11,
+        fontWeight: '600',
+      },
+      
+      statusBadgeTextCompleted: {
+        color: '#059669',
+      },
+      
+      statusBadgeTextMissed: {
+        color: '#DC2626',
       },
 });

@@ -177,14 +177,23 @@ const headerTranslateY = useSharedValue(0);
 
       <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
         <Text style={styles.title}>Community</Text>
-        <TouchableOpacity
-        style={styles.composeButton}
-        onPress={() => router.push('/compose')}
-        >
-        <Feather name="edit-2" size={16} color={colors.white} />
-        </TouchableOpacity>
-     </Animated.View>
-          
+        <View style={styles.headerButtons}>
+            <TouchableOpacity
+            style={styles.trainersButton}
+            onPress={() => router.push('/trainers')}
+            >
+            <Feather name="users" size={14} color={colors.blue} />
+            <Text style={styles.trainersButtonText}>Trainers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+            style={styles.composeButton}
+            onPress={() => router.push('/compose')}
+            >
+            <Feather name="edit-2" size={16} color={colors.white} />
+            </TouchableOpacity>
+        </View>
+        </Animated.View>
+                
       <ScrollView
         onScrollBeginDrag={handleScrollBegin}
         onMomentumScrollBegin={handleScrollBegin}
@@ -576,5 +585,26 @@ const styles = StyleSheet.create({
   postPhotoText: {
     fontSize: 12,
     color: colors.greyLight,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  
+  trainersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.blueLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 100,
+  },
+  
+  trainersButtonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.blue,
   },
 });

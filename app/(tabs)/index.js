@@ -89,6 +89,25 @@ function handleScrollBegin(event) {
     lastScrollY.current = currentY;
   }
 
+  // Hardcoded training days — comes from onboarding later
+const trainingDays = ['mon', 'wed', 'fri'];
+const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const todayIndex = new Date().getDay();
+const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+const todayKey = dayKeys[reorderedIndex];
+const isTrainingDay = trainingDays.includes(todayKey);
+
+// Find next training day
+const nextTrainingDay = (() => {
+  for (let i = 1; i <= 7; i++) {
+    const nextIndex = (reorderedIndex + i) % 7;
+    if (trainingDays.includes(dayKeys[nextIndex])) {
+      return dayNames[nextIndex];
+    }
+  }
+  return 'soon';
+})();
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
             <BackgroundCircles variant="default" />
@@ -122,30 +141,61 @@ function handleScrollBegin(event) {
                 <View style={styles.streakDivider} />
                 <View style={styles.streakRight}>
                     <Text style={styles.streakWeekLabel}>This week</Text>
+                    {/* Streak dots — smart based on training days */}
                     <View style={styles.streakDots}>
-                    {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-                        <View key={index} style={styles.streakDayContainer}>
-                        <View style={[
-                            styles.streakDot,
-                            index < 2 && styles.streakDotActive
-                        ]} />
-                        <Text style={styles.streakDayLabel}>{day}</Text>
-                        </View>
-                    ))}
+                    {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day, index) => {
+                        // Hardcoded for now — comes from real data later
+                        const trainingDays = ['mon', 'wed', 'fri'];
+                        const completedDays = ['mon'];
+                        const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                        const todayIndex = new Date().getDay();
+                        const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+                        const today = dayKeys[reorderedIndex];
+                        
+                        const isTrainingDay = trainingDays.includes(day);
+                        const isCompleted = completedDays.includes(day);
+                        const isToday = day === today;
+                        
+                        const isPast = index < ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].indexOf(today);
+
+                        let dotStyle = styles.streakDotRest; // rest day — white
+                        if (isCompleted) dotStyle = styles.streakDotCompleted; // green
+                        else if (isToday && isTrainingDay) dotStyle = styles.streakDotActive; // blue — today
+                        else if (isPast && isTrainingDay && !isCompleted) dotStyle = styles.streakDotMissed;
+                        else if (isTrainingDay) dotStyle = styles.streakDotPending; // yellow — upcoming training day
+
+                        const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+                        return (
+                            <View key={index} style={styles.streakDayContainer}>
+                            <View style={[
+                              styles.streakDot,
+                              dotStyle,
+                              isToday && styles.streakDotToday, // white ring on today always
+                            ]} />
+                            <Text style={styles.streakDayLabel}>{labels[index]}</Text>
+                          </View>
+                        );
+                    })}
                     </View>
                 </View>
                 </View>
             </FadeUpItem>
             {/* Today's workout */}
+            {/* Today's workout — day aware */}
             <FadeUpItem delay={300}>
-                <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Today's workout</Text>
-                <TouchableOpacity onPress = {() => router.navigate('/(tabs)/workouts')}>
-                    <Text style={styles.sectionLink}>See all</Text>
+                <TouchableOpacity onPress={() => router.navigate('/(tabs)/workouts')}>
+                <Text style={styles.sectionLink}>See all</Text>
                 </TouchableOpacity>
-                </View>
+            </View>
 
-                <TouchableOpacity style={styles.workoutCard}>
+            {isTrainingDay ? (
+                <TouchableOpacity
+                style={styles.workoutCard}
+                onPress={() => router.push('/workout/upper-body')}
+                >
                 <View style={styles.workoutCardTop}>
                     <View style={styles.workoutIconContainer}>
                     <Feather name="zap" size={20} color={colors.white} />
@@ -154,10 +204,8 @@ function handleScrollBegin(event) {
                     <Text style={styles.workoutBadgeText}>Crafted for you</Text>
                     </View>
                 </View>
-
                 <Text style={styles.workoutName}>Upper Body Strength</Text>
                 <Text style={styles.workoutSub}>6 exercises · 45 min · Intermediate</Text>
-
                 <View style={styles.workoutFooter}>
                     <View style={styles.workoutStat}>
                     <Feather name="clock" size={12} color={colors.grey} />
@@ -169,14 +217,26 @@ function handleScrollBegin(event) {
                     </View>
                     <TouchableOpacity
                     style={styles.startButton}
-                    onPress = {() => router.push('/workout/upper-body')}
+                    onPress={() => router.push('/workout/upper-body')}
                     >
-                        <Text style={styles.startButtonText}>Start</Text>
-                        <Feather name="arrow-right" size={14} color={colors.white} />
-
+                    <Text style={styles.startButtonText}>Start</Text>
+                    <Feather name="arrow-right" size={14} color={colors.white} />
                     </TouchableOpacity>
                 </View>
                 </TouchableOpacity>
+            ) : (
+                <View style={styles.restDayCard}>
+                <View style={styles.restDayIcon}>
+                    <Feather name="moon" size={24} color={colors.blue} />
+                </View>
+                <View style={styles.restDayContent}>
+                    <Text style={styles.restDayTitle}>Rest day</Text>
+                    <Text style={styles.restDaySub}>
+                    Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
+                    </Text>
+                </View>
+                </View>
+            )}
             </FadeUpItem>
 
             {/* Nutrition targets */}
@@ -463,7 +523,13 @@ function handleScrollBegin(event) {
         
         streakDotActive: {
             backgroundColor: colors.white,
-        },
+            borderWidth: 2,
+            borderColor: 'rgba(255,255,255,0.9)',
+            shadowColor: colors.white,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.8,
+            shadowRadius: 4,
+          },
         
         streakDayLabel: {
             fontSize: 10,
@@ -872,4 +938,79 @@ function handleScrollBegin(event) {
         fontSize: 12,
         color: colors.grey,
     },
+    
+      streakDotActive: {
+        backgroundColor: colors.white,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.8)',
+      },
+      
+      streakDotPending: {
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderColor: 'rgba(255,255,255,0.4)',
+      },
+      streakDotCompleted: {
+        backgroundColor: '#22C55E', // brighter green
+      },
+      
+      streakDotActive: {
+        backgroundColor: colors.white, // white — today
+      },
+      
+      streakDotPending: {
+        backgroundColor: '#EAB308', // yellow — upcoming training day
+      },
+      
+      streakDotRest: {
+        backgroundColor: 'rgba(255,255,255,0.2)' // faint — rest day
+      },
+      streakDotMissed: {
+        backgroundColor: '#EF4444', // red — missed training day
+      },
+      streakDotToday: {
+        borderWidth: 2.5,
+        borderColor: colors.white,
+      },
+
+      restDayCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        backgroundColor: colors.blueLight,
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(37,99,235,0.15)',
+      },
+      
+      restDayIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: colors.white,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+      },
+      
+      restDayTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.black,
+        letterSpacing: -0.3,
+        marginBottom: 4,
+      },
+      
+      restDaySub: {
+        fontSize: 13,
+        color: colors.grey,
+        lineHeight: 18,
+        fontWeight: '300',
+      },
+      
+      restDayContent: {
+        flex: 1,
+      },
 });
