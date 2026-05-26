@@ -13,6 +13,7 @@ import Animated, {
     import { useTabBar } from '../../context/TabBarContext';
     import { useCallback, useState, useRef } from 'react';
     import { router} from 'expo-router';
+    import { weeklyPlan } from '../meals/weekly';
 
 
     export default function HomeScreen() {
@@ -21,6 +22,18 @@ import Animated, {
         const translateY = useSharedValue(8);
         const { setCollapsed } = useTabBar();
         const lastScrollY = useRef(0);
+
+        // Hardcoded nutrition data — calculated by AI from onboarding answers later
+        const nutritionTargets = {
+            calories: 2100,
+            protein: 158,
+            carbs: 210,
+            fats: 70,
+            goal: 'Build muscle',
+            explanation: 'Based on your weight, height and goal, you need 2,100 calories daily with high protein to build muscle effectively.',
+        };
+        
+        const todaysMeals = weeklyPlan[0].meals;
 
         
 
@@ -165,6 +178,112 @@ function handleScrollBegin(event) {
                 </View>
                 </TouchableOpacity>
             </FadeUpItem>
+
+            {/* Nutrition targets */}
+            <FadeUpItem delay={400}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Your nutrition</Text>
+                <TouchableOpacity onPress ={()=> router.push('/nutrition/details')}>
+                <Text style={styles.sectionLink}>Details</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.nutritionCard}>
+                {/* Explanation */}
+                <View style={styles.nutritionExplanation}>
+                <Feather name="info" size={14} color={colors.blue} />
+                <Text style={styles.nutritionExplanationText}>
+                    {nutritionTargets.explanation}
+                </Text>
+                </View>
+
+                {/* Targets grid */}
+                <View style={styles.nutritionGrid}>
+                <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionValue}>{nutritionTargets.calories}</Text>
+                    <Text style={styles.nutritionLabel}>Calories</Text>
+                    <View style={[styles.nutritionBar, { backgroundColor: '#FEF3C7' }]}>
+                    <View style={[styles.nutritionBarFill, { backgroundColor: '#D97706', width: '60%' }]} />
+                    </View>
+                </View>
+                <View style={styles.nutritionDivider} />
+                <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionValue}>{nutritionTargets.protein}g</Text>
+                    <Text style={styles.nutritionLabel}>Protein</Text>
+                    <View style={[styles.nutritionBar, { backgroundColor: colors.blueLight }]}>
+                    <View style={[styles.nutritionBarFill, { backgroundColor: colors.blue, width: '40%' }]} />
+                    </View>
+                </View>
+                <View style={styles.nutritionDivider} />
+                <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionValue}>{nutritionTargets.carbs}g</Text>
+                    <Text style={styles.nutritionLabel}>Carbs</Text>
+                    <View style={[styles.nutritionBar, { backgroundColor: '#D1FAE5' }]}>
+                    <View style={[styles.nutritionBarFill, { backgroundColor: '#059669', width: '70%' }]} />
+                    </View>
+                </View>
+                <View style={styles.nutritionDivider} />
+                <View style={styles.nutritionItem}>
+                    <Text style={styles.nutritionValue}>{nutritionTargets.fats}g</Text>
+                    <Text style={styles.nutritionLabel}>Fats</Text>
+                    <View style={[styles.nutritionBar, { backgroundColor: '#FEE2E2' }]}>
+                    <View style={[styles.nutritionBarFill, { backgroundColor: '#DC2626', width: '30%' }]} />
+                    </View>
+                </View>
+                </View>
+            </View>
+            </FadeUpItem>
+
+            {/* Today's meals */}
+            <FadeUpItem delay={450}>
+            <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Today's meals</Text>
+                <TouchableOpacity onPress={() => router.push('/meals/weekly')}>
+  <Text style={styles.sectionLink}>See all</Text>
+</TouchableOpacity>
+            </View>
+
+            <View style={styles.mealsList}>
+            {todaysMeals.map(meal => (
+                <TouchableOpacity
+                    key={meal.id}
+                    style={styles.mealCard}
+                    onPress={() => router.push(`/meals/${meal.id}`)}
+                >
+
+                    {/* Meal type and time */}
+                    <View style={styles.mealHeader}>
+                    <View style={styles.mealTypeContainer}>
+                        <Text style={styles.mealType}>{meal.type}</Text>
+                        {meal.isEthiopian && (
+                        <View style={styles.ethiopianBadge}>
+                            <Text style={styles.ethiopianBadgeText}>🇪🇹</Text>
+                        </View>
+                        )}
+                    </View>
+                    <Text style={styles.mealTime}>{meal.time}</Text>
+                    </View>
+
+                    {/* Meal name and description */}
+                    <Text style={styles.mealName}>{meal.name}</Text>
+                    <Text style={styles.mealDescription}>{meal.description}</Text>
+
+                    {/* Meal stats */}
+                    <View style={styles.mealStats}>
+                    <View style={styles.mealStat}>
+                        <Feather name="zap" size={12} color={colors.grey} />
+                        <Text style={styles.mealStatText}>{meal.calories} kcal</Text>
+                    </View>
+                    <View style={styles.mealStat}>
+                        <Feather name="activity" size={12} color={colors.grey} />
+                        <Text style={styles.mealStatText}>{meal.protein}g protein</Text>
+                    </View>
+                    </View>
+
+                </TouchableOpacity>
+                ))}
+            </View>
+            </FadeUpItem>
             {/* Weekly progress */}
             <FadeUpItem delay={400}>
                 <View style={styles.sectionHeader}>
@@ -193,7 +312,7 @@ function handleScrollBegin(event) {
             <FadeUpItem delay={500}>
                 <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Community</Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress = {() => router.navigate('/(tabs)/community')}>
                     <Text style={styles.sectionLink}>See all</Text>
                 </TouchableOpacity>
                 </View>
@@ -589,4 +708,168 @@ function handleScrollBegin(event) {
             paddingTop: 120,
             paddingBottom: 120,
           },
+
+          // Nutrition
+    nutritionCard: {
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        padding: 20,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: colors.greyBorder,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 3,
+        gap: 16,
+    },
+    
+    nutritionExplanation: {
+        flexDirection: 'row',
+        gap: 8,
+        alignItems: 'flex-start',
+        backgroundColor: colors.blueLight,
+        padding: 12,
+        borderRadius: 12,
+    },
+    
+    nutritionExplanationText: {
+        fontSize: 13,
+        color: colors.blue,
+        lineHeight: 18,
+        flex: 1,
+        fontWeight: '300',
+    },
+    
+    nutritionGrid: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    
+    nutritionItem: {
+        flex: 1,
+        alignItems: 'center',
+        gap: 4,
+    },
+    
+    nutritionValue: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: colors.black,
+        letterSpacing: -0.5,
+    },
+    
+    nutritionLabel: {
+        fontSize: 11,
+        color: colors.grey,
+        fontWeight: '300',
+        marginBottom: 4,
+    },
+    
+    nutritionBar: {
+        width: '80%',
+        height: 4,
+        borderRadius: 2,
+        overflow: 'hidden',
+    },
+    
+    nutritionBarFill: {
+        height: 4,
+        borderRadius: 2,
+    },
+    
+    nutritionDivider: {
+        width: 0.5,
+        height: 50,
+        backgroundColor: colors.greyBorder,
+    },
+    
+    // Meals
+    mealsList: {
+        gap: 12,
+        marginBottom: 20,
+    },
+    
+    mealCard: {
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.greyBorder,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 12,
+        elevation: 3,
+        gap: 6,
+    },
+    
+    mealHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    
+    mealTypeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    
+    mealType: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: colors.blue,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    
+    ethiopianBadge: {
+        backgroundColor: colors.greyCard,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 100,
+    },
+    
+    ethiopianBadgeText: {
+        fontSize: 10,
+    },
+    
+    mealTime: {
+        fontSize: 11,
+        color: colors.greyLight,
+        fontWeight: '300',
+    },
+    
+    mealName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.black,
+        letterSpacing: -0.3,
+    },
+    
+    mealDescription: {
+        fontSize: 13,
+        color: colors.grey,
+        lineHeight: 18,
+        fontWeight: '300',
+    },
+    
+    mealStats: {
+        flexDirection: 'row',
+        gap: 16,
+        marginTop: 4,
+    },
+    
+    mealStat: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    
+    mealStatText: {
+        fontSize: 12,
+        color: colors.grey,
+    },
 });
