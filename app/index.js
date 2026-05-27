@@ -30,7 +30,7 @@ export default function SplashScreen() {
       ]),
       Animated.delay(800),
     ]).start(() => {
-      router.replace('/(tabs)');
+      router.replace('/language');
     });
   }, []);
 

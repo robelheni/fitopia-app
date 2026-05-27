@@ -26,7 +26,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 item.isPast && styles.weeklyPlanCardPast,
             ]}
             onPress={onToggle}
-            activeOpacity={item.isPast ? 1 : 0.8}
+            activeOpacity={0.8}
             >
             <View style={styles.weeklyPlanLeft}>
                 <Text style={[styles.weeklyPlanDay, item.isToday && styles.weeklyPlanDayActive]}>
@@ -65,7 +65,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
     
             </TouchableOpacity>
     
-            {isExpanded && !item.isPast && (
+            {isExpanded &&  (
             <View style={[styles.weeklyPlanExpanded, item.isToday && styles.weeklyPlanExpandedActive]}>
                 {item.exercises.map((exercise, i) => (
                 <View key={i} style={styles.weeklyExerciseItem}>
@@ -80,7 +80,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 onPress={() => router.push(`/workout/${item.workout.toLowerCase().replace(/ /g, '-')}`)}
                 >
                 <Text style={[styles.weeklyStartText, item.isToday && styles.weeklyStartTextActive]}>
-                    Start {item.workout}
+                {item.isPast ? 'View workout' : `Start ${item.workout}`}
                 </Text>
                 <Feather
                     name="arrow-right"
@@ -317,7 +317,7 @@ export default function WorkoutsScreen() {
                     key={index}
                     item={item}
                     isExpanded={expandedDay === index}
-                    onToggle={() => !item.isPast && setExpandedDay(expandedDay === index ? null : index)}
+                    onToggle={() => setExpandedDay(expandedDay === index ? null : index)}
                 />
                 ))}
                 </View>
