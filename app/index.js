@@ -2,10 +2,30 @@ import { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
 import { router } from 'expo-router';
 
+import { getCurrentUser } from '../services/api';
+
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const fitSlide = useRef(new Animated.Value(-100)).current;
   const opiaSlide = useRef(new Animated.Value(100)).current;
+  
+
+
+
+useEffect(() => {
+  async function checkAuth() {
+    try {
+      const user = await getCurrentUser();
+      if (user) {
+        // User is already logged in — skip to tabs
+        router.replace('/(tabs)');
+      }
+    } catch (error) {
+      // No token or invalid token — stay on splash
+    }
+  }
+  checkAuth();
+}, []);
 
   useEffect(() => {
     Animated.sequence([

@@ -5,6 +5,8 @@ import {useState } from 'react';
 import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
 import { Feather } from '@expo/vector-icons';
+import {signupUser} from '../services/api';
+
 
 export default function SignupScreen() {
     const [name, setName] = useState('');
@@ -18,7 +20,11 @@ export default function SignupScreen() {
         password: '',
     });
 
-    function handleSignup() {
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState('');
+
+
+    async function handleSignup() {
         const newErrors = {
             name: !name ? 'Name is required' : '',
             email: !email
@@ -35,7 +41,18 @@ export default function SignupScreen() {
         setErrors(newErrors);
         const hasErrors = Object.values(newErrors).some(error => error !== '');
         if (hasErrors) return;
-        router.navigate('/onboarding/complete');
+
+        // Call the real API
+        try {
+            setLoading(true);
+            setServerError('');
+            await signupUser(name, email, password, referral);
+            router.navigate('/onboarding/complete');
+        } catch (error) {
+            setServerError(error.message);
+        } finally {
+            setLoading(false);
+        }
     }
 
     return (
@@ -141,11 +158,18 @@ export default function SignupScreen() {
                     </View>
 
                     <FadeUpItem delay={600}>
+                    {serverError ? (
+                        <Text style={styles.errorText}>{serverError}</Text>
+                    ) : null}
+
                         <TouchableOpacity
-                            style={styles.button}
+                            style={[styles.button, loading && { opacity: 0.7 }]}
                             onPress={handleSignup}
-                        >
-                            <Text style={styles.buttonText}>Create account</Text>
+                            disabled={loading}
+                            >
+                            <Text style={styles.buttonText}>
+                            {loading ? 'Creating account...' : 'Create account'}
+                            </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => router.push('/login')}>

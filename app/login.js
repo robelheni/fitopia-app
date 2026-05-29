@@ -4,6 +4,7 @@ import {colors} from '../constants/colors';
 import { useState } from 'react';
 import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
+import { loginUser } from '../services/api';
 
 
 export default function LoginScreen () {
@@ -11,9 +12,10 @@ export default function LoginScreen () {
     const [password, setPassword] = useState('');
 
     const [ error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [serverError, setServerError] = useState('');
 
-
-    function handleLogin(){
+    async function handleLogin(){
         setError('');
 
         if(!email || !password){
@@ -21,7 +23,16 @@ export default function LoginScreen () {
             return;
         }
 
-        router.replace('/(tabs)');
+        try{
+            setLoading(true);
+            setServerError('');
+            await loginUser(email, password);
+            router.replace('/(tabs)')
+        } catch (error) {
+            setServerError(error.message);
+        } finally{
+            setLoading(false);
+        }
     }
 
     return(
@@ -67,11 +78,17 @@ export default function LoginScreen () {
 
             <FadeUpItem delay={100}>
             {/* Login button */}
+            {serverError ? (
+                <Text style={styles.errorText}>{serverError}</Text>
+            ) : null}
             <TouchableOpacity
-                style={styles.button}
+                style={[styles.button, loading && {opacity:0.7}]}
                 onPress={handleLogin}
+                disabled = {loading}
                 >
-                <Text style={styles.buttonText}>Log in</Text>
+                <Text style={styles.buttonText}>
+                    {loading ? 'Logging in...' : 'Log in'}
+                </Text>
             </TouchableOpacity>
 
             {/* Link to signup */}
