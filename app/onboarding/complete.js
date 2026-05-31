@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect} from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 // Add to your imports
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import { router } from 'expo-router';
 import { colors } from '../../constants/colors';
 import { Feather } from '@expo/vector-icons';
 import { TouchableOpacity } from 'react-native';
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -122,6 +123,8 @@ export default function Complete() {
     opacity: buttonOpacity.value,
     transform: [{ translateY: buttonY.value }],
   }));
+
+
 
   return (
     <View style={styles.container}>

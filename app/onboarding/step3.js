@@ -27,6 +27,8 @@ const maxDays = {
   '5+': 5,
 };
 
+
+
 export default function Step3() {
   const [selected, setSelected] = useState(null);
   const [selectedDays, setSelectedDays] = useState([]);
@@ -52,9 +54,9 @@ export default function Step3() {
 
   function handleContinue() {
     if (!isComplete) return;
-    updateAnswer('daysPerWeek', selected);
-    updateAnswer('trainingDays', selectedDays);
-    router.navigate('/onboarding/step4');
+  updateAnswer('daysPerWeek', selected);
+  updateAnswer('trainingDays', selectedDays);
+  router.navigate('/onboarding/step4');
   }
 
   return (

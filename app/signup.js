@@ -6,6 +6,9 @@ import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
 import { Feather } from '@expo/vector-icons';
 import {signupUser} from '../services/api';
+import { saveOnboarding } from '../services/api';
+import { useOnboarding } from '../context/OnboardingContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 export default function SignupScreen() {
@@ -22,6 +25,8 @@ export default function SignupScreen() {
 
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState('');
+    const { answers } = useOnboarding();
+
 
 
     async function handleSignup() {
@@ -46,14 +51,48 @@ export default function SignupScreen() {
         try {
             setLoading(true);
             setServerError('');
+        
+            // Step 1 — create account and get token
             await signupUser(name, email, password, referral);
+        
+            // Small wait
+            await new Promise(resolve => setTimeout(resolve, 100));
+        
+            // Step 2 — read answers from AsyncStorage
+            const savedAnswers = await AsyncStorage.getItem('onboarding_answers');
+            const answers = savedAnswers ? JSON.parse(savedAnswers) : {};
+        
+            console.log('Answers from storage:', answers);
+        
+            // Step 3 — save to backend
+            await saveOnboarding({
+                fitness_level: answers.fitnessLevel,
+                goal: answers.goal,
+                days_per_week: answers.daysPerWeek,
+                training_days: answers.trainingDays ? answers.trainingDays.join(',') : null,
+                workout_duration: answers.duration,
+                equipment: answers.equipment,
+                food_preferences: answers.foodChoices ? answers.foodChoices.join(',') : null,
+                location: answers.location,
+                injuries: answers.injuries?.selected ? answers.injuries.selected.join(',') : null,
+                gender: answers.personalInfo?.gender,
+                age: answers.personalInfo?.age ? parseInt(answers.personalInfo.age) : null,
+                height: answers.personalInfo?.height ? parseFloat(answers.personalInfo.height) : null,
+                weight: answers.personalInfo?.weight ? parseFloat(answers.personalInfo.weight) : null,
+                goal_weight: answers.personalInfo?.goalWeight ? parseFloat(answers.personalInfo.goalWeight) : null,
+              });
+            // Step 4 — clean up and navigate
+            await AsyncStorage.removeItem('onboarding_answers');
             router.navigate('/onboarding/complete');
-        } catch (error) {
+        
+          } catch (error) {
             setServerError(error.message);
-        } finally {
+          } finally {
             setLoading(false);
-        }
+          }
     }
+
+    
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
