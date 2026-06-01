@@ -106,3 +106,75 @@ export async function saveOnboarding(answers, tokenOverride = null) {
   
     return data;
   }
+
+  export async function getNutrition() {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+  
+    const response = await fetch(`${BASE_URL}/plan/nutrition?token=${token}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get nutrition');
+    return data;
+  }
+  
+  export async function getTodaysMeals(isFasting = false) {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+  
+    const response = await fetch(
+      `${BASE_URL}/plan/meals/today?token=${token}&is_fasting=${isFasting}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get meals');
+    return data;
+  }
+  export async function getSwaps(mealId, swapGroup, targetCalories) {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+  
+    const response = await fetch(
+      `${BASE_URL}/plan/meals/swaps?token=${token}&meal_id=${mealId}&swap_group=${swapGroup}&target_calories=${targetCalories}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get swaps');
+    return data;
+  }
+  export async function getWeeklyMeals() {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+    const response = await fetch(
+      `${BASE_URL}/plan/meals/weekly?token=${token}`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get weekly meals');
+    return data;
+  }
+
+  export async function getMealById(mealId) {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+  
+    const response = await fetch(`${BASE_URL}/plan/meals/${mealId}?token=${token}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get meal');
+    return data;
+  }

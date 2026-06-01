@@ -3,38 +3,94 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
+import { useEffect, useState } from 'react';
+import { getNutrition } from '../../services/api';
 
-// Hardcoded — calculated from onboarding answers later
-const nutritionProfile = {
-  // User stats from onboarding
-  age: 26,
-  gender: 'Male',
-  height: 178,
-  weight: 75,
-  goalWeight: 82,
-  goal: 'Build muscle',
-  activityLevel: '4 days per week',
 
-  // Calculated targets
-  calories: 2100,
-  protein: 158,
-  carbs: 210,
-  fats: 70,
-  water: 2.6,
-
-  // Surplus or deficit
-  maintenanceCalories: 1800,
-  surplus: 300,
-
-  // Estimated timeline
-  weeksToGoal: 12,
-
-  // BMI
-  bmi: 23.7,
-  bmiCategory: 'Healthy weight',
-};
 
 export default function NutritionDetailsScreen() {
+  const [nutritionProfile, setNutritionProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchNutrition() {
+      try {
+        const data = await getNutrition();
+        setNutritionProfile({
+          // User stats
+          age: data.user.age,
+          gender: data.user.gender,
+          height: data.user.height,
+          weight: data.user.weight,
+          goalWeight: data.user.goal_weight,
+          goal: data.user.goal,
+          foodPreferences: data.user.food_preferences || '',
+          // Nutrition targets
+          calories: data.nutrition.calories,
+          protein: data.nutrition.protein,
+          carbs: data.nutrition.carbs,
+          fats: data.nutrition.fats,
+          water: data.nutrition.water,
+          maintenanceCalories: data.nutrition.tdee,
+          surplus: data.user.goal === 'build_muscle' ? 300 : -500,
+          weeksToGoal: data.nutrition.weeks_to_goal,
+          bmi: Math.round((data.user.weight / Math.pow(data.user.height / 100, 2)) * 10) / 10,
+          bmiCategory: getBMICategory(data.user.weight, data.user.height),
+          activityLevel: `${data.user.training_days?.split(',').length || 3} days per week`,
+          explanation: data.nutrition.explanation,
+        });
+      } catch (error) {
+        console.log('Failed to fetch nutrition:', error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchNutrition();
+  }, []);
+
+  function getBMICategory(weight, height) {
+    const bmi = weight / Math.pow(height / 100, 2);
+    if (bmi < 18.5) return 'Underweight';
+    if (bmi < 25) return 'Healthy weight';
+    if (bmi < 30) return 'Overweight';
+    return 'Obese';
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Feather name="arrow-left" size={20} color={colors.black} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Your nutrition</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.grey }}>Loading your plan...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (!nutritionProfile) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Feather name="arrow-left" size={20} color={colors.black} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Your nutrition</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: colors.grey }}>Complete onboarding to see your plan</Text>
+        </View>
+      </View>
+    );
+  }
+
+
   return (
     <View style={styles.container}>
 
@@ -189,6 +245,78 @@ export default function NutritionDetailsScreen() {
             </View>
             <Text style={styles.waterValue}>{nutritionProfile.water}L</Text>
           </View>
+        </FadeUpItem>
+
+        {/* Food preference section */}
+        <FadeUpItem delay={225}>
+          {(() => {
+            const prefs = nutritionProfile.foodPreferences?.split(',') || [];
+            const isFasting = prefs.includes('fasting');
+            const isEthiopian = prefs.includes('ethiopian');
+            const isMeat = prefs.includes('meat');
+            const isVegetarian = prefs.includes('vegetarian');
+
+            let title = '';
+            let description = '';
+            let foods = [];
+            let color = colors.blue;
+            let bgColor = colors.blueLight;
+
+            if (isFasting && isEthiopian) {
+              title = '🕊️ Ethiopian Orthodox Fasting';
+              description = 'Your meal plan follows Orthodox fasting guidelines — no meat, dairy or eggs. All meals are plant based and fasting compliant.';
+              foods = ['Shiro with Injera', 'Misir Wot', 'Atkilt Wot', 'Tofu Stir Fry', 'Lentil Soup', 'Roasted Chickpeas', 'Edamame'];
+              color = '#7C3AED';
+              bgColor = '#EDE9FE';
+            } else if (isFasting) {
+              title = '🕊️ Fasting Diet';
+              description = 'Your meal plan is fully plant based with no animal products. We have selected high protein plant foods to help you hit your targets.';
+              foods = ['Tofu Stir Fry', 'Lentil Soup', 'Chickpea Curry', 'Edamame', 'Roasted Chickpeas', 'Peanut Butter on Toast'];
+              color = '#7C3AED';
+              bgColor = '#EDE9FE';
+            } else if (isEthiopian && isMeat) {
+              title = '🇪🇹 Ethiopian Meat Diet';
+              description = 'Your meal plan includes a mix of Ethiopian dishes and international meals. You will get at least one Ethiopian meal per day — either lunch or dinner.';
+              foods = ['Doro Wot', 'Tibs with Injera', 'Kitfo with Ayib', 'Asa Tibs', 'Firfir with Egg', 'Gomen with Eggs'];
+              color = '#D97706';
+              bgColor = '#FEF3C7';
+            } else if (isEthiopian) {
+              title = '🇪🇹 Ethiopian Diet';
+              description = 'Your meal plan is built around Ethiopian cuisine. You will get at least one Ethiopian meal per day alongside international options.';
+              foods = ['Shiro', 'Misir Wot', 'Tibs', 'Doro Wot', 'Firfir', 'Kitfo'];
+              color = '#D97706';
+              bgColor = '#FEF3C7';
+            } else if (isMeat) {
+              title = '🥩 Meat Based Diet';
+              description = 'Your meal plan prioritises high protein meat dishes to help you hit your muscle building targets efficiently.';
+              foods = ['Chicken Breast with Rice', 'Beef Stew', 'Grilled Fish', 'Turkey Meatballs', 'Salmon with Sweet Potato', 'Lamb Chops'];
+              color = '#059669';
+              bgColor = '#D1FAE5';
+            } else if (isVegetarian) {
+              title = '🌱 Vegetarian Diet';
+              description = 'Your meal plan is fully vegetarian. We have selected high protein plant and dairy sources to help you hit your targets.';
+              foods = ['Greek Yogurt', 'Cottage Cheese', 'Eggs', 'Tofu', 'Lentils', 'Chickpeas'];
+              color = '#059669';
+              bgColor = '#D1FAE5';
+            } else {
+              return null;
+            }
+
+            return (
+              <View style={[styles.foodPrefCard, { borderColor: color, backgroundColor: bgColor }]}>
+                <Text style={[styles.foodPrefTitle, { color }]}>{title}</Text>
+                <Text style={[styles.foodPrefDescription, { color }]}>{description}</Text>
+                <Text style={[styles.foodPrefSubtitle, { color }]}>Foods in your plan:</Text>
+                <View style={styles.foodPrefList}>
+                  {foods.map((food, i) => (
+                    <View key={i} style={[styles.foodPrefChip, { backgroundColor: 'rgba(0,0,0,0.06)' }]}>
+                      <Text style={[styles.foodPrefChipText, { color }]}>{food}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })()}
         </FadeUpItem>
 
         {/* Meal timing */}
@@ -810,5 +938,42 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.white,
+  },
+  foodPrefCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    gap: 8,
+  },
+  foodPrefTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  foodPrefDescription: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: '300',
+    opacity: 0.8,
+  },
+  foodPrefSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  foodPrefList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  foodPrefChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 100,
+  },
+  foodPrefChipText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

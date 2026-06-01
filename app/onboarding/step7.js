@@ -43,11 +43,10 @@ export default function Step7() {
 
   function calculateIdealWeight() {
     if (!canCalculate) return;
-
+  
     setCalculating(true);
     setCalculated(false);
-
-    // Start pulse animation
+  
     pulseScale.value = withRepeat(
       withSequence(
         withTiming(1.2, { duration: 600 }),
@@ -64,27 +63,46 @@ export default function Step7() {
       -1,
       false
     );
-
-    // Simulate AI calculation — 2.5 seconds
+  
     setTimeout(() => {
       const h = parseInt(height);
+      const w = parseInt(weight);
       const goal = answers?.goal || 'build_muscle';
-
-      let ideal;
+  
+      // Devine formula — used by doctors worldwide
+      let base;
       if (gender === 'male') {
-        ideal = goal === 'lose_weight' ? h - 110 : h - 100 + 5;
+        base = 50 + 2.3 * ((h - 152.4) / 2.54);
       } else {
-        ideal = goal === 'lose_weight' ? h - 115 : h - 105;
+        base = 45.5 + 2.3 * ((h - 152.4) / 2.54);
       }
-
+  
+      // Adjust for goal
+      let ideal;
+      if (goal === 'build_muscle') {
+        ideal = Math.round(base + 7);
+        // Already at or above ideal — just add a little
+        if (w >= ideal) ideal = w + 3;
+      } else if (goal === 'lose_weight') {
+        ideal = Math.round(base);
+        // Already lean — maintain current weight
+        if (w <= base) ideal = w;
+      } else {
+        // Stay active — just the base ideal
+        ideal = Math.round(base);
+      }
+  
       // Stop animation
       pulseScale.value = withTiming(1, { duration: 300 });
       pulseOpacity.value = withTiming(1, { duration: 300 });
-
+  
       setSuggestedWeight(ideal);
       setCalculating(false);
       setCalculated(true);
     }, 2500);
+  
+
+   
   }
 
   function handleAccept() {
