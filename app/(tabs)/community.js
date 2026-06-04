@@ -181,6 +181,7 @@ const headerTranslateY = useSharedValue(0);
             <TouchableOpacity
             style={styles.trainersButton}
             onPress={() => router.push('/trainers')}
+            
             >
             <Feather name="users" size={14} color={colors.blue} />
             <Text style={styles.trainersButtonText}>Trainers</Text>

@@ -14,6 +14,7 @@ import Animated, {
   } from 'react-native-reanimated';
 
 import { exerciseData } from '../../data/exercises';
+import { completeWorkout } from '../../services/api';
 
 const celebrations = [
     "That's what we're talking about,",
@@ -432,11 +433,15 @@ const workoutData = {
         setResting(true);
     }
 
-    function handleNextExercise() {
-        if (currentIndex + 1 >= totalExercises) {
-        // Workout complete
-        progress.value = withTiming(100, { duration: 500 });
-        setWorkoutDone(true);
+    async function handleNextExercise() {
+      if (currentIndex + 1 >= totalExercises) {
+          progress.value = withTiming(100, { duration: 500 });
+          try {
+              await completeWorkout(workout.name);
+          } catch (e) {
+              console.log('Complete workout error:', e.message);
+          }
+          setWorkoutDone(true);
         } else {
         setCurrentIndex(prev => prev + 1);
         setCompletedSets([]);

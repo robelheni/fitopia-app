@@ -1,23 +1,24 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useEffect, useState } from 'react';
-import { getNutrition } from '../../services/api';
-
-
+import { getNutrition, getToken } from '../../services/api';
 
 export default function NutritionDetailsScreen() {
   const [nutritionProfile, setNutritionProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [newGoalWeight, setNewGoalWeight] = useState('');
+  const [newGoal, setNewGoal] = useState('build_muscle');
+  const [savingGoal, setSavingGoal] = useState(false);
 
   useEffect(() => {
     async function fetchNutrition() {
       try {
         const data = await getNutrition();
         setNutritionProfile({
-          // User stats
           age: data.user.age,
           gender: data.user.gender,
           height: data.user.height,
@@ -25,7 +26,6 @@ export default function NutritionDetailsScreen() {
           goalWeight: data.user.goal_weight,
           goal: data.user.goal,
           foodPreferences: data.user.food_preferences || '',
-          // Nutrition targets
           calories: data.nutrition.calories,
           protein: data.nutrition.protein,
           carbs: data.nutrition.carbs,
@@ -38,7 +38,17 @@ export default function NutritionDetailsScreen() {
           bmiCategory: getBMICategory(data.user.weight, data.user.height),
           activityLevel: `${data.user.training_days?.split(',').length || 3} days per week`,
           explanation: data.nutrition.explanation,
-        });
+          startingWeight: data.user.starting_weight ?? data.user.weight,
+                });
+
+        const goalReached =
+        (data.user.goal === 'build_muscle' && 
+          data.user.weight >= data.user.goal_weight &&
+        data.user.weight > (data.user.starting_weight || 0)) ||
+        (data.user.goal === 'lose_weight' && 
+          data.user.weight <= data.user.goal_weight &&
+        data.user.weight < (data.user.starting_weight || 999));
+        if (goalReached) setShowCelebration(true);
       } catch (error) {
         console.log('Failed to fetch nutrition:', error.message);
       } finally {
@@ -90,26 +100,27 @@ export default function NutritionDetailsScreen() {
     );
   }
 
+  const progressPercent = (() => {
+    const start = nutritionProfile.startingWeight;
+    const current = nutritionProfile.weight;
+    const goal = nutritionProfile.goalWeight;
+    if (goal === start) return 0;
+    const progress = Math.abs(current - start) / Math.abs(goal - start);
+    return Math.round(Math.min(Math.max(progress, 0), 1) * 100);
+  })();
 
   return (
     <View style={styles.container}>
 
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.black} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Your nutrition</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Profile summary */}
         <FadeUpItem delay={0}>
@@ -230,7 +241,6 @@ export default function NutritionDetailsScreen() {
               </Text>
             </View>
           </View>
-
         </FadeUpItem>
 
         {/* Water intake */}
@@ -323,7 +333,6 @@ export default function NutritionDetailsScreen() {
         <FadeUpItem delay={250}>
           <Text style={styles.sectionTitle}>Meal timing</Text>
           <View style={styles.timingList}>
-
             <View style={styles.timingItem}>
               <View style={styles.timingIconContainer}>
                 <Feather name="sunrise" size={16} color="#D97706" />
@@ -333,9 +342,7 @@ export default function NutritionDetailsScreen() {
                 <Text style={styles.timingText}>Eat a carb and protein meal 1-2 hours before training. Firfir with egg or oats with banana work well.</Text>
               </View>
             </View>
-
             <View style={styles.timingDivider} />
-
             <View style={styles.timingItem}>
               <View style={styles.timingIconContainer}>
                 <Feather name="zap" size={16} color={colors.blue} />
@@ -345,9 +352,7 @@ export default function NutritionDetailsScreen() {
                 <Text style={styles.timingText}>Eat within 30-60 minutes after training. This is your most important meal. High protein — chicken, tibs or kitfo are ideal.</Text>
               </View>
             </View>
-
             <View style={styles.timingDivider} />
-
             <View style={styles.timingItem}>
               <View style={styles.timingIconContainer}>
                 <Feather name="moon" size={16} color="#7C3AED" />
@@ -357,7 +362,6 @@ export default function NutritionDetailsScreen() {
                 <Text style={styles.timingText}>Have your last meal at least 2 hours before sleeping. Keep it lighter — misir wot or a chicken salad work well.</Text>
               </View>
             </View>
-
           </View>
         </FadeUpItem>
 
@@ -378,15 +382,9 @@ export default function NutritionDetailsScreen() {
             </View>
             <View style={styles.progressBarContainer}>
               <View style={styles.progressBarTrack}>
-                <View style={[styles.progressBarFill, { width: '15%' }]} />
+                <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
               </View>
-              <Text style={styles.progressBarLabel}>15% of the way there</Text>
-            </View>
-            <View style={styles.estimateRow}>
-              <Feather name="clock" size={14} color={colors.grey} />
-              <Text style={styles.estimateText}>
-                At this rate you will reach your goal in approximately {nutritionProfile.weeksToGoal} weeks
-              </Text>
+              <Text style={styles.progressBarLabel}>{progressPercent}% of the way there</Text>
             </View>
           </View>
         </FadeUpItem>
@@ -427,11 +425,7 @@ export default function NutritionDetailsScreen() {
             </View>
             <TouchableOpacity
               style={styles.aiButton}
-              onPress={() => Alert.alert(
-                'Coming soon',
-                'AI nutrition coaching is coming in the next update. Stay tuned.',
-                [{ text: 'OK' }]
-              )}
+              onPress={() => Alert.alert('Coming soon', 'AI nutrition coaching is coming in the next update. Stay tuned.', [{ text: 'OK' }])}
             >
               <Feather name="message-circle" size={16} color={colors.white} />
               <Text style={styles.aiButtonText}>Chat with AI</Text>
@@ -440,540 +434,212 @@ export default function NutritionDetailsScreen() {
         </FadeUpItem>
 
       </ScrollView>
+
+      {/* Goal reached celebration modal */}
+      <Modal
+        visible={showCelebration}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowCelebration(false)}
+      >
+        <View style={styles.celebrationOverlay}>
+          <View style={styles.celebrationCard}>
+            <Text style={styles.celebrationEmoji}>🎉</Text>
+            <Text style={styles.celebrationTitle}>Goal reached!</Text>
+            <Text style={styles.celebrationSub}>
+              You hit {nutritionProfile.goalWeight}kg. That is a massive achievement. Time to set a new target.
+            </Text>
+
+            <Text style={styles.celebrationLabel}>New goal type</Text>
+            <View style={styles.goalOptions}>
+              {[
+                { id: 'build_muscle', label: '💪 Build muscle' },
+                { id: 'lose_weight', label: '🔥 Lose weight' },
+                { id: 'stay_active', label: '⚡ Stay active' },
+              ].map(option => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[styles.goalOption, newGoal === option.id && styles.goalOptionSelected]}
+                  onPress={() => setNewGoal(option.id)}
+                >
+                  <Text style={[styles.goalOptionText, newGoal === option.id && styles.goalOptionTextSelected]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.celebrationLabel}>New goal weight (kg)</Text>
+            <TextInput
+              style={styles.goalWeightInput}
+              value={newGoalWeight}
+              onChangeText={setNewGoalWeight}
+              keyboardType="number-pad"
+              placeholder={String(nutritionProfile.goalWeight || '')}
+              placeholderTextColor={colors.greyLight}
+              maxLength={3}
+            />
+
+            <TouchableOpacity
+              style={styles.celebrationButton}
+              onPress={async () => {
+                if (!newGoalWeight) return;
+                try {
+                  setSavingGoal(true);
+                  const token = await getToken();
+                  await fetch(`http://192.168.0.186:8000/auth/onboarding?token=${token}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      goal: newGoal,
+                      goal_weight: parseFloat(newGoalWeight),
+                      starting_weight: nutritionProfile.weight,
+                    }),
+                  });
+                  setShowCelebration(false);
+                  setNutritionProfile(prev => ({
+                    ...prev,
+                    goal: newGoal,
+                    goalWeight: parseFloat(newGoalWeight),
+                    startingWeight: prev.weight,
+                  }));
+                } catch (e) {
+                  console.log('Save goal error:', e.message);
+                } finally {
+                  setSavingGoal(false);
+                }
+              }}
+            >
+              <Text style={styles.celebrationButtonText}>
+                {savingGoal ? 'Saving...' : 'Set new goal'}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.celebrationSkip} onPress={() => setShowCelebration(false)}>
+              <Text style={styles.celebrationSkipText}>Remind me later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-
+  container: { flex: 1, backgroundColor: colors.white },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.greyBorder,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
   },
-
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.black,
-  },
-
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-
-  // Profile card
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   profileCard: {
-    backgroundColor: colors.blue,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-    gap: 16,
+    backgroundColor: colors.blue, borderRadius: 20, padding: 20, marginBottom: 16,
+    shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, gap: 16,
   },
-
-  profileTitle: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '300',
-  },
-
-  profileGrid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  profileItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-
-  profileValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: -0.5,
-  },
-
-  profileLabel: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-    fontWeight: '300',
-  },
-
-  profileDivider: {
-    width: 0.5,
-    height: 40,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-
-  bmiCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 100,
-    alignSelf: 'flex-start',
-  },
-
-  bmiText: {
-    fontSize: 13,
-    color: colors.white,
-    fontWeight: '500',
-  },
-
-  // Goal card
+  profileTitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
+  profileGrid: { flexDirection: 'row', alignItems: 'center' },
+  profileItem: { flex: 1, alignItems: 'center', gap: 4 },
+  profileValue: { fontSize: 22, fontWeight: '700', color: colors.white, letterSpacing: -0.5 },
+  profileLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
+  profileDivider: { width: 0.5, height: 40, backgroundColor: 'rgba(255,255,255,0.3)' },
+  bmiCard: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, alignSelf: 'flex-start' },
+  bmiText: { fontSize: 13, color: colors.white, fontWeight: '500' },
   goalCard: {
-    backgroundColor: colors.white,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-    gap: 12,
+    backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 24,
+    borderWidth: 1, borderColor: colors.greyBorder,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, gap: 12,
   },
-
-  goalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  goalTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.3,
-  },
-
-  goalExplanation: {
-    fontSize: 14,
-    color: colors.grey,
-    lineHeight: 20,
-    fontWeight: '300',
-  },
-
-  surplusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.greyCard,
-    borderRadius: 12,
-    padding: 16,
-  },
-
-  surplusItem: {
-    alignItems: 'center',
-    gap: 2,
-  },
-
-  surplusLabel: {
-    fontSize: 11,
-    color: colors.grey,
-    fontWeight: '300',
-  },
-
-  surplusValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.5,
-  },
-
-  surplusUnit: {
-    fontSize: 10,
-    color: colors.greyLight,
-  },
-
-  // Section title
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.5,
-    marginBottom: 12,
-  },
-
-  // Macro cards
+  goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  goalTitle: { fontSize: 16, fontWeight: '700', color: colors.black, letterSpacing: -0.3 },
+  goalExplanation: { fontSize: 14, color: colors.grey, lineHeight: 20, fontWeight: '300' },
+  surplusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.greyCard, borderRadius: 12, padding: 16 },
+  surplusItem: { alignItems: 'center', gap: 2 },
+  surplusLabel: { fontSize: 11, color: colors.grey, fontWeight: '300' },
+  surplusValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+  surplusUnit: { fontSize: 10, color: colors.greyLight },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5, marginBottom: 12 },
   macroCard: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: colors.white,
+    borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.greyBorder,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
-
-  macroContent: {
-    flex: 1,
-    gap: 6,
-  },
-
-  macroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  macroName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.black,
-  },
-
-  macroValue: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.blue,
-  },
-
-  macroExplanation: {
-    fontSize: 13,
-    color: colors.grey,
-    lineHeight: 18,
-    fontWeight: '300',
-  },
-
-  // Water
-  waterCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#CFFAFE',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-
-  waterLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-
-  waterTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#0891B2',
-  },
-
-  waterSub: {
-    fontSize: 12,
-    color: '#0891B2',
-    fontWeight: '300',
-    opacity: 0.7,
-  },
-
-  waterValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#0891B2',
-    letterSpacing: -1,
-  },
-
-  // Meal timing
+  macroContent: { flex: 1, gap: 6 },
+  macroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  macroName: { fontSize: 15, fontWeight: '600', color: colors.black },
+  macroValue: { fontSize: 15, fontWeight: '700', color: colors.blue },
+  macroExplanation: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
+  waterCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#CFFAFE', borderRadius: 16, padding: 16, marginBottom: 24 },
+  waterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  waterTitle: { fontSize: 15, fontWeight: '600', color: '#0891B2' },
+  waterSub: { fontSize: 12, color: '#0891B2', fontWeight: '300', opacity: 0.7 },
+  waterValue: { fontSize: 28, fontWeight: '700', color: '#0891B2', letterSpacing: -1 },
+  foodPrefCard: { borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, gap: 8 },
+  foodPrefTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+  foodPrefDescription: { fontSize: 13, lineHeight: 20, fontWeight: '300', opacity: 0.8 },
+  foodPrefSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+  foodPrefList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  foodPrefChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
+  foodPrefChipText: { fontSize: 12, fontWeight: '500' },
   timingList: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    marginBottom: 24,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.greyBorder,
+    marginBottom: 24, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
   },
-
-  timingItem: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-    alignItems: 'flex-start',
-  },
-
-  timingIconContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  timingContent: {
-    flex: 1,
-    gap: 4,
-  },
-
-  timingTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.black,
-  },
-
-  timingText: {
-    fontSize: 13,
-    color: colors.grey,
-    lineHeight: 18,
-    fontWeight: '300',
-  },
-
-  timingDivider: {
-    height: 0.5,
-    backgroundColor: colors.greyBorder,
-    marginHorizontal: 16,
-  },
-
-  // Progress
+  timingItem: { flexDirection: 'row', gap: 12, padding: 16, alignItems: 'flex-start' },
+  timingIconContainer: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  timingContent: { flex: 1, gap: 4 },
+  timingTitle: { fontSize: 14, fontWeight: '600', color: colors.black },
+  timingText: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
+  timingDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginHorizontal: 16 },
   progressCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 16,
+    backgroundColor: colors.white, borderRadius: 16, padding: 16, marginBottom: 24,
+    borderWidth: 1, borderColor: colors.greyBorder,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2, gap: 16,
   },
-
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  progressItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-
-  progressLabel: {
-    fontSize: 12,
-    color: colors.grey,
-    fontWeight: '300',
-  },
-
-  progressValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.5,
-  },
-
-  progressBarContainer: {
-    gap: 8,
-  },
-
-  progressBarTrack: {
-    height: 8,
-    backgroundColor: colors.greyCard,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-
-  progressBarFill: {
-    height: 8,
-    backgroundColor: colors.blue,
-    borderRadius: 4,
-  },
-
-  progressBarLabel: {
-    fontSize: 12,
-    color: colors.grey,
-    fontWeight: '300',
-  },
-
-  estimateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.greyCard,
-    padding: 12,
-    borderRadius: 12,
-  },
-
-  estimateText: {
-    fontSize: 13,
-    color: colors.grey,
-    lineHeight: 18,
-    flex: 1,
-    fontWeight: '300',
-  },
-
-  // Tips
-  tipsList: {
-    gap: 10,
-    marginBottom: 24,
-  },
-
-  tipItem: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'flex-start',
-  },
-
-  tipDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.blue,
-    marginTop: 7,
-    flexShrink: 0,
-  },
-
-  tipText: {
-    fontSize: 14,
-    color: colors.black,
-    lineHeight: 20,
-    flex: 1,
-    fontWeight: '300',
-  },
-
-  // AI card
+  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  progressItem: { alignItems: 'center', gap: 4 },
+  progressLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+  progressValue: { fontSize: 24, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+  progressBarContainer: { gap: 8 },
+  progressBarTrack: { height: 8, backgroundColor: colors.greyCard, borderRadius: 4, overflow: 'hidden' },
+  progressBarFill: { height: 8, backgroundColor: colors.blue, borderRadius: 4 },
+  progressBarLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+  tipsList: { gap: 10, marginBottom: 24 },
+  tipItem: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  tipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.blue, marginTop: 7, flexShrink: 0 },
+  tipText: { fontSize: 14, color: colors.black, lineHeight: 20, flex: 1, fontWeight: '300' },
   aiCard: {
-    backgroundColor: colors.blue,
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
-    marginBottom: 20,
+    backgroundColor: colors.blue, borderRadius: 20, padding: 20, gap: 16,
+    shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, marginBottom: 20,
   },
-
-  aiCardTop: {
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
+  aiCardTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  aiIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  aiCardContent: { flex: 1, gap: 4 },
+  aiCardTitle: { fontSize: 16, fontWeight: '700', color: colors.white, letterSpacing: -0.3 },
+  aiCardSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 18, fontWeight: '300' },
+  aiButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.2)', paddingVertical: 14, borderRadius: 100 },
+  aiButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
+  celebrationOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  celebrationCard: { backgroundColor: colors.white, borderRadius: 24, padding: 24, width: '100%', gap: 12, alignItems: 'center' },
+  celebrationEmoji: { fontSize: 56 },
+  celebrationTitle: { fontSize: 26, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+  celebrationSub: { fontSize: 14, color: colors.grey, fontWeight: '300', textAlign: 'center', lineHeight: 20 },
+  celebrationLabel: { fontSize: 13, fontWeight: '600', color: colors.black, alignSelf: 'flex-start', marginTop: 4 },
+  goalOptions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', width: '100%' },
+  goalOption: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.greyBorder, alignItems: 'center' },
+  goalOptionSelected: { borderColor: colors.blue, backgroundColor: colors.blueLight },
+  goalOptionText: { fontSize: 12, fontWeight: '500', color: colors.grey, textAlign: 'center' },
+  goalOptionTextSelected: { color: colors.blue },
+  goalWeightInput: { width: '100%', borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12, padding: 14, fontSize: 16, color: colors.black },
+  celebrationButton: {
+    width: '100%', backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100,
+    alignItems: 'center', shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginTop: 4,
   },
-
-  aiIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-
-  aiCardContent: {
-    flex: 1,
-    gap: 4,
-  },
-
-  aiCardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.white,
-    letterSpacing: -0.3,
-  },
-
-  aiCardSub: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    lineHeight: 18,
-    fontWeight: '300',
-  },
-
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingVertical: 14,
-    borderRadius: 100,
-  },
-
-  aiButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  foodPrefCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    gap: 8,
-  },
-  foodPrefTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-  },
-  foodPrefDescription: {
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: '300',
-    opacity: 0.8,
-  },
-  foodPrefSubtitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  foodPrefList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  foodPrefChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
-  foodPrefChipText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
+  celebrationButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
+  celebrationSkip: { paddingVertical: 8 },
+  celebrationSkipText: { fontSize: 13, color: colors.grey, fontWeight: '300' },
 });

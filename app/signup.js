@@ -95,6 +95,8 @@ export default function SignupScreen() {
     
 
     return (
+
+        
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <KeyboardAvoidingView
                 style={{ flex: 1, backgroundColor: colors.white }}

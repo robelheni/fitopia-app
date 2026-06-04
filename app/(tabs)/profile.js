@@ -11,6 +11,7 @@ import { colors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
+import { logout } from '../../services/api';
 
 // Hardcoded user data — comes from backend later
 const userData = {
@@ -100,6 +101,12 @@ export default function ProfileScreen() {
     setCodeCopied(true);
     setTimeout(() => setCodeCopied(false), 2000);
   }
+
+  async function handleLogout() {
+    console.log('logout tapped');
+    await logout();
+    router.replace('/welcome');
+}
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -325,7 +332,7 @@ export default function ProfileScreen() {
 
               <View style={styles.settingsDivider} />
 
-              <TouchableOpacity style={styles.settingsItem}>
+              <TouchableOpacity style={styles.settingsItem} onPress={handleLogout}>
                 <View style={[styles.settingsIconContainer, { backgroundColor: '#FEE2E2' }]}>
                   <Feather name="log-out" size={16} color="#DC2626" />
                 </View>

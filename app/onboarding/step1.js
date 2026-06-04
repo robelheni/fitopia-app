@@ -53,7 +53,7 @@ export default function Step1() {
                 <Text style={[styles.optionTitle, selected === 'beginner' && styles.optionTitleSelected]}>
                 Beginner
                 </Text>
-                <Text style={styles.optionSub}>Just starting out</Text>
+                <Text style={styles.optionSub}>Just starting out . 0-6 months training</Text>
             </View>
             </TouchableOpacity>
         </FadeUpItem>
@@ -77,7 +77,7 @@ export default function Step1() {
                 <Text style={[styles.optionTitle, selected === 'intermediate' && styles.optionTitleSelected]}>
                 Intermediate
                 </Text>
-                <Text style={styles.optionSub}>Training 2–3 times a week</Text>
+                <Text style={styles.optionSub}>6 months to 2 years training</Text>
             </View>
             </TouchableOpacity>
         </FadeUpItem>
@@ -102,7 +102,7 @@ export default function Step1() {
                 <Text style={[styles.optionTitle, selected === 'advanced' && styles.optionTitleSelected]}>
                 Advanced
                 </Text>
-                <Text style={styles.optionSub}>Training 4+ times a week</Text>
+                <Text style={styles.optionSub}>2+ years of training</Text>
             </View>
             </TouchableOpacity>
         </FadeUpItem>

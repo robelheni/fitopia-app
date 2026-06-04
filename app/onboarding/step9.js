@@ -92,6 +92,35 @@ export default function step9(){
                         </TouchableOpacity>
                     </FadeUpItem>
 
+                    
+                    
+
+                    <FadeUpItem delay={350}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('wrist') && styles.optionSelected]}
+                        onPress={() => toggleOption('wrist')}
+                        >
+                        <Text style={styles.optionEmoji}>🤝</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('wrist') && styles.optionTitleSelected]}>Wrist pain</Text>
+                            <Text style={styles.optionSub}>Wrist or forearm discomfort</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+
+                    <FadeUpItem delay={400}>
+                        <TouchableOpacity
+                        style={[styles.option, selected.includes('ankle') && styles.optionSelected]}
+                        onPress={() => toggleOption('ankle')}
+                        >
+                        <Text style={styles.optionEmoji}>🦶</Text>
+                        <View>
+                            <Text style={[styles.optionTitle, selected.includes('ankle') && styles.optionTitleSelected]}>Ankle pain</Text>
+                            <Text style={styles.optionSub}>Ankle or foot issues</Text>
+                        </View>
+                        </TouchableOpacity>
+                    </FadeUpItem>
+
                     <FadeUpItem delay={400}>
                         <TouchableOpacity
                         style={[styles.option, selected.includes('none') && styles.optionSelected]}
@@ -104,32 +133,32 @@ export default function step9(){
                         </View>
                         </TouchableOpacity>
                     </FadeUpItem>
+                    <FadeUpItem delay={500}>
+                    <TouchableOpacity
+                    style={[styles.option, selected.includes('other') && styles.optionSelected]}
+                    onPress={() => toggleOption('other')}
+                    >
+                    <Text style={styles.optionEmoji}>✏️</Text>
+                    <View>
+                        <Text style={[styles.optionTitle, selected.includes('other') && styles.optionTitleSelected]}>Other</Text>
+                        <Text style={styles.optionSub}>Tap to describe your limitation</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
 
-                    <FadeUpItem delay={300}>
-                        <TouchableOpacity
-                        style={[styles.option, selected.includes('other') && styles.optionSelected]}
-                        onPress={() => toggleOption('other')}
-                        >
-                        <Text style={styles.optionEmoji}>✏️</Text>
-                        <View>
-                            <Text style={[styles.optionTitle, selected.includes('other') && styles.optionTitleSelected]}>Other</Text>
-                            <Text style={styles.optionSub}>Tap to describe your limitation</Text>
-                        </View>
-                        </TouchableOpacity>
-                    </FadeUpItem>
+                {/* Text input only shows when Other is selected */}
+                {selected.includes('other') && (
+                    <TextInput
+                        style={styles.otherInput}
+                        placeholder="Describe your injury or limitation..."
+                        placeholderTextColor={colors.greyLight}r
+                        value={other}
+                        onChangeText={setOther}
+                        multiline
+                        numberOfLines={3}
+                    />
+                )}
 
-                        {/* Text input only shows when Other is selected */}
-                        {selected.includes('other') && (
-                        <TextInput
-                            style={styles.otherInput}
-                            placeholder="Describe your injury or limitation..."
-                            placeholderTextColor={colors.greyLight}
-                            value={other}
-                            onChangeText={setOther}
-                            multiline
-                            numberOfLines={3}
-                        />
-                        )}
 
                     
             

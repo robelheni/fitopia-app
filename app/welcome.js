@@ -9,6 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { colors } from '../constants/colors';
+import { Feather } from '@expo/vector-icons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -83,6 +84,8 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
+        
+      
 
       {/* Subtle background circles */}
       <Animated.View style={[styles.circle1, circle1Style]} />

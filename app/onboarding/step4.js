@@ -31,25 +31,7 @@ export default function Step4() {
 
             <View style={styles.options}>
 
-                <FadeUpItem delay={150}>
-                    <TouchableOpacity
-                    style={[styles.option, selected === '20' && styles.optionSelected]}
-                    onPress={() => setSelected('20')}
-                    >
-                    <View style={[
-                        styles.optionIconContainer,
-                        selected === '20' && styles.optionIconContainerSelected
-                    ]}>
-                        <MaterialCommunityIcons name="lightning-bolt" size={20} color={selected === '5+' ? colors.white : colors.grey} />
-                    </View>
-                    <View>
-                        <Text style={[styles.optionTitle, selected === '20' && styles.optionTitleSelected]}>
-                        20 minutes
-                        </Text>
-                        <Text style={styles.optionSub}>Quick and effective</Text>
-                    </View>
-                    </TouchableOpacity>
-                </FadeUpItem>
+                
 
                 <FadeUpItem delay={250}>
                     <TouchableOpacity
@@ -66,7 +48,7 @@ export default function Step4() {
                         <Text style={[styles.optionTitle, selected === '30' && styles.optionTitleSelected]}>
                         30 minutes
                         </Text>
-                        <Text style={styles.optionSub}>Most popular choice</Text>
+                        <Text style={styles.optionSub}>Quick session</Text>
                     </View>
                     </TouchableOpacity>
                 </FadeUpItem>
@@ -86,7 +68,7 @@ export default function Step4() {
                         <Text style={[styles.optionTitle, selected === '45' && styles.optionTitleSelected]}>
                         45 minutes
                         </Text>
-                        <Text style={styles.optionSub}>Solid session</Text>
+                        <Text style={styles.optionSub}>Most popular choice</Text>
                     </View>
                     </TouchableOpacity>
                 </FadeUpItem>
@@ -105,6 +87,26 @@ export default function Step4() {
                     <View>
                         <Text style={[styles.optionTitle, selected === '60+' && styles.optionTitleSelected]}>
                         60+ minutes
+                        </Text>
+                        <Text style={styles.optionSub}>Solid Session</Text>
+                    </View>
+                    </TouchableOpacity>
+                </FadeUpItem>
+
+                <FadeUpItem delay={450}>
+                    <TouchableOpacity
+                    style={[styles.option, selected === '80' && styles.optionSelected]}
+                    onPress={() => setSelected('80')}
+                    >
+                    <View style={[
+                        styles.optionIconContainer,
+                        selected === '80' && styles.optionIconContainerSelected
+                    ]}>
+                        <MaterialCommunityIcons name="clock-time-eight-outline" size={20} color={selected === '80' ? colors.white : colors.grey} />
+                    </View>
+                    <View>
+                        <Text style={[styles.optionTitle, selected === '80' && styles.optionTitleSelected]}>
+                        1 hour 20 minutes
                         </Text>
                         <Text style={styles.optionSub}>Full dedication</Text>
                     </View>

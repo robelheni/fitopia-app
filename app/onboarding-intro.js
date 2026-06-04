@@ -10,6 +10,13 @@ export default function OnboardingScreen(){
     return (
         <ScreenWrapper style={styles.container}>
 
+            <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => router.navigate('/welcome')}
+                >
+                <Feather name="arrow-left" size={20} color={colors.black} />
+            </TouchableOpacity>
+
         <BackgroundCircles variant="centered" />
     
         {/* Top section - icon and messaging */}

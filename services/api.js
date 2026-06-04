@@ -178,3 +178,27 @@ export async function saveOnboarding(answers, tokenOverride = null) {
     if (!response.ok) throw new Error(data.detail || 'Failed to get meal');
     return data;
   }
+
+  export async function completeWorkout(workoutName = "Today's workout") {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+    const response = await fetch(
+      `${BASE_URL}/workouts/complete?token=${token}&workout_name=${encodeURIComponent(workoutName)}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to complete workout');
+    return data;
+  }
+  
+  export async function getStreak() {
+    const token = await getToken();
+    if (!token) throw new Error('Not logged in');
+    const response = await fetch(
+      `${BASE_URL}/workouts/streak?token=${token}`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+    );
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || 'Failed to get streak');
+    return data;
+  }

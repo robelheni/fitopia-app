@@ -1,10 +1,13 @@
-import { View, TouchableOpacity, StyleSheet, Dimensions} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   withTiming,
+  interpolate,
+  useDerivedValue,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
@@ -23,80 +26,70 @@ const tabs = [
 ];
 
 export default function TabBar({ state, navigation }) {
-  // All hooks at the top level
   const { collapsed } = useTabBar();
 
   const bubbleX = useSharedValue(state.index * TAB_WIDTH);
   const bubbleWidth = useSharedValue(TAB_WIDTH - 16);
   const containerBounce = useSharedValue(1);
   const containerWidth = useSharedValue(TAB_BAR_WIDTH);
+  const bubbleOpacity = useSharedValue(1);
+  const highlightX = useSharedValue(state.index * TAB_WIDTH);
 
   const pressScale0 = useSharedValue(1);
   const pressScale1 = useSharedValue(1);
   const pressScale2 = useSharedValue(1);
   const pressScale3 = useSharedValue(1);
   const pressScales = [pressScale0, pressScale1, pressScale2, pressScale3];
-  const bubbleOpacity = useSharedValue(1);
 
-  // React to collapsed state
   useEffect(() => {
     if (collapsed) {
       containerWidth.value = withSpring(96, { damping: 18, stiffness: 180 });
-      // Fade bubble out when collapsing
       bubbleOpacity.value = withTiming(0, { duration: 200 });
     } else {
       containerWidth.value = withSpring(TAB_BAR_WIDTH, { damping: 18, stiffness: 180 });
-      // Restore bubble position then fade back in
       bubbleX.value = withSpring(state.index * TAB_WIDTH, { damping: 18, stiffness: 180 });
+      highlightX.value = withSpring(state.index * TAB_WIDTH, { damping: 20, stiffness: 160 });
       bubbleOpacity.value = withTiming(1, { duration: 200 });
     }
   }, [collapsed, state.index]);
+
   function handlePress(index, routeName) {
     const currentX = bubbleX.value;
     const targetX = index * TAB_WIDTH;
     const distance = Math.abs(targetX - currentX);
 
-    containerBounce.value = withSpring(1.06, {
-      damping: 3,
-      stiffness: 200,
-      mass: 0.5,
-      overshootClamping: false,
+    containerBounce.value = withSpring(1.03, {
+      damping: 3, stiffness: 200, mass: 0.5,
     }, () => {
       containerBounce.value = withSpring(1, {
-        damping: 4,
-        stiffness: 100,
-        mass: 0.5,
-        overshootClamping: false,
+        damping: 4, stiffness: 100, mass: 0.5,
       });
     });
 
+    // Bubble stretches toward target
     bubbleWidth.value = withSpring(
       TAB_WIDTH - 16 + distance * 0.12,
       { damping: 8, stiffness: 120 }
     );
 
     bubbleX.value = withSpring(targetX, {
-      damping: 18,
-      stiffness: 180,
-      mass: 0.6,
+      damping: 18, stiffness: 180, mass: 0.6,
     }, () => {
       bubbleWidth.value = withSpring(TAB_WIDTH - 16, {
-        damping: 12,
-        stiffness: 200,
+        damping: 12, stiffness: 200,
       });
     });
 
-    pressScales[index].value = withSpring(1.3, {
-      damping: 12,
-      stiffness: 350,
-      mass: 0.4,
-      overshootClamping: true,
+    // Specular highlight moves slightly behind bubble — depth illusion
+    highlightX.value = withSpring(targetX, {
+      damping: 22, stiffness: 160, mass: 0.7,
+    });
+
+    pressScales[index].value = withSpring(1.22, {
+      damping: 12, stiffness: 350, mass: 0.4, overshootClamping: true,
     }, () => {
       pressScales[index].value = withSpring(1, {
-        damping: 14,
-        stiffness: 350,
-        mass: 0.4,
-        overshootClamping: true,
+        damping: 14, stiffness: 350, mass: 0.4, overshootClamping: true,
       });
     });
 
@@ -110,6 +103,11 @@ export default function TabBar({ state, navigation }) {
   const bubbleStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: bubbleX.value + 8 }],
     width: bubbleWidth.value,
+    opacity: bubbleOpacity.value,
+  }));
+
+  const highlightStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: highlightX.value + 16 }],
     opacity: bubbleOpacity.value,
   }));
 
@@ -127,17 +125,55 @@ export default function TabBar({ state, navigation }) {
     <Animated.View style={[styles.wrapper, wrapperBounceStyle]}>
       <Animated.View style={[styles.container, containerStyle]}>
 
-        <View style={styles.innerContainer}>
-          <BlurView
-            intensity={10}
-            tint="light"
+        {/* Layer 1 — Real background blur, strong */}
+        <BlurView
+          intensity={140}
+          tint="light"
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Layer 2 — Gradient gives depth, not flat white */}
+        <LinearGradient
+          colors={[
+            'rgba(255,255,255,0.20)',
+            'rgba(255,255,255,0.06)',
+            'rgba(255,255,255,0.12)',
+          ]}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+
+        {/* Layer 3 — Very subtle mid glass tint */}
+        <View style={styles.glassMid} />
+
+        {/* Layer 4 — Glass edge border */}
+        <View style={styles.glassBorder} />
+
+        {/* Layer 5 — Top shine edge */}
+        <View style={styles.topShine} />
+
+        {/* Layer 6 — Bottom depth */}
+        <View style={styles.bottomDepth} />
+
+        {/* Moving specular highlight — trails slightly behind bubble */}
+        <Animated.View style={[styles.specularHighlight, highlightStyle]} />
+
+        {/* Active pill — glass not blue */}
+        <Animated.View style={[styles.bubble, bubbleStyle]}>
+          <LinearGradient
+            colors={[
+              'rgba(255,255,255,0.55)',
+              'rgba(255,255,255,0.25)',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          <View style={styles.glassOverlay} />
-          <View style={styles.topHighlight} />
-          <Animated.View style={[styles.bubble, bubbleStyle]} />
-        </View>
+        </Animated.View>
 
+        {/* Tabs */}
         {tabs.map((tab, index) => {
           const isFocused = state.index === index;
           if (collapsed && !isFocused) return null;
@@ -152,7 +188,7 @@ export default function TabBar({ state, navigation }) {
                 <Feather
                   name={tab.icon}
                   size={22}
-                  color={isFocused ? colors.blue : 'rgba(150,150,160,0.7)'}
+                  color={isFocused ? colors.blue : 'rgba(90,90,100,0.5)'}
                 />
               </Animated.View>
             </TouchableOpacity>
@@ -167,13 +203,13 @@ export default function TabBar({ state, navigation }) {
 const styles = StyleSheet.create({
   wrapper: {
     position: 'absolute',
-    bottom: 28,
+    bottom: 40,
     left: 24,
-    
+    // Layered shadow — Apple style
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 30,
     elevation: 20,
   },
 
@@ -182,42 +218,74 @@ const styles = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.02)',
     overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
-  innerContainer: {
+  // Very subtle mid tint — keeps it from looking milky
+  glassMid: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 32,
+  },
+
+  // Glass edge
+  glassBorder: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 32,
-    overflow: 'hidden',
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.75)',
   },
 
-  glassOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderRadius: 32,
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.7)',
-  },
-
-  topHighlight: {
+  // Light catching top edge
+  topShine: {
     position: 'absolute',
     top: 0,
     left: 20,
     right: 20,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: 'rgba(255,255,255,1)',
     borderRadius: 1,
+    zIndex: 3,
   },
 
+  // Depth at bottom
+  bottomDepth: {
+    position: 'absolute',
+    bottom: 0,
+    left: 20,
+    right: 20,
+    height: 1,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 1,
+    zIndex: 3,
+  },
+
+  // Moving specular highlight — floats behind active tab
+  specularHighlight: {
+    position: 'absolute',
+    top: 6,
+    width: TAB_WIDTH - 32,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    zIndex: 1,
+  },
+
+  // Active tab pill — glass not blue
   bubble: {
     position: 'absolute',
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(37,99,235,0.12)',
     top: 10,
-    borderWidth: 0.5,
-    borderColor: 'rgba(37,99,235,0.2)',
+    zIndex: 2,
+    overflow: 'hidden',
+    borderWidth: 0.8,
+    borderColor: 'rgba(255,255,255,0.8)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
 
   tab: {
@@ -225,6 +293,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: '100%',
-    zIndex: 1,
+    zIndex: 4,
   },
 });

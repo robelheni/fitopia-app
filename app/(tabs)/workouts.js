@@ -14,6 +14,7 @@ import MyPlanModal from '../../components/MyPlanModal';
 import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
+import {getNutrition} from "../../services/api";
 
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
@@ -102,6 +103,8 @@ export default function WorkoutsScreen() {
     const opacity = useSharedValue(0);
     const translateY = useSharedValue(8);
     const [expandedDay, setExpandedDay] = useState(null);
+    const [userInitials, setUserInitials] = useState('');
+    const [userName, setUserName] = useState('');
 
     const filters = [
         { key: 'forYou', label: 'For You' },
@@ -160,6 +163,22 @@ export default function WorkoutsScreen() {
             opacity.value = withTiming(1, { duration: 300 });
             translateY.value = withTiming(0, { duration: 300 });
         });
+
+        //fetch user data
+        async function fetchUser(){
+          try{
+            const data = await getNutrition();
+            const name = data.user.name || '';
+            const parts = name.trim().split(' ');
+            const initials = parts[0]?.[0] || 'M';
+            setUserInitials(initials.toUpperCase());
+            setUserName(parts[0]);
+
+          } catch (e) {
+            console.log('Fetch user error:', e.message);
+          }
+        }
+        fetchUser();
         }, [])
     );
 
@@ -216,7 +235,7 @@ export default function WorkoutsScreen() {
                 activeOpacity={0.7}
             >
                 <View style={styles.myPlanInitials}>
-                <Text style={styles.myPlanInitialsText}>HE</Text>
+                  <Text style={styles.myPlanInitialsText}>{userInitials}</Text>
                 </View>
                 <Text style={styles.myPlanText}>My Plan</Text>
                 <Feather name="chevron-right" size={14} color={colors.grey} />

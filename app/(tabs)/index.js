@@ -15,14 +15,20 @@ import { useCallback, useRef } from 'react';
 import { router } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getNutrition, getWeeklyMeals } from '../../services/api';
+import { getNutrition, getWeeklyMeals, getStreak, completeWorkout } from '../../services/api';
+
+
 
 export default function HomeScreen() {
   const [contentKey, setContentKey] = useState(0);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
   const { setCollapsed } = useTabBar();
+  const [trainingDays, setTrainingDays] = useState(['mon', 'wed', 'fri']); 
   const lastScrollY = useRef(0);
+  const [userName, setUserName] = useState('');
+  const [streak, setStreak] = useState(0);
+  const [completedDays, setCompletedDays] = useState([]);
 
   const [nutritionTargets, setNutritionTargets] = useState({
     calories: 0,
@@ -33,7 +39,7 @@ export default function HomeScreen() {
     explanation: 'Loading your personalised plan...',
   });
   const [todaysMeals, setTodaysMeals] = useState([]);
-
+  
   useFocusEffect(
     useCallback(() => {
       setContentKey(prev => prev + 1);
@@ -48,6 +54,12 @@ export default function HomeScreen() {
         try {
           // Get nutrition
           const nutritionData = await getNutrition();
+          setUserName(nutritionData.user.name);
+          const days = nutritionData.user.training_days?.split(',') || ['mon', 'wed', 'fri'];
+          setTrainingDays(days);
+          const streakData = await getStreak();
+          setStreak(streakData.streak);
+          setCompletedDays(streakData.completed_days);
           setNutritionTargets({
             calories: nutritionData.nutrition.calories,
             protein: nutritionData.nutrition.protein,
@@ -123,7 +135,7 @@ export default function HomeScreen() {
     lastScrollY.current = currentY;
   }
 
-  const trainingDays = ['mon', 'wed', 'fri'];
+  
   const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const todayIndex = new Date().getDay();
@@ -148,7 +160,7 @@ export default function HomeScreen() {
       <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
         <View>
           <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.name}>Welcome back</Text>
+          <Text style={styles.name}>{userName ? `Welcome back, ${userName.split(' ')[0]}` : 'Welcome back'}</Text>
         </View>
       </Animated.View>
 
@@ -165,21 +177,20 @@ export default function HomeScreen() {
           <FadeUpItem delay={200}>
             <View style={styles.streakCard}>
               <View style={styles.streakLeft}>
-                <Text style={styles.streakNumber}>0</Text>
+                <Text style={styles.streakNumber}>{streak}</Text>
                 <Text style={styles.streakLabel}>day streak</Text>
               </View>
               <View style={styles.streakDivider} />
               <View style={styles.streakRight}>
                 <Text style={styles.streakWeekLabel}>This week</Text>
                 <View style={styles.streakDots}>
-                  {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day, index) => {
-                    const trainingDays = ['mon', 'wed', 'fri'];
-                    const completedDays = ['mon'];
+                {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day, index) => {
+                    const completedDays = [];
                     const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
                     const todayIndex = new Date().getDay();
                     const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
                     const today = dayKeys[reorderedIndex];
-                    const isTrainingDay = trainingDays.includes(day);
+                    const isTrainingDay = trainingDays.includes(day); // ← uses component state
                     const isCompleted = completedDays.includes(day);
                     const isToday = day === today;
                     const isPast = index < dayKeys.indexOf(today);
@@ -213,32 +224,51 @@ export default function HomeScreen() {
             </View>
 
             {isTrainingDay ? (
-              <TouchableOpacity style={styles.workoutCard} onPress={() => router.push('/workout/upper-body')}>
-                <View style={styles.workoutCardTop}>
-                  <View style={styles.workoutIconContainer}>
-                    <Feather name="zap" size={20} color={colors.white} />
-                  </View>
-                  <View style={styles.workoutBadge}>
-                    <Text style={styles.workoutBadgeText}>Crafted for you</Text>
-                  </View>
-                </View>
-                <Text style={styles.workoutName}>Upper Body Strength</Text>
-                <Text style={styles.workoutSub}>6 exercises · 45 min · Intermediate</Text>
-                <View style={styles.workoutFooter}>
-                  <View style={styles.workoutStat}>
-                    <Feather name="clock" size={12} color={colors.grey} />
-                    <Text style={styles.workoutStatText}>45 min</Text>
-                  </View>
-                  <View style={styles.workoutStat}>
-                    <Feather name="activity" size={12} color={colors.grey} />
-                    <Text style={styles.workoutStatText}>6 exercises</Text>
-                  </View>
-                  <TouchableOpacity style={styles.startButton} onPress={() => router.push('/workout/upper-body')}>
-                    <Text style={styles.startButtonText}>Start</Text>
-                    <Feather name="arrow-right" size={14} color={colors.white} />
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
+                <TouchableOpacity style={styles.workoutCard}>
+                    
+                    <View style={styles.workoutFooter}>
+                    <View style={styles.workoutStat}>
+                        <Feather name="clock" size={12} color={colors.grey} />
+                        <Text style={styles.workoutStatText}>45 min</Text>
+                    </View>
+                    <View style={styles.workoutStat}>
+                        <Feather name="activity" size={12} color={colors.grey} />
+                        <Text style={styles.workoutStatText}>6 exercises</Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.startButton}
+                        onPress={() => router.push('/workout/upper-body')}
+                    >
+                        <Text style={styles.startButtonText}>Start</Text>
+                        <Feather name="arrow-right" size={14} color={colors.white} />
+                    </TouchableOpacity>
+                    </View>
+
+                    {/* Complete button */}
+                    {!completedDays.includes(todayKey) ? (
+                    <TouchableOpacity
+                        style={styles.completeButton}
+                        onPress={async () => {
+                        try {
+                            await completeWorkout('Upper Body Strength');
+                            const streakData = await getStreak();
+                            setStreak(streakData.streak);
+                            setCompletedDays(streakData.completed_days);
+                        } catch (e) {
+                            console.log('Complete error:', e.message);
+                        }
+                        }}
+                    >
+                        <Feather name="check" size={16} color={colors.white} />
+                        <Text style={styles.completeButtonText}>Mark as complete</Text>
+                    </TouchableOpacity>
+                    ) : (
+                    <View style={styles.completedBadge}>
+                        <Feather name="check-circle" size={16} color="#059669" />
+                        <Text style={styles.completedBadgeText}>Completed today</Text>
+                    </View>
+                    )}
+                </TouchableOpacity>
             ) : (
               <View style={styles.restDayCard}>
                 <View style={styles.restDayIcon}>
@@ -632,5 +662,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.blueLight, 
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  completeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#059669',
+    paddingVertical: 12,
+    borderRadius: 100,
+    marginTop: 12,
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  completeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#D1FAE5',
+    paddingVertical: 12,
+    borderRadius: 100,
+    marginTop: 12,
+  },
+  completedBadgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#059669',
   },
 });
