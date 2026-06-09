@@ -367,9 +367,31 @@ const workoutData = {
         );
       }
 
-    export default function ActiveWorkoutScreen() {
-    const { id } = useLocalSearchParams();
-    const workout = workoutData[id];
+      export default function ActiveWorkoutScreen() {
+        const { id, sessionData, workoutName } = useLocalSearchParams();
+    
+        let workout;
+    
+        if (sessionData) {
+          const session = JSON.parse(sessionData);
+      
+          workout = {
+              name: workoutName || 'Today\'s Workout',
+              exercises: session.exercises.map(ex => ({
+                  id: ex.id,
+                  name: ex.name,
+                  sets: ex.sets_range ? ex.sets_range[0] : 3,
+                  reps: ex.reps_range ? ex.reps_range[0] : null,
+                  rest: 60,
+                  isTimed: ex.is_timed,
+                  seconds: ex.seconds_range ? ex.seconds_range[0] : null,
+                  instructions: ex.instructions,
+                  coaching_cues: ex.coaching_cues,
+              })),
+          };
+      } else {
+          workout = workoutData[id];
+      }
     const [selectedExercise, setSelectedExercise] = useState(null);
 
     // Current exercise index
@@ -653,7 +675,7 @@ const workoutData = {
                     </View>
                     <Text style={styles.modalSectionTitle}>How to do it</Text>
                     <View style={styles.modalInstructions}>
-                    {exerciseData[selectedExercise.id]?.instructions.map((instruction, i) => (
+                    {(selectedExercise.instructions || exerciseData[selectedExercise.id]?.instructions || []).map((instruction, i) => (
                         <View key={i} style={styles.modalInstructionItem}>
                         <View style={styles.modalInstructionNumber}>
                             <Text style={styles.modalInstructionNumberText}>{i + 1}</Text>

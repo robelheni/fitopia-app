@@ -8,8 +8,11 @@ import { exerciseData } from '../../data/exercises';
 
 
     export default function ExerciseDetailScreen() {
-    const { id } = useLocalSearchParams();
-    const exercise = exerciseData[id];
+        const { id, exerciseData: exerciseParam, dayKey, exerciseId, sessionExercises } = useLocalSearchParams();
+
+        // If real exercise data was passed as a param use it
+        // Otherwise fall back to local hardcoded data for library exercises
+        const exercise = exerciseParam ? JSON.parse(exerciseParam) : exerciseData[id];
 
     // Timer state for timed exercises
     const [timerRunning, setTimerRunning] = useState(false);
@@ -160,7 +163,18 @@ import { exerciseData } from '../../data/exercises';
 
             {/* Replace exercise button */}
             <FadeUpItem delay={400}>
-            <TouchableOpacity style={styles.replaceButton}>
+            <TouchableOpacity 
+                style={styles.replaceButton}
+                onPress={() => router.push({
+                    pathname: '/workout/swap',
+                    params: {
+                        exerciseId: exerciseId || id,
+                        sessionExercises: sessionExercises || '',
+                        dayKey: dayKey || '',
+                        exerciseName: exercise.name,
+                    }
+                })}
+            >
                 <Feather name="refresh-cw" size={16} color={colors.grey} />
                 <Text style={styles.replaceButtonText}>Replace this exercise</Text>
             </TouchableOpacity>

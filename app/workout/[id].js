@@ -4,7 +4,9 @@ import { Feather } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import BackgroundCircles from '../../components/BackgroundCircles';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 // Hardcoded workout data
 // Later this comes from the backend based on the ID
 const workoutData = {
@@ -138,17 +140,98 @@ const workoutData = {
     },
     };
 
-    export default function WorkoutDetailScreen() {
-    const { id } = useLocalSearchParams();
-    const workout = workoutData[id];
 
-    if (!workout) {
-        return (
-        <View style={styles.container}>
-            <Text>Workout not found</Text>
-        </View>
-        );
-    }
+
+    export default function WorkoutDetailScreen() {
+        const { id, sessionData, workoutName } = useLocalSearchParams();
+        
+
+        const [savedSwaps, setSavedSwaps] = useState({});
+
+
+    useFocusEffect(
+        useCallback(() => {
+            async function loadSwaps() {
+                try {
+                    // Load all AsyncStorage keys
+                    const keys = await AsyncStorage.getAllKeys();
+                    // Filter for workout swaps for this specific day
+                    const swapKeys = keys.filter(k => k.startsWith(`workout_swap_${id}_`));
+                    const swapMap = {};
+                    for (const key of swapKeys) {
+                        const val = await AsyncStorage.getItem(key);
+                        if (val) {
+                            const swap = JSON.parse(val);
+                            // Map original exercise ID to replacement
+                            swapMap[swap.original] = swap.replacement;
+                        }
+                    }
+                    setSavedSwaps(swapMap);
+                } catch (e) {
+                    console.log('Load swaps error:', e.message);
+                }
+            }
+            loadSwaps();
+        }, [id])
+    );
+
+        let workout;
+    
+        if (sessionData) {
+            try {
+                const session = JSON.parse(sessionData);
+        
+                const sessionNames = {
+                    push: 'Push Day', pull: 'Pull Day', legs: 'Leg Day',
+                    upper: 'Upper Body', lower: 'Lower Body', full_body: 'Full Body',
+                };
+        
+                workout = {
+                    name: workoutName || sessionNames[session.session_type] || 'Workout',
+                    category: 'Personal Plan',
+                    duration: `${session.exercises.length * 5} min`,
+                    difficulty: 'Personalised',
+                    description: `Your personalised ${workoutName} session built around your goals and equipment.`,
+                    exercises: session.exercises.map(ex => ({
+                        id: ex.id,
+                        name: ex.name,
+                        sets: ex.sets_range ? ex.sets_range[0] : 3,
+                        reps: ex.reps_range ? ex.reps_range[0] : null,
+                        rest: '60s',
+                        muscle: ex.muscle_group,
+                        equipment: ex.equipment,
+                        isTimed: ex.is_timed,
+                        seconds: ex.seconds_range ? ex.seconds_range[0] : null,
+                        instructions: ex.instructions,
+                        coaching_cues: ex.coaching_cues,
+                    })),
+                    warmup: session.warmup,
+                    finisher: session.finisher,
+                    cardio_circuit: session.cardio_circuit,
+                };
+            } catch (e) {
+                // If parse fails show the error on screen
+                return (
+                    <View style={{ flex: 1, padding: 40 }}>
+                        <Text>Parse error: {e.message}</Text>
+                        <Text>Session data type: {typeof sessionData}</Text>
+                        <Text>First 100 chars: {String(sessionData).substring(0, 100)}</Text>
+                    </View>
+                );
+            }
+        } else {
+            workout = workoutData[id];
+        }
+    
+        if (!workout) {
+            return (
+                <View style={styles.container}>
+                    <Text>id: {id}</Text>
+                    <Text>hasSession: {sessionData ? 'YES' : 'NO'}</Text>
+                    <Text>name: {workoutName}</Text>
+                </View>
+            );
+        }
 
     return (
         <View style={styles.container}>
@@ -199,53 +282,104 @@ const workoutData = {
             <FadeUpItem delay={150}>
             <Text style={styles.sectionTitle}>Exercises</Text>
             <View style={styles.exerciseList}>
-                {workout.exercises.map((exercise, index) => (
-                <TouchableOpacity
-                    key={exercise.id}
-                    style={styles.exerciseCard}
-                    onPress={() => router.push(`/exercise/${exercise.id}?workoutId=${id}`)}
-                >
-                    {/* Number */}
-                    <View style={styles.exerciseNumber}>
-                    <Text style={styles.exerciseNumberText}>{index + 1}</Text>
-                    </View>
+            {workout.exercises.map((exercise, index) => {
+                // Check if this exercise has been swapped
+                // If yes show the replacement instead of the original
+                const displayExercise = savedSwaps[exercise.id] || exercise;
 
-                    {/* Exercise info */}
-                    <View style={styles.exerciseInfo}>
-                    <Text style={styles.exerciseName}>{exercise.name}</Text>
-                    <Text style={styles.exerciseMeta}>
-                        {exercise.isTimed
-                        ? `${exercise.sets} sets · ${exercise.seconds}s · Rest ${exercise.rest}`
-                        : `${exercise.sets} sets · ${exercise.reps} reps · Rest ${exercise.rest}`
-                        }
-                    </Text>
-                    <View style={styles.exerciseTags}>
-                        <View style={styles.tag}>
-                        <Text style={styles.tagText}>{exercise.muscle}</Text>
-                        </View>
-                        <View style={styles.tag}>
-                        <Text style={styles.tagText}>{exercise.equipment}</Text>
-                        </View>
-                        {exercise.isTimed && (
-                        <View style={[styles.tag, styles.tagTimed]}>
-                            <Feather name="clock" size={10} color={colors.blue} />
-                            <Text style={[styles.tagText, { color: colors.blue }]}>Timed</Text>
-                        </View>
-                        )}
-                    </View>
-                    </View>
+                // Build comma separated list of all session exercise IDs
+                // Used by the swap screen to exclude duplicates
+                const sessionExerciseIds = workout.exercises.map(e => e.id).join(',');
 
-                    <Feather name="chevron-right" size={16} color={colors.greyLight} />
-                </TouchableOpacity>
-                ))}
+                return (
+                    <TouchableOpacity
+                        key={exercise.id}
+                        style={styles.exerciseCard}
+                        onPress={() => router.push({
+                            pathname: `/exercise/${displayExercise.id}`,
+                            params: {
+                                exerciseData: JSON.stringify(displayExercise),
+                                workoutId: id,
+                                dayKey: id,
+                                exerciseId: exercise.id,
+                                sessionExercises: sessionExerciseIds,
+                            }
+                        })}
+                    >
+                        {/* Number */}
+                        <View style={styles.exerciseNumber}>
+                            <Text style={styles.exerciseNumberText}>{index + 1}</Text>
+                        </View>
+
+                        {/* Exercise info */}
+                        <View style={styles.exerciseInfo}>
+                            <Text style={styles.exerciseName}>{displayExercise.name}</Text>
+                            <Text style={styles.exerciseMeta}>
+                                {displayExercise.isTimed
+                                ? `${displayExercise.sets} sets · ${displayExercise.seconds}s · Rest ${displayExercise.rest}`
+                                : `${displayExercise.sets} sets · ${displayExercise.reps ?? '-'} reps · Rest ${displayExercise.rest}`
+                                }
+                            </Text>
+                            <View style={styles.exerciseTags}>
+                                <View style={styles.tag}>
+                                    <Text style={styles.tagText}>{displayExercise.muscle}</Text>
+                                </View>
+                                <View style={styles.tag}>
+                                    <Text style={styles.tagText}>{displayExercise.equipment}</Text>
+                                </View>
+                                {/* Show swapped badge if this exercise was swapped */}
+                                {savedSwaps[exercise.id] && (
+                                    <View style={[styles.tag, { backgroundColor: colors.blueLight }]}>
+                                        <Text style={[styles.tagText, { color: colors.blue }]}>Swapped</Text>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
+
+                        {/* Swap icon — tapping this opens the swap screen */}
+                        <TouchableOpacity
+                            style={styles.swapButton}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                router.push({
+                                    pathname: '/workout/swap',
+                                    params: {
+                                        exerciseId: exercise.id,
+                                        sessionExercises: sessionExerciseIds,
+                                        dayKey: id,
+                                        exerciseName: exercise.name,
+                                    }
+                                });
+                            }}
+                        >
+                            <Feather name="refresh-cw" size={14} color={colors.grey} />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
+                );
+            })}
+            
             </View>
             </FadeUpItem>
 
             {/* Start workout button */}
             <FadeUpItem delay={300}>
             <TouchableOpacity
-                style={styles.startButton}
-                onPress={() => router.push(`/workout/active?id=${id}`)}
+                    style={styles.startButton}
+                    onPress={() => {
+                        if (sessionData) {
+                            // Pass real session data to active screen
+                            router.push({
+                                pathname: '/workout/active',
+                                params: {
+                                    sessionData: sessionData,
+                                    workoutName: workout.name,
+                                }
+                            });
+                        } else {
+                            // Old hardcoded route for library workouts
+                            router.push(`/workout/active?id=${id}`);
+                        }
+                    }}
                 >
                 <Text style={styles.startButtonText}>Start workout</Text>
                 <Feather name="arrow-right" size={18} color={colors.white} />
@@ -457,5 +591,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: colors.white,
+    },
+    swapButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.greyCard,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
     },
 });

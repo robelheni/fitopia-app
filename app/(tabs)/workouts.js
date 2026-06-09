@@ -14,7 +14,9 @@ import MyPlanModal from '../../components/MyPlanModal';
 import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
-import {getNutrition} from "../../services/api";
+import {getNutrition, getWorkoutPlan} from "../../services/api";
+
+
 
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
@@ -77,9 +79,17 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 </View>
                 ))}
                 <TouchableOpacity
-                style={[styles.weeklyStartButton, item.isToday && styles.weeklyStartButtonActive]}
-                onPress={() => router.push(`/workout/${item.workout.toLowerCase().replace(/ /g, '-')}`)}
-                >
+                  style={[styles.weeklyStartButton, item.isToday && styles.weeklyStartButtonActive]}
+                  onPress={() => router.push({
+                    pathname: '/workout/[id]',
+                    params: {
+                        sessionData: JSON.stringify(item.sessionData),
+                        dayKey: item.dayKey,
+                        workoutName: item.workout,
+                        id: item.dayKey,
+                    }
+                })}
+>
                 <Text style={[styles.weeklyStartText, item.isToday && styles.weeklyStartTextActive]}>
                 {item.isPast ? 'View workout' : `Start ${item.workout}`}
                 </Text>
@@ -106,27 +116,27 @@ export default function WorkoutsScreen() {
     const [userInitials, setUserInitials] = useState('');
     const [userName, setUserName] = useState('');
 
+    // Stores the raw plan from the backend
+  const [workoutPlan, setWorkoutPlan] = useState(null);
+
+  // Stores the transformed plan ready for the WeeklyPlanCard component
+  const [weeklyPlanItems, setWeeklyPlanItems] = useState([]);
+
+  // Stores the user's actual training days from their profile
+  const [trainingDays, setTrainingDays] = useState([]);
+
+  // Loading state while plan is being fetched
+  const [planLoading, setPlanLoading] = useState(true);
+
     const filters = [
         { key: 'forYou', label: 'For You' },
         { key: 'home', label: 'Home' },
         { key: 'gym', label: 'Gym' },
         { key: 'fasting', label: 'Fasting' },
     ];
-    const workouts = [
-        { id: '1', name: 'Upper Body Strength', type: 'gym', duration: '45 min', difficulty: 'Intermediate', muscle: 'Upper body', exercises: 6, featured: true },
-        { id: '2', name: 'Home Full Body', type: 'home', duration: '30 min', difficulty: 'Beginner', muscle: 'Full body', exercises: 5, featured: false },
-        { id: '3', name: 'Fasting Day Flow', type: 'fasting', duration: '20 min', difficulty: 'Light', muscle: 'Full body', exercises: 4, featured: false },
-        { id: '4', name: 'Lower Body Power', type: 'gym', duration: '45 min', difficulty: 'Intermediate', muscle: 'Lower body', exercises: 6, featured: false },
-        { id: '5', name: 'Dumbbell Circuit', type: 'home', duration: '30 min', difficulty: 'Intermediate', muscle: 'Full body', exercises: 5, featured: false },
-        { id: '6', name: 'Fasting Mobility', type: 'fasting', duration: '20 min', difficulty: 'Light', muscle: 'Flexibility', exercises: 6, featured: false },
-    ];
+    
 
-    const filteredWorkouts = activeFilter === 'forYou'
-        ? workouts
-        : workouts.filter(w => w.type === activeFilter);
-
-    const featuredWorkout = workouts.find(w => w.featured);
-
+    
     const { setCollapsed } = useTabBar();
     const lastScrollY = useRef(0);
 
@@ -153,74 +163,142 @@ export default function WorkoutsScreen() {
       }
       
 
-    useFocusEffect(
+      useFocusEffect(
         useCallback(() => {
-        // Force remount of all FadeUpItem components
-        setContentKey(prev => prev + 1);
-        opacity.value = 0;
-        translateY.value = 8;
-        requestAnimationFrame(() => {
-            opacity.value = withTiming(1, { duration: 300 });
-            translateY.value = withTiming(0, { duration: 300 });
-        });
-
-        //fetch user data
-        async function fetchUser(){
-          try{
-            const data = await getNutrition();
-            const name = data.user.name || '';
-            const parts = name.trim().split(' ');
-            const initials = parts[0]?.[0] || 'M';
-            setUserInitials(initials.toUpperCase());
-            setUserName(parts[0]);
-
-          } catch (e) {
-            console.log('Fetch user error:', e.message);
-          }
-        }
-        fetchUser();
+            // Force remount of all FadeUpItem components
+            setContentKey(prev => prev + 1);
+            opacity.value = 0;
+            translateY.value = 8;
+            requestAnimationFrame(() => {
+                opacity.value = withTiming(1, { duration: 300 });
+                translateY.value = withTiming(0, { duration: 300 });
+            });
+    
+            // Fetch user data for initials and name
+            async function fetchUser() {
+                try {
+                    const data = await getNutrition();
+                    const name = data.user.name || '';
+                    const parts = name.trim().split(' ');
+                    const initials = parts[0]?.[0] || 'M';
+                    setUserInitials(initials.toUpperCase());
+                    setUserName(parts[0]);
+                } catch (e) {
+                    console.log('Fetch user error:', e.message);
+                }
+            }
+    
+            // Fetch the workout plan from the backend
+            // The plan comes back as a dictionary keyed by day
+            // e.g. { mon: { session_type: 'upper', exercises: [...] } }
+            // We transform it into the format WeeklyPlanCard expects
+            async function fetchPlan() {
+                try {
+                    setPlanLoading(true);
+    
+                    const plan = await getWorkoutPlan();
+    
+                    // Map session type keys to display names
+                    // e.g. 'upper' becomes 'Upper Body'
+                    const sessionNames = {
+                        push:       'Push Day',
+                        pull:       'Pull Day',
+                        legs:       'Leg Day',
+                        upper:      'Upper Body',
+                        lower:      'Lower Body',
+                        full_body:  'Full Body',
+                    };
+    
+                    // Day key to display name map
+                    const dayDisplayNames = {
+                        mon: 'Mon', tue: 'Tue', wed: 'Wed',
+                        thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+                    };
+    
+                    // Day order for calculating past vs future
+                    const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    
+                    // Get today's day key
+                    const todayIndex = new Date().getDay();
+                    const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+                    const todayKey = dayOrder[reorderedIndex];
+                    const todayPosition = dayOrder.indexOf(todayKey);
+    
+                    // Get the training days from the plan keys
+                    // These are the days the user actually trains
+                    const planDays = Object.keys(plan);
+                    setTrainingDays(planDays);
+    
+                    // Transform the plan into WeeklyPlanCard format
+                    const transformed = planDays.map(dayKey => {
+                        const session = plan[dayKey];
+                        const itemPosition = dayOrder.indexOf(dayKey);
+                        const isPast = itemPosition < todayPosition;
+                        const isToday = dayKey === todayKey;
+    
+                        // Extract just the exercise names for the expanded view
+                        const exerciseNames = session.exercises.map(ex => ex.name);
+    
+                        return {
+                            day: dayDisplayNames[dayKey] || dayKey,
+                            workout: sessionNames[session.session_type] || session.session_type,
+                            dayKey: dayKey,
+                            // Store the full session data for when we navigate to the workout
+                            sessionData: session,
+                            completed: false, // Will be updated by streak data later
+                            exercises: exerciseNames,
+                            isPast,
+                            isToday,
+                        };
+                    });
+    
+                    setWeeklyPlanItems(transformed);
+    
+                } catch (e) {
+                    console.log('Fetch plan error:', e.message);
+                } finally {
+                    setPlanLoading(false);
+                }
+            }
+    
+            fetchUser();
+            fetchPlan();
+    
         }, [])
     );
+  // Day order and today calculation
+// Used to determine if today is a training day
+// and what the next training day is
+const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const todayIndex = new Date().getDay();
+const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+const todayKey = dayKeys[reorderedIndex];
 
-    const animatedStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-        transform: [{ translateY: translateY.value }],
-    }));
+// isTrainingDay now uses real training days from the backend
+// instead of hardcoded ['mon', 'wed', 'fri']
+const isTrainingDay = trainingDays.includes(todayKey);
 
-        // Same logic as home screen
-    const trainingDays = ['mon', 'wed', 'fri'];
-    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    const todayIndex = new Date().getDay();
-    const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
-    const todayKey = dayKeys[reorderedIndex];
-    const isTrainingDay = trainingDays.includes(todayKey);
-
-    const nextTrainingDay = (() => {
+// Find the next training day after today
+// Loops through the week until it finds a scheduled day
+const nextTrainingDay = (() => {
     for (let i = 1; i <= 7; i++) {
         const nextIndex = (reorderedIndex + i) % 7;
         if (trainingDays.includes(dayKeys[nextIndex])) {
-        return dayNames[nextIndex];
+            return dayNames[nextIndex];
         }
     }
     return 'soon';
-    })();
+})();
 
-    const weeklyWorkouts = [
-        { day: 'Mon', workout: 'Upper Body', dayKey: 'mon', completed: true, exercises: ['Dumbbell Chest Press', 'Shoulder Press', 'Dumbbell Row', 'Bicep Curl', 'Tricep Dips'] },
-        { day: 'Wed', workout: 'Lower Body', dayKey: 'wed', completed: false, exercises: ['Dumbbell Squat', 'Bodyweight Squat', 'Plank', 'Bicycle Crunch'] },
-        { day: 'Fri', workout: 'Full Body', dayKey: 'fri', completed: false, exercises: ['Push Up', 'Bodyweight Squat', 'Dumbbell Row', 'Plank', 'Bicep Curl'] },
-      ];
-      
-      const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-      const todayPosition = dayOrder.indexOf(todayKey);
-      
-      const weeklyPlanItems = weeklyWorkouts.map(item => {
-        const itemPosition = dayOrder.indexOf(item.dayKey);
-        const isPast = itemPosition < todayPosition;
-        const isToday = item.dayKey === todayKey;
-        return { ...item, isPast, isToday, active: isToday };
-      });
+// Get today's session from the plan if it exists
+// Used to populate the featured card with real workout data
+const todaySession = weeklyPlanItems.find(item => item.isToday);
+
+const animatedStyle = useAnimatedStyle(() => ({
+  opacity: opacity.value,
+  transform: [{ translateY: translateY.value }],
+}));    
 
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
@@ -284,48 +362,67 @@ export default function WorkoutsScreen() {
                     </View>
 
                     {isTrainingDay ? (
-                    <TouchableOpacity style={styles.featuredCard}>
+                    <TouchableOpacity 
+                        style={styles.featuredCard}
+                        onPress={() => todaySession && router.push({
+                          pathname: '/workout/[id]',
+                          params: { 
+                              sessionData: JSON.stringify(todaySession.sessionData), 
+                              dayKey: todayKey,
+                              workoutName: todaySession.workout,
+                              id: todayKey,
+                          }
+                      })}
+                    >
                         <View style={styles.featuredTop}>
-                        <View style={styles.featuredIconContainer}>
-                            <Feather name="zap" size={22} color={colors.white} />
+                            <View style={styles.featuredIconContainer}>
+                                <Feather name="zap" size={22} color={colors.white} />
+                            </View>
+                            <View style={styles.featuredBadge}>
+                                <Text style={styles.featuredBadgeText}>Crafted for you</Text>
+                            </View>
                         </View>
-                        <View style={styles.featuredBadge}>
-                            <Text style={styles.featuredBadgeText}>Crafted for you</Text>
-                        </View>
-                        </View>
-                        <Text style={styles.featuredName}>{featuredWorkout.name}</Text>
+
+                        {/* Show real workout name from backend or loading state */}
+                        <Text style={styles.featuredName}>
+                            {planLoading ? 'Loading...' : todaySession ? todaySession.workout : 'Rest Day'}
+                        </Text>
+
                         <View style={styles.featuredStats}>
-                        <View style={styles.featuredStat}>
-                            <Feather name="clock" size={12} color="rgba(255,255,255,0.7)" />
-                            <Text style={styles.featuredStatText}>{featuredWorkout.duration}</Text>
+                            <View style={styles.featuredStat}>
+                                <Feather name="activity" size={12} color="rgba(255,255,255,0.7)" />
+                                <Text style={styles.featuredStatText}>
+                                    {planLoading ? '...' : todaySession ? `${todaySession.exercises.length} exercises` : ''}
+                                </Text>
+                            </View>
+                            <View style={styles.featuredStat}>
+                                <Feather name="bar-chart-2" size={12} color="rgba(255,255,255,0.7)" />
+                                <Text style={styles.featuredStatText}>
+                                    {todaySession ? todaySession.workout : ''}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.featuredStat}>
-                            <Feather name="activity" size={12} color="rgba(255,255,255,0.7)" />
-                            <Text style={styles.featuredStatText}>{featuredWorkout.exercises} exercises</Text>
-                        </View>
-                        <View style={styles.featuredStat}>
-                            <Feather name="bar-chart-2" size={12} color="rgba(255,255,255,0.7)" />
-                            <Text style={styles.featuredStatText}>{featuredWorkout.difficulty}</Text>
-                        </View>
-                        </View>
+
                         <View style={styles.featuredStartButton}>
-                        <Text style={styles.featuredStartText}>Start workout</Text>
-                        <Feather name="arrow-right" size={16} color={colors.blue} />
+                            <Text style={styles.featuredStartText}>
+                                {planLoading ? 'Loading plan...' : 'Start workout'}
+                            </Text>
+                            <Feather name="arrow-right" size={16} color={colors.blue} />
                         </View>
                     </TouchableOpacity>
-                    ) : (
+                ) : (
                     <View style={styles.restDayCard}>
                         <View style={styles.restDayIcon}>
-                        <Feather name="moon" size={24} color={colors.blue} />
+                            <Feather name="moon" size={24} color={colors.blue} />
                         </View>
                         <View style={styles.restDayContent}>
-                        <Text style={styles.restDayTitle}>Rest day</Text>
-                        <Text style={styles.restDaySub}>
-                            Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
-                        </Text>
+                            <Text style={styles.restDayTitle}>Rest day</Text>
+                            <Text style={styles.restDaySub}>
+                                Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
+                            </Text>
                         </View>
                     </View>
-                    )}
+                )}
 
                 {/* Weekly plan with expandable exercises */}
                 
