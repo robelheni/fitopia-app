@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Your backend URL — localhost for development
-const BASE_URL = 'http://192.168.0.186:8000';
+const BASE_URL = 'https://web-production-9079c.up.railway.app';
 
 // ─── Auth ────────────────────────────────────────────────────────
 

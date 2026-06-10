@@ -8,7 +8,7 @@ import BackgroundCircles from '../../components/BackgroundCircles';
 import { getToken } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.0.186:8000';
+const BASE_URL = 'https://web-production-9079c.up.railway.app';
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const DAY_NAMES = {

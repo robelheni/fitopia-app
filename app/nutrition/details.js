@@ -487,7 +487,7 @@ export default function NutritionDetailsScreen() {
                 try {
                   setSavingGoal(true);
                   const token = await getToken();
-                  await fetch(`http://192.168.0.186:8000/auth/onboarding?token=${token}`, {
+                  await fetch(`https://web-production-9079c.up.railway.app/auth/onboarding?token=${token}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
