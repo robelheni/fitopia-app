@@ -15,6 +15,16 @@ export default function MyPlanModal({ visible, onClose }) {
   const [showFoodPicker, setShowFoodPicker] = useState(false);
   const [foodPreferences, setFoodPreferences] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [goal, setGoal] = useState('');
+  const [fitnessLevel, setFitnessLevel] = useState('');
+  const [equipment, setEquipment] = useState('');
+  const [trainingDays, setTrainingDays] = useState([]);
+  const [workoutDuration, setWorkoutDuration] = useState('');
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
+  const [showFitnessLevelPicker, setShowFitnessLevelPicker] = useState(false);
+  const [showEquipmentPicker, setShowEquipmentPicker] = useState(false);
+  const [showTrainingDaysPicker, setShowTrainingDaysPicker] = useState(false);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
   
 
   // Load current preferences and weight from backend
@@ -27,6 +37,14 @@ export default function MyPlanModal({ visible, onClose }) {
         const prefs = data.user.food_preferences?.split(',').filter(Boolean) || [];
         setFoodPreferences(prefs);
         if (data.user.weight) setCurrentWeight(String(data.user.weight));
+
+        if(data.user.goal) setGoal(data.user.goal);
+        if (data.user.fitness_level) setFitnessLevel(data.user.fitness_level);
+        if (data.user.equipment) setEquipment(data.user.equipment);
+        if (data.user.training_days) {
+          setTrainingDays(data.user.training_days.split(',').filter(Boolean));
+        }
+        if (data.user.workout_duration) setWorkoutDuration(data.user.workout_duration);
       } catch (e) {
         console.log('Load profile error:', e.message);
       }
@@ -45,14 +63,62 @@ export default function MyPlanModal({ visible, onClose }) {
     return foodPreferences.map(p => labels[p] || p).join(', ');
   }
 
-  async function saveToBackend(fields) {
-    const token = await getToken();
-    await fetch(`${BASE_URL}/auth/onboarding?token=${token}`, {
+  function getGoalLabel() {
+    const labels = {
+        build_muscle: 'Build muscle',
+        lose_weight: 'Lose weight',
+        improve_fitness: 'Improve fitness',
+        stay_active: 'Stay active',
+    };
+    return labels[goal] || 'Not set';
+}
+
+function getFitnessLevelLabel() {
+    const labels = {
+        beginner: 'Beginner',
+        intermediate: 'Intermediate',
+        advanced: 'Advanced',
+    };
+    return labels[fitnessLevel] || 'Not set';
+}
+
+function getEquipmentLabel() {
+    const labels = {
+        gym: 'Gym',
+        dumbbells: 'Dumbbells at home',
+        bodyweight: 'Bodyweight only',
+        both: 'Gym and Home',
+    };
+    return labels[equipment] || 'Not set';
+}
+
+function getTrainingDaysLabel() {
+    if (trainingDays.length === 0) return 'Not set';
+    const dayNames = {
+        mon: 'Mon', tue: 'Tue', wed: 'Wed',
+        thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+    };
+    return trainingDays.map(d => dayNames[d] || d).join(', ');
+}
+
+function getDurationLabel() {
+    const labels = {
+        '30': '30 minutes',
+        '45': '45 minutes',
+        '60': '60 minutes',
+        '60+': '60+ minutes',
+    };
+    return labels[workoutDuration] || workoutDuration || 'Not set';
+}
+
+async function saveToBackend(fields) {
+  const token = await getToken();
+  await fetch(`${BASE_URL}/auth/onboarding?token=${token}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(fields),
-    });
-  }
+  });
+}
 
   return (
     <Modal
@@ -81,55 +147,67 @@ export default function MyPlanModal({ visible, onClose }) {
             <Text style={styles.sectionTitle}>Training profile</Text>
             <View style={styles.planCard}>
 
-              <View style={styles.planItem}>
+            <TouchableOpacity
+                style={styles.planItem}
+                onPress={() => setShowFitnessLevelPicker(true)}
+            >
                 <View style={styles.planIconContainer}>
-                  <Feather name="trending-up" size={16} color={colors.blue} />
+                    <Feather name="trending-up" size={16} color={colors.blue} />
                 </View>
                 <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Fitness level</Text>
-                  <Text style={styles.planItemValue}>Intermediate</Text>
+                    <Text style={styles.planItemLabel}>Fitness level</Text>
+                    <Text style={styles.planItemValue}>{getFitnessLevelLabel()}</Text>
                 </View>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
-              </View>
+            </TouchableOpacity>
 
               <View style={styles.planDivider} />
 
-              <View style={styles.planItem}>
-                <View style={styles.planIconContainer}>
-                  <Feather name="target" size={16} color={colors.blue} />
-                </View>
-                <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Goal</Text>
-                  <Text style={styles.planItemValue}>Build muscle</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.greyLight} />
-              </View>
+              <TouchableOpacity
+                  style={styles.planItem}
+                  onPress={() => setShowGoalPicker(true)}
+              >
+                  <View style={styles.planIconContainer}>
+                      <Feather name="target" size={16} color={colors.blue} />
+                  </View>
+                  <View style={styles.planItemContent}>
+                      <Text style={styles.planItemLabel}>Goal</Text>
+                      <Text style={styles.planItemValue}>{getGoalLabel()}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={16} color={colors.greyLight} />
+              </TouchableOpacity>
 
               <View style={styles.planDivider} />
 
-              <View style={styles.planItem}>
-                <View style={styles.planIconContainer}>
-                  <Feather name="calendar" size={16} color={colors.blue} />
-                </View>
-                <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Training days</Text>
-                  <Text style={styles.planItemValue}>Mon, Wed, Fri, Sun</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.greyLight} />
-              </View>
+              <TouchableOpacity
+                  style={styles.planItem}
+                  onPress={() => setShowTrainingDaysPicker(true)}
+              >
+                  <View style={styles.planIconContainer}>
+                      <Feather name="calendar" size={16} color={colors.blue} />
+                  </View>
+                  <View style={styles.planItemContent}>
+                      <Text style={styles.planItemLabel}>Training days</Text>
+                      <Text style={styles.planItemValue}>{getTrainingDaysLabel()}</Text>
+                  </View>
+                  <Feather name="chevron-right" size={16} color={colors.greyLight} />
+              </TouchableOpacity>
 
               <View style={styles.planDivider} />
 
-              <View style={styles.planItem}>
+              <TouchableOpacity
+                style={styles.planItem}
+                onPress={() => setShowDurationPicker(true)}
+            >
                 <View style={styles.planIconContainer}>
-                  <Feather name="clock" size={16} color={colors.blue} />
+                    <Feather name="clock" size={16} color={colors.blue} />
                 </View>
                 <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Duration</Text>
-                  <Text style={styles.planItemValue}>45 minutes</Text>
+                    <Text style={styles.planItemLabel}>Duration</Text>
+                    <Text style={styles.planItemValue}>{getDurationLabel()}</Text>
                 </View>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
-              </View>
+            </TouchableOpacity>
 
               <View style={styles.planDivider} />
 
@@ -181,34 +259,36 @@ export default function MyPlanModal({ visible, onClose }) {
             </View>
           </View>
 
-          {/* Equipment */}
+         {/* Equipment */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Equipment and location</Text>
-            <View style={styles.planCard}>
-              <View style={styles.planItem}>
-                <View style={styles.planIconContainer}>
-                  <Feather name="home" size={16} color={colors.blue} />
-                </View>
-                <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Equipment</Text>
-                  <Text style={styles.planItemValue}>Dumbbells at home</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.greyLight} />
+              <Text style={styles.sectionTitle}>Equipment and location</Text>
+              <View style={styles.planCard}>
+                  <TouchableOpacity
+                      style={styles.planItem}
+                      onPress={() => setShowEquipmentPicker(true)}
+                  >
+                      <View style={styles.planIconContainer}>
+                          <Feather name="home" size={16} color={colors.blue} />
+                      </View>
+                      <View style={styles.planItemContent}>
+                          <Text style={styles.planItemLabel}>Equipment</Text>
+                          <Text style={styles.planItemValue}>{getEquipmentLabel()}</Text>
+                      </View>
+                      <Feather name="chevron-right" size={16} color={colors.greyLight} />
+                  </TouchableOpacity>
+                  <View style={styles.planDivider} />
+                  <View style={styles.planItem}>
+                      <View style={styles.planIconContainer}>
+                          <Feather name="map-pin" size={16} color={colors.blue} />
+                      </View>
+                      <View style={styles.planItemContent}>
+                          <Text style={styles.planItemLabel}>Location</Text>
+                          <Text style={styles.planItemValue}>United Kingdom</Text>
+                      </View>
+                      <Feather name="chevron-right" size={16} color={colors.greyLight} />
+                  </View>
               </View>
-              <View style={styles.planDivider} />
-              <View style={styles.planItem}>
-                <View style={styles.planIconContainer}>
-                  <Feather name="map-pin" size={16} color={colors.blue} />
-                </View>
-                <View style={styles.planItemContent}>
-                  <Text style={styles.planItemLabel}>Location</Text>
-                  <Text style={styles.planItemValue}>United Kingdom</Text>
-                </View>
-                <Feather name="chevron-right" size={16} color={colors.greyLight} />
-              </View>
-            </View>
           </View>
-
           {/* Food and fasting */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Food and fasting</Text>
@@ -238,7 +318,12 @@ export default function MyPlanModal({ visible, onClose }) {
                 await saveToBackend({
                   weight: parseFloat(currentWeight),
                   food_preferences: foodPreferences.join(','),
-                });
+                  goal: goal || undefined,
+                  fitness_level: fitnessLevel || undefined,
+                  equipment: equipment || undefined,
+                  training_days: trainingDays.length > 0 ? trainingDays.join(',') : undefined,
+                  workout_duration: workoutDuration || undefined,
+              });
                 await AsyncStorage.removeItem('cached_weekly_plan');
                 onClose();
                 router.replace('/(tabs)');
@@ -324,6 +409,310 @@ export default function MyPlanModal({ visible, onClose }) {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Goal picker */}
+      <Modal
+          visible={showGoalPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowGoalPicker(false)}
+      >
+          <View style={styles.pickerContainer}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
+                  <Text style={styles.title}>Your goal</Text>
+                  <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setShowGoalPicker(false)}
+                  >
+                      <Feather name="x" size={20} color={colors.black} />
+                  </TouchableOpacity>
+              </View>
+
+              <ScrollView contentContainerStyle={styles.pickerContent}>
+                  <Text style={styles.pickerSubtitle}>
+                      Your goal shapes your entire workout and meal plan.
+                  </Text>
+
+                  {[
+                      { id: 'build_muscle', label: 'Build muscle', desc: 'Strength focused sessions with progressive overload', icon: '💪' },
+                      { id: 'lose_weight', label: 'Lose weight', desc: 'Strength plus cardio circuits to maximise calorie burn', icon: '🔥' },
+                      { id: 'improve_fitness', label: 'Improve fitness', desc: 'Mix of strength and cardio to build overall fitness', icon: '⚡' },
+                      { id: 'stay_active', label: 'Stay active', desc: 'Light sessions to keep you moving and feeling good', icon: '🏃' },
+                  ].map(option => {
+                      const selected = goal === option.id;
+                      return (
+                          <TouchableOpacity
+                              key={option.id}
+                              style={[styles.prefOption, selected && styles.prefOptionSelected]}
+                              onPress={() => setGoal(option.id)}
+                          >
+                              <Text style={styles.prefEmoji}>{option.icon}</Text>
+                              <View style={styles.prefContent}>
+                                  <Text style={[styles.prefLabel, selected && styles.prefLabelSelected]}>
+                                      {option.label}
+                                  </Text>
+                                  <Text style={styles.prefDesc}>{option.desc}</Text>
+                              </View>
+                              <View style={[styles.prefCheck, selected && styles.prefCheckSelected]}>
+                                  {selected && <Feather name="check" size={12} color="white" />}
+                              </View>
+                          </TouchableOpacity>
+                      );
+                  })}
+
+                  <TouchableOpacity
+                      style={[styles.updateButton, { marginTop: 24 }]}
+                      onPress={() => setShowGoalPicker(false)}
+                  >
+                      <Text style={styles.updateButtonText}>Done</Text>
+                  </TouchableOpacity>
+              </ScrollView>
+          </View>
+      </Modal>
+
+
+      {/* Fitness level picker */}
+      <Modal
+          visible={showFitnessLevelPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowFitnessLevelPicker(false)}
+      >
+          <View style={styles.pickerContainer}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
+                  <Text style={styles.title}>Fitness level</Text>
+                  <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setShowFitnessLevelPicker(false)}
+                  >
+                      <Feather name="x" size={20} color={colors.black} />
+                  </TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={styles.pickerContent}>
+                  <Text style={styles.pickerSubtitle}>
+                      Your fitness level determines exercise difficulty and session length.
+                  </Text>
+                  {[
+                      { id: 'beginner', label: 'Beginner', desc: 'New to training or returning after a long break', icon: '🌱' },
+                      { id: 'intermediate', label: 'Intermediate', desc: 'Training consistently for 6 months or more', icon: '⚡' },
+                      { id: 'advanced', label: 'Advanced', desc: 'Training seriously for 2 or more years', icon: '🔥' },
+                  ].map(option => {
+                      const selected = fitnessLevel === option.id;
+                      return (
+                          <TouchableOpacity
+                              key={option.id}
+                              style={[styles.prefOption, selected && styles.prefOptionSelected]}
+                              onPress={() => setFitnessLevel(option.id)}
+                          >
+                              <Text style={styles.prefEmoji}>{option.icon}</Text>
+                              <View style={styles.prefContent}>
+                                  <Text style={[styles.prefLabel, selected && styles.prefLabelSelected]}>
+                                      {option.label}
+                                  </Text>
+                                  <Text style={styles.prefDesc}>{option.desc}</Text>
+                              </View>
+                              <View style={[styles.prefCheck, selected && styles.prefCheckSelected]}>
+                                  {selected && <Feather name="check" size={12} color="white" />}
+                              </View>
+                          </TouchableOpacity>
+                      );
+                  })}
+                  <TouchableOpacity
+                      style={[styles.updateButton, { marginTop: 24 }]}
+                      onPress={() => setShowFitnessLevelPicker(false)}
+                  >
+                      <Text style={styles.updateButtonText}>Done</Text>
+                  </TouchableOpacity>
+              </ScrollView>
+          </View>
+      </Modal>
+
+      {/* Equipment picker */}
+      <Modal
+          visible={showEquipmentPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowEquipmentPicker(false)}
+      >
+          <View style={styles.pickerContainer}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
+                  <Text style={styles.title}>Equipment</Text>
+                  <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setShowEquipmentPicker(false)}
+                  >
+                      <Feather name="x" size={20} color={colors.black} />
+                  </TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={styles.pickerContent}>
+                  <Text style={styles.pickerSubtitle}>
+                      Your equipment determines which exercises appear in your plan.
+                  </Text>
+                  {[
+                      { id: 'gym', label: 'Gym', desc: 'Full gym access — barbells, cables, machines', icon: '🏋️' },
+                      { id: 'dumbbells', label: 'Dumbbells at home', desc: 'Dumbbells only — home or hotel workouts', icon: '💪' },
+                      { id: 'bodyweight', label: 'Bodyweight only', desc: 'No equipment needed — anywhere, anytime', icon: '🤸' },
+                      { id: 'both', label: 'Gym and Home', desc: 'Mix of gym and home equipment', icon: '⚡' },
+                  ].map(option => {
+                      const selected = equipment === option.id;
+                      return (
+                          <TouchableOpacity
+                              key={option.id}
+                              style={[styles.prefOption, selected && styles.prefOptionSelected]}
+                              onPress={() => setEquipment(option.id)}
+                          >
+                              <Text style={styles.prefEmoji}>{option.icon}</Text>
+                              <View style={styles.prefContent}>
+                                  <Text style={[styles.prefLabel, selected && styles.prefLabelSelected]}>
+                                      {option.label}
+                                  </Text>
+                                  <Text style={styles.prefDesc}>{option.desc}</Text>
+                              </View>
+                              <View style={[styles.prefCheck, selected && styles.prefCheckSelected]}>
+                                  {selected && <Feather name="check" size={12} color="white" />}
+                              </View>
+                          </TouchableOpacity>
+                      );
+                  })}
+                  <TouchableOpacity
+                      style={[styles.updateButton, { marginTop: 24 }]}
+                      onPress={() => setShowEquipmentPicker(false)}
+                  >
+                      <Text style={styles.updateButtonText}>Done</Text>
+                  </TouchableOpacity>
+              </ScrollView>
+          </View>
+      </Modal>
+
+      {/* Training days picker */}
+      <Modal
+          visible={showTrainingDaysPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowTrainingDaysPicker(false)}
+      >
+          <View style={styles.pickerContainer}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
+                  <Text style={styles.title}>Training days</Text>
+                  <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setShowTrainingDaysPicker(false)}
+                  >
+                      <Feather name="x" size={20} color={colors.black} />
+                  </TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={styles.pickerContent}>
+                  <Text style={styles.pickerSubtitle}>
+                      Select the days you want to train each week.
+                  </Text>
+                  {[
+                      { id: 'mon', label: 'Monday' },
+                      { id: 'tue', label: 'Tuesday' },
+                      { id: 'wed', label: 'Wednesday' },
+                      { id: 'thu', label: 'Thursday' },
+                      { id: 'fri', label: 'Friday' },
+                      { id: 'sat', label: 'Saturday' },
+                      { id: 'sun', label: 'Sunday' },
+                  ].map(option => {
+                      const selected = trainingDays.includes(option.id);
+                      return (
+                          <TouchableOpacity
+                              key={option.id}
+                              style={[styles.prefOption, selected && styles.prefOptionSelected]}
+                              onPress={() => {
+                                  setTrainingDays(prev =>
+                                      prev.includes(option.id)
+                                          ? prev.filter(d => d !== option.id)
+                                          : [...prev, option.id]
+                                  );
+                              }}
+                          >
+                              <Text style={styles.prefEmoji}>
+                                  {selected ? '✅' : '📅'}
+                              </Text>
+                              <View style={styles.prefContent}>
+                                  <Text style={[styles.prefLabel, selected && styles.prefLabelSelected]}>
+                                      {option.label}
+                                  </Text>
+                              </View>
+                              <View style={[styles.prefCheck, selected && styles.prefCheckSelected]}>
+                                  {selected && <Feather name="check" size={12} color="white" />}
+                              </View>
+                          </TouchableOpacity>
+                      );
+                  })}
+                  <TouchableOpacity
+                      style={[styles.updateButton, { marginTop: 24 }]}
+                      onPress={() => setShowTrainingDaysPicker(false)}
+                  >
+                      <Text style={styles.updateButtonText}>Done</Text>
+                  </TouchableOpacity>
+              </ScrollView>
+          </View>
+      </Modal>
+
+      {/* Duration picker */}
+      <Modal
+          visible={showDurationPicker}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowDurationPicker(false)}
+      >
+          <View style={styles.pickerContainer}>
+              <View style={styles.handle} />
+              <View style={styles.header}>
+                  <Text style={styles.title}>Workout duration</Text>
+                  <TouchableOpacity
+                      style={styles.closeButton}
+                      onPress={() => setShowDurationPicker(false)}
+                  >
+                      <Feather name="x" size={20} color={colors.black} />
+                  </TouchableOpacity>
+              </View>
+              <ScrollView contentContainerStyle={styles.pickerContent}>
+                  <Text style={styles.pickerSubtitle}>
+                      How long do you want each workout session to be?
+                  </Text>
+                  {[
+                      { id: '30', label: '30 minutes', desc: 'Short and efficient — perfect for busy days', icon: '⚡' },
+                      { id: '45', label: '45 minutes', desc: 'The sweet spot for most people', icon: '✅' },
+                      { id: '60', label: '60 minutes', desc: 'Full session with time for warm up and cool down', icon: '💪' },
+                      { id: '60+', label: '60+ minutes', desc: 'Extended session for serious training', icon: '🔥' },
+                  ].map(option => {
+                      const selected = workoutDuration === option.id;
+                      return (
+                          <TouchableOpacity
+                              key={option.id}
+                              style={[styles.prefOption, selected && styles.prefOptionSelected]}
+                              onPress={() => setWorkoutDuration(option.id)}
+                          >
+                              <Text style={styles.prefEmoji}>{option.icon}</Text>
+                              <View style={styles.prefContent}>
+                                  <Text style={[styles.prefLabel, selected && styles.prefLabelSelected]}>
+                                      {option.label}
+                                  </Text>
+                                  <Text style={styles.prefDesc}>{option.desc}</Text>
+                              </View>
+                              <View style={[styles.prefCheck, selected && styles.prefCheckSelected]}>
+                                  {selected && <Feather name="check" size={12} color="white" />}
+                              </View>
+                          </TouchableOpacity>
+                      );
+                  })}
+                  <TouchableOpacity
+                      style={[styles.updateButton, { marginTop: 24 }]}
+                      onPress={() => setShowDurationPicker(false)}
+                  >
+                      <Text style={styles.updateButtonText}>Done</Text>
+                  </TouchableOpacity>
+              </ScrollView>
+          </View>
+      </Modal>
+
 
     </Modal>
   );

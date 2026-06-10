@@ -18,6 +18,7 @@ import {getNutrition, getWorkoutPlan} from "../../services/api";
 
 
 
+
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
     return (
@@ -236,8 +237,15 @@ export default function WorkoutsScreen() {
                         const isPast = itemPosition < todayPosition;
                         const isToday = dayKey === todayKey;
     
-                        // Extract just the exercise names for the expanded view
+                        /// Extract strength exercise names
                         const exerciseNames = session.exercises.map(ex => ex.name);
+
+                        // Add cardio circuit exercises if they exist
+                        if (session.cardio_circuit && session.cardio_circuit.exercises) {
+                            session.cardio_circuit.exercises.forEach(ex => {
+                                exerciseNames.push(`${ex.name} (cardio)`);
+                            });
+                        }
     
                         return {
                             day: dayDisplayNames[dayKey] || dayKey,

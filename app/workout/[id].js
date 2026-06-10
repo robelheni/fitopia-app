@@ -322,7 +322,7 @@ const workoutData = {
                             </Text>
                             <View style={styles.exerciseTags}>
                                 <View style={styles.tag}>
-                                    <Text style={styles.tagText}>{displayExercise.muscle}</Text>
+                                <Text style={styles.tagText}>{exercise.muscle || exercise.muscle_group}</Text>
                                 </View>
                                 <View style={styles.tag}>
                                     <Text style={styles.tagText}>{displayExercise.equipment}</Text>
@@ -360,6 +360,83 @@ const workoutData = {
             
             </View>
             </FadeUpItem>
+
+            {/* Cardio circuit — only shown for lose weight and improve fitness */}
+            {workout.cardio_circuit && workout.cardio_circuit.exercises && (
+                <FadeUpItem delay={200}>
+                    <Text style={styles.sectionTitle}>Cardio Circuit</Text>
+                    <View style={[styles.infoCard, { backgroundColor: '#DC2626', marginBottom: 16 }]}>
+                        <Text style={{ color: 'white', fontWeight: '700', fontSize: 16, marginBottom: 4 }}>
+                            {workout.cardio_circuit.rounds} rounds
+                        </Text>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, marginBottom: 12 }}>
+                            {workout.cardio_circuit.work_seconds}s work · {workout.cardio_circuit.rest_seconds}s rest
+                        </Text>
+                    </View>
+                    <View style={styles.exerciseList}>
+                    {workout.cardio_circuit.exercises.map((exercise, index) => {
+                    const sessionExerciseIds = workout.exercises.map(e => e.id).join(',');
+                    return (
+                        <TouchableOpacity
+                            key={exercise.id}
+                            style={styles.exerciseCard}
+                            onPress={() => router.push({
+                                pathname: `/exercise/${exercise.id}`,
+                                params: {
+                                    exerciseData: JSON.stringify({
+                                        ...exercise,
+                                        muscle: exercise.muscle_group,
+                                        sets: workout.cardio_circuit.rounds,
+                                        reps: null,
+                                        rest: `${workout.cardio_circuit.rest_seconds}s`,
+                                        isTimed: true,
+                                        seconds: workout.cardio_circuit.work_seconds,
+                                    }),
+                                    workoutId: id,
+                                    dayKey: id,
+                                    exerciseId: exercise.id,
+                                    sessionExercises: sessionExerciseIds,
+                                }
+                            })}
+                        >
+                            <View style={[styles.exerciseNumber, { backgroundColor: '#FEE2E2' }]}>
+                                <Text style={[styles.exerciseNumberText, { color: '#DC2626' }]}>{index + 1}</Text>
+                            </View>
+                            <View style={styles.exerciseInfo}>
+                                <Text style={styles.exerciseName}>{exercise.name}</Text>
+                                <Text style={styles.exerciseMeta}>
+                                    {`${workout.cardio_circuit.work_seconds}s work · ${workout.cardio_circuit.rest_seconds}s rest`}
+                                </Text>
+                                <View style={styles.exerciseTags}>
+                                    <View style={[styles.tag, { backgroundColor: '#FEE2E2' }]}>
+                                        <Text style={[styles.tagText, { color: '#DC2626' }]}>Cardio</Text>
+                                    </View>
+                                </View>
+                            </View>
+                            {/* Swap button for cardio exercises */}
+                            <TouchableOpacity
+                                style={styles.swapButton}
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    router.push({
+                                        pathname: '/workout/swap',
+                                        params: {
+                                            exerciseId: exercise.id,
+                                            sessionExercises: sessionExerciseIds,
+                                            dayKey: id,
+                                            exerciseName: exercise.name,
+                                        }
+                                    });
+                                }}
+                            >
+                                <Feather name="refresh-cw" size={14} color={colors.grey} />
+                            </TouchableOpacity>
+                        </TouchableOpacity>
+                    );
+                })}
+                    </View>
+                </FadeUpItem>
+            )}
 
             {/* Start workout button */}
             <FadeUpItem delay={300}>
