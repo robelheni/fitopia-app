@@ -319,3 +319,16 @@ export async function getExercises(muscleGroup = null, equipment = null) {
   if (!response.ok) throw new Error(data.detail || 'Failed to get exercises');
   return data;
 }
+
+export async function getMotivationalQuote(workoutName = 'workout') {
+  const token = await getToken();
+  if (!token) return null;
+
+  const response = await fetch(
+      `${BASE_URL}/workouts/quote?token=${token}&workout_name=${encodeURIComponent(workoutName)}`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  if (!response.ok) return null;
+  return await response.json();
+}
