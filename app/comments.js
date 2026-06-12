@@ -1,49 +1,63 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import { getComments, createComment, getCurrentUser} from '../services/api';
 
-// Hardcoded comments — comes from backend later
-const initialComments = {
-  '1': [
-    { id: 'c1', name: 'Yonas B.', initials: 'YB', avatarColor: '#DC2626', text: 'Amazing progress! Keep it up!', time: '1h ago' },
-    { id: 'c2', name: 'Sara M.', initials: 'SM', avatarColor: '#059669', text: 'Week 3 is when it really starts to click. Great work!', time: '30m ago' },
-  ],
-  '2': [
-    { id: 'c3', name: 'Dawit K.', initials: 'DK', avatarColor: '#7C3AED', text: 'The fasting workouts are seriously underrated.', time: '4h ago' },
-  ],
-  '3': [
-    { id: 'c4', name: 'Abebu T.', initials: 'AT', avatarColor: colors.blue, text: 'I do light workouts on both fasting days. Works well for me.', time: '7h ago' },
-    { id: 'c5', name: 'Meron H.', initials: 'MH', avatarColor: '#D4A843', text: 'I only do one. Listen to your body!', time: '6h ago' },
-    { id: 'c6', name: 'Sara M.', initials: 'SM', avatarColor: '#059669', text: 'Depends on the type of fast too. Wet vs dry fasting makes a big difference.', time: '5h ago' },
-  ],
-  '4': [
-    { id: 'c7', name: 'Yonas B.', initials: 'YB', avatarColor: '#DC2626', text: 'This is so inspiring. Congratulations!', time: '23h ago' },
-  ],
-  '5': [
-    { id: 'c8', name: 'Abebu T.', initials: 'AT', avatarColor: colors.blue, text: 'Day 5 here. Shoulders are on fire!', time: '20h ago' },
-    { id: 'c9', name: 'Meron H.', initials: 'MH', avatarColor: '#D4A843', text: 'Let\'s go! Day 2 for me.', time: '18h ago' },
-  ],
-};
+
 
 export default function CommentsScreen() {
   const { postId, postText, postName } = useLocalSearchParams();
-  const [comments, setComments] = useState(initialComments[postId] || []);
+  const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
-  function handleSubmit() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const data = await getCurrentUser();
+      setUser(data);
+    }
+    fetchUser();
+  }, []);
+
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+    : '??';
+
+
+  //fetch the raeal comments
+  useEffect(() => {
+    async function fetchComments(){
+      try{
+        setLoading(true);
+        const data = await getComments(postId);
+        setComments(data);
+      } catch (err) {
+        console.log('Failed to load comments:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchComments();
+  }, [postId]);
+
+  async function handleSubmit() {
     if (!newComment.trim()) return;
-    const comment = {
-      id: `new_${Date.now()}`,
-      name: 'You',
-      initials: 'HE',
-      avatarColor: colors.blue,
-      text: newComment.trim(),
-      time: 'Just now',
-    };
-    setComments(prev => [...prev, comment]);
-    setNewComment('');
+    try {
+      setSending(true);
+      const saved = await createComment(postId, newComment.trim());
+      // Add the new comment to the list immediately without re-fetching everything
+      setComments(prev => [...prev, saved]);
+      setNewComment('');
+    } catch (err) {
+      console.log('Comment failed:', err.message);
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -79,11 +93,11 @@ export default function CommentsScreen() {
         <View style={styles.divider} />
 
         {/* Comments */}
-        <Text style={styles.commentsCount}>
-          {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-        </Text>
-
-        {comments.length === 0 ? (
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.blue} />
+          </View>
+        ) : comments.length === 0 ? (
           <View style={styles.emptyState}>
             <Feather name="message-circle" size={40} color={colors.greyLight} />
             <Text style={styles.emptyText}>No comments yet</Text>
@@ -93,13 +107,15 @@ export default function CommentsScreen() {
           <View style={styles.commentsList}>
             {comments.map(comment => (
               <View key={comment.id} style={styles.commentCard}>
-                <View style={[styles.avatar, { backgroundColor: comment.avatarColor }]}>
-                  <Text style={styles.avatarText}>{comment.initials}</Text>
+                <View style={[styles.avatar, { backgroundColor: comment.avatarColor || colors.blue }]}>
+                  <Text style={styles.avatarText}>
+                    {comment.name ? comment.name.substring(0, 2).toUpperCase() : 'U'}
+                  </Text>
                 </View>
                 <View style={styles.commentContent}>
                   <View style={styles.commentHeader}>
                     <Text style={styles.commentName}>{comment.name}</Text>
-                    <Text style={styles.commentTime}>{comment.time}</Text>
+                    <Text style={styles.commentTime}>{comment.time || 'Just now'}</Text>
                   </View>
                   <Text style={styles.commentText}>{comment.text}</Text>
                 </View>
@@ -113,7 +129,8 @@ export default function CommentsScreen() {
       {/* Comment input */}
       <View style={styles.inputContainer}>
         <View style={styles.inputAvatar}>
-          <Text style={styles.inputAvatarText}>HE</Text>
+        <Text style={styles.inputAvatarText}>{initials}</Text>
+
         </View>
         <TextInput
           style={styles.input}
@@ -127,7 +144,7 @@ export default function CommentsScreen() {
         <TouchableOpacity
           style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
           onPress={handleSubmit}
-          disabled={!newComment.trim()}
+          disabled={!newComment.trim() ||sending}
         >
           <Feather
             name="send"
@@ -333,5 +350,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.greyCard,
     shadowOpacity: 0,
     elevation: 0,
+  },
+  centered: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

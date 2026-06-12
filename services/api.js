@@ -332,3 +332,94 @@ export async function getMotivationalQuote(workoutName = 'workout') {
   if (!response.ok) return null;
   return await response.json();
 }
+
+//Fetches alll posts from the community feed, newest first
+export async function getCommunityPosts() {
+  const token = await getToken();
+  if(!token) throw new Error("Not logged in");
+
+  const response = await fetch(`${BASE_URL}/community/posts?token=${token}`,{
+    method: 'GET',
+    headers: {'Content-Type': 'application/json'},
+  });
+
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.detail || 'Failed to get posts');
+  return data;
+}
+
+//creates a new post
+export async function createPost(text, tag) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, tag }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to create post');
+  return data;
+}
+
+//Toggles like on a post
+export async function togglePostLike(postId) {
+  const token = await getToken();
+  if(!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/like?token=${token}`,
+    {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+    }
+  );
+
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.detail || 'Failed to toggle like');
+  return data;
+}
+
+//Fetches all comments for a specific post
+export async function getComments(postId) {
+  const token = await getToken();
+  if(!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/comments?token=${token}`,
+    {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'},
+    }
+  );
+
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.detail || 'Failed to get comments');
+  return data;
+
+  
+}
+
+
+//Post a new comment on a post
+export async function createComment(postId, text) {
+  const token = await getToken();
+  if(!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/comments?token=${token}&text=${encodeURIComponent(text)}`,
+    {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+    }
+  );
+
+  const data = await response.json();
+  if(!response.ok) throw new Error(data.detail || 'Failed to post comment');
+  return data;
+}

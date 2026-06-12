@@ -84,22 +84,44 @@ export default function WeeklyMealPlanScreen() {
     try {
       setLoading(true);
       const token = await getToken();
+
+      // 30 second timeout — meal generation can be slow
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch(
         `${BASE_URL}/plan/meals/weekly?token=${token}`,
-        { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+        {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal
+        }
       );
+      clearTimeout(timeoutId);
+
       const data = await response.json();
+      console.log('Weekly data response:', JSON.stringify(data).substring(0, 1000));
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        console.log('Backend error:', data.detail);
+        return;
+      }
+
+      
+
       setWeeklyData(data.week);
       setNutritionTargets(data.nutrition_targets);
 
       // Save today's meals for home screen
-      const dayMap = { 0:'mon', 1:'tue', 2:'wed', 3:'thu', 4:'fri', 5:'sat', 6:'sun' };
+      const dayMap = { 0: 'mon', 1: 'tue', 2: 'wed', 3: 'thu', 4: 'fri', 5: 'sat', 6: 'sun' };
       const todayKey = dayMap[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
       await AsyncStorage.setItem('todays_meals', JSON.stringify(data.week[todayKey]));
 
       await loadStoredData();
     } catch (error) {
-      console.log('Weekly fetch error:', error.message);
+      console.log('Weekly fetch error type:', error.constructor.name);
+      console.log('Weekly fetch error message:', error.message);
     } finally {
       setLoading(false);
     }

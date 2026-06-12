@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
+import {createPost, getCurrentUser} from '../services/api';
 
 const tags = [
   { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
@@ -13,6 +14,23 @@ const tags = [
 export default function ComposeScreen() {
   const [text, setText] = useState('');
   const [selectedTag, setSelectedTag] = useState(null);
+  const [posting, setPosting] = useState(false);
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const data = await getCurrentUser();
+      setUser(data);
+    }
+    fetchUser();
+  }, []);
+
+  // Gets the first two letters of the user's name as uppercase initials
+  const initials = user?.name
+    ? user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+    : '??';
+
 
   const canPost = text.trim().length > 0 && selectedTag !== null;
 
@@ -29,14 +47,23 @@ export default function ComposeScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New post</Text>
         <TouchableOpacity
-          style={[styles.postButton, !canPost && styles.postButtonDisabled]}
-          disabled={!canPost}
-          onPress={() => router.back()}
+          style={[styles.postButton, (!canPost || posting) && styles.postButtonDisabled]}
+          disabled={!canPost || posting}
+          onPress={async () => {
+            try {
+              setPosting(true);
+              await createPost(text.trim(), selectedTag);
+              router.back();
+            } catch (err) {
+              console.log('Post failed:', err.message);
+              setPosting(false);
+            }
+          }}
         >
-          <Text style={[styles.postButtonText, !canPost && styles.postButtonTextDisabled]}>
-            Post
-          </Text>
-        </TouchableOpacity>
+  <Text style={[styles.postButtonText, (!canPost || posting) && styles.postButtonTextDisabled]}>
+    {posting ? 'Posting...' : 'Post'}
+  </Text>
+</TouchableOpacity>
       </View>
 
       <ScrollView
@@ -47,9 +74,9 @@ export default function ComposeScreen() {
 
         {/* User avatar and text input */}
         <View style={styles.inputRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>HE</Text>
-          </View>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
           <TextInput
             style={styles.textInput}
             placeholder="Share your progress, ask a question, or start a challenge..."

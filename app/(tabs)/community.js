@@ -1,84 +1,22 @@
 import { useFocusEffect } from 'expo-router';
 
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
 import { router } from 'expo-router';
+import { getCommunityPosts, togglePostLike } from '../../services/api';
 
-// Hardcoded posts for now — comes from backend later
-const posts = [
-  {
-    id: '1',
-    name: 'Abebu T.',
-    initials: 'AT',
-    location: 'London, UK',
-    time: '2h ago',
-    text: 'Completed week 3 of my plan. Feeling stronger every day. The fasting day workouts are a game changer.',
-    likes: 24,
-    comments: 8,
-    tag: 'progress',
-    avatarColor: colors.blue,
-    hasPhoto: true,
-  },
-  {
-    id: '2',
-    name: 'Meron H.',
-    initials: 'MH',
-    location: 'Minnesota, US',
-    time: '5h ago',
-    text: 'First fasting day workout done. Never thought I could work out while fasting but the adapted plan really works.',
-    likes: 41,
-    comments: 15,
-    tag: 'progress',
-    avatarColor: '#D4A843',
-  },
-  {
-    id: '3',
-    name: 'Dawit K.',
-    initials: 'DK',
-    location: 'Stockholm, SE',
-    time: '8h ago',
-    text: 'Question — for someone doing Orthodox fasting twice a week, should I do the light workout on both days or just one?',
-    likes: 12,
-    comments: 23,
-    tag: 'questions',
-    avatarColor: '#7C3AED',
-  },
-  {
-    id: '4',
-    name: 'Sara M.',
-    initials: 'SM',
-    location: 'Toronto, CA',
-    time: '1d ago',
-    text: 'Just finished the 30 day challenge. Down 4kg and feeling amazing. This community kept me going on the hard days.',
-    likes: 89,
-    comments: 31,
-    tag: 'progress',
-    avatarColor: '#059669',
-  },
-  {
-    id: '5',
-    name: 'Yonas B.',
-    initials: 'YB',
-    location: 'Dubai, UAE',
-    time: '1d ago',
-    text: 'Who else is doing the upper body challenge this week? Day 3 done. Arms are destroyed but in a good way.',
-    likes: 34,
-    comments: 19,
-    tag: 'challenges',
-    avatarColor: '#DC2626',
-    hasPhoto: true,
-  },
-];
+
+
 
 const challenges = [
   {
@@ -104,10 +42,24 @@ const challenges = [
   },
 ];
 
+// Converts a raw timestamp like "2026-06-12T11:23:00" into "2h ago"
+function timeAgo(isoString) {
+  const now = new Date();
+  const date = new Date(isoString);
+  const seconds = Math.floor((now - date) / 1000);
+
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
+
 export default function CommunityScreen() {
   const [contentKey, setContentKey] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [likedPosts, setLikedPosts] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
   const { setCollapsed } = useTabBar();
@@ -135,6 +87,22 @@ const headerTranslateY = useSharedValue(0);
         opacity.value = withTiming(1, { duration: 300 });
         translateY.value = withTiming(0, { duration: 300 });
       });
+
+      //fetch real posts from the backend every time his scren comes into focus
+      async function fetchPosts(){
+        try {
+          setLoading(true);
+          setError(null);
+          const data = await getCommunityPosts();
+          setPosts(data);
+        
+        } catch(err){
+          setError('could not load posts');
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchPosts();
     }, [])
   );
 
@@ -163,12 +131,18 @@ const headerTranslateY = useSharedValue(0);
     lastScrollY.current = currentY;
   }
 
-  function toggleLike(postId) {
-    setLikedPosts(prev =>
-      prev.includes(postId)
-        ? prev.filter(id => id !== postId)
-        : [...prev, postId]
-    );
+  async function toggleLike(postId) {
+    try {
+      const result = await togglePostLike(postId);
+      // Update just the one post that was liked — don't re-fetch the whole list
+      setPosts(prev => prev.map(post =>
+        post.id === postId
+          ? { ...post, like_count: result.like_count, liked_by_me: result.liked }
+          : post
+      ));
+    } catch (err) {
+      console.log('Like failed:', err.message);
+    }
   }
 
   return (
@@ -205,7 +179,19 @@ const headerTranslateY = useSharedValue(0);
       >
         <View key={contentKey}>
 
-        
+          {/* Show spinner while posts are loading */}
+          {loading && (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={colors.blue} />
+            </View>
+          )}
+
+          {/* Show error message if fetch failed */}
+          {error && (
+            <View style={styles.centered}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
           {/* Active challenges */}
           <FadeUpItem delay={100}>
@@ -262,12 +248,20 @@ const headerTranslateY = useSharedValue(0);
 
                   {/* Post header */}
                   <View style={styles.postHeader}>
-                    <View style={[styles.avatar, { backgroundColor: post.avatarColor }]}>
-                      <Text style={styles.avatarText}>{post.initials}</Text>
+                  <View style={[styles.avatar, { 
+                      backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard,
+                      borderWidth: 1, 
+                      borderColor: colors.greyBorder 
+                    }]}>
+                      <Feather
+                        name="user"
+                        size={20}
+                        color={post.gender === 'female' ? '#7C3AED' : post.gender === 'male' ? colors.blue : colors.greyLight}
+                      />
                     </View>
                     <View style={styles.postMeta}>
                       <Text style={styles.postName}>{post.name}</Text>
-                      <Text style={styles.postLocation}>{post.location} · {post.time}</Text>
+                      <Text style={styles.postLocation}>{timeAgo(post.created_at)}</Text>
                     </View>
                     <View style={[styles.postTag, post.tag === 'questions' && styles.postTagQuestion, post.tag === 'challenges' && styles.postTagChallenge]}>
                       <Text style={[styles.postTagText, post.tag === 'questions' && styles.postTagTextQuestion, post.tag === 'challenges' && styles.postTagTextChallenge]}>
@@ -289,22 +283,19 @@ const headerTranslateY = useSharedValue(0);
 
                   {/* Post actions */}
                   <View style={styles.postActions}>
-                    <TouchableOpacity
-                      style={styles.postAction}
-                      onPress={() => toggleLike(post.id)}
-                    >
-                      <Feather
-                        name="heart"
-                        size={16}
-                        color={likedPosts.includes(post.id) ? '#DC2626' : colors.greyLight}
-                      />
-                      <Text style={[
-                        styles.postActionText,
-                        likedPosts.includes(post.id) && styles.postActionTextLiked
-                      ]}>
-                        {likedPosts.includes(post.id) ? post.likes + 1 : post.likes}
-                      </Text>
-                    </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.postAction}
+                    onPress={() => toggleLike(post.id)}
+                  >
+                   <Ionicons
+                    name={post.liked_by_me ? "heart" : "heart-outline"}
+                    size={16}
+                    color={post.liked_by_me ? '#DC2626' : colors.greyLight}
+                  />
+                    <Text style={[styles.postActionText, post.liked_by_me && styles.postActionTextLiked]}>
+                      {post.like_count}
+                    </Text>
+                  </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.postAction}
                         onPress={() => router.push({
@@ -317,7 +308,7 @@ const headerTranslateY = useSharedValue(0);
                         })}
                         >
                     <Feather name="message-circle" size={16} color={colors.greyLight} />
-                    <Text style={styles.postActionText}>{post.comments}</Text>
+                    <Text style={styles.postActionText}>{post.comment_count}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.postAction}>
                       <Feather name="share-2" size={16} color={colors.greyLight} />
@@ -607,5 +598,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: colors.blue,
+  },
+  centered: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    fontSize: 14,
+    color: colors.grey,
+    fontWeight: '300',
   },
 });
