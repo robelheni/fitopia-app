@@ -129,12 +129,13 @@ export default function WorkoutsScreen() {
   // Loading state while plan is being fetched
   const [planLoading, setPlanLoading] = useState(true);
 
-    const filters = [
-        { key: 'forYou', label: 'For You' },
-        { key: 'home', label: 'Home' },
-        { key: 'gym', label: 'Gym' },
-        { key: 'fasting', label: 'Fasting' },
-    ];
+  const filters = [
+    { key: 'forYou', label: 'For You' },
+    { key: 'home', label: 'Home' },
+    { key: 'gym', label: 'Gym' },
+    { key: 'fasting', label: 'Fasting' },
+    { key: 'all', label: 'All' },
+  ];
     
 
     
@@ -450,89 +451,129 @@ const animatedStyle = useAnimatedStyle(() => ({
 
             {/* Home categories */}
             {activeFilter === 'home' && (
-            <FadeUpItem delay={200}>
+              <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Home workouts</Text>
-                <Text style={styles.sectionSub}>No gym needed</Text>
+                  <Text style={styles.sectionTitle}>Home workouts</Text>
+                  <Text style={styles.sectionSub}>No gym needed</Text>
                 </View>
                 <View style={styles.categoryGrid}>
-                {[
-                    { name: 'Full Body', icon: 'user', color: '#059669', bg: '#D1FAE5', exercises: 8 },
-                    { name: 'Upper Body', icon: 'trending-up', color: '#2563EB', bg: '#EFF6FF', exercises: 6 },
-                    { name: 'Lower Body', icon: 'trending-down', color: '#7C3AED', bg: '#EDE9FE', exercises: 5 },
-                    { name: 'Core', icon: 'target', color: '#D97706', bg: '#FEF3C7', exercises: 6 },
-                    { name: 'Arms', icon: 'activity', color: '#DC2626', bg: '#FEE2E2', exercises: 4 },
-                ].map((cat, index) => (
+                  {[
+                    { name: 'Full Body',   icon: 'user',          color: '#059669', bg: '#D1FAE5', categoryKey: 'full-body-home' },
+                    { name: 'Upper Body',  icon: 'trending-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'upper-body-home' },
+                    { name: 'Lower Body',  icon: 'trending-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'lower-body-home' },
+                    { name: 'Core',        icon: 'target',        color: '#D97706', bg: '#FEF3C7', categoryKey: 'core-home' },
+                    { name: 'Biceps',      icon: 'activity',      color: '#DC2626', bg: '#FEE2E2', categoryKey: 'biceps-home' },
+                    { name: 'Triceps',     icon: 'zap',           color: '#0891B2', bg: '#CFFAFE', categoryKey: 'triceps-home' },
+                    { name: 'Cardio',      icon: 'heart',         color: '#059669', bg: '#D1FAE5', categoryKey: 'cardio-home' },
+                    { 
+                      name: 'Intense Cardio', 
+                      icon: 'zap', 
+                      color: '#DC2626', 
+                      bg: '#FEE2E2', 
+                      categoryKey: 'intense-cardio-home',
+                      isCircuit: true,
+                      circuitType: 'home'
+                    },
+                  ].map((cat, index) => (
                     <TouchableOpacity key={index} style={styles.categoryCard}
-                    onPress={() => router.push(`/workout/${cat.name.toLowerCase().replace(/ /g, '-')}`)}>
-                    <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
+                    onPress={() => cat.isCircuit
+                      ? router.push({ pathname: '/workout/circuits', params: { type: cat.circuitType } })
+                      : router.push({ pathname: '/workout/library', params: { category: cat.categoryKey } })
+                    }>
+                      <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
                         <Feather name={cat.icon} size={22} color={cat.color} />
-                    </View>
-                    <Text style={styles.categoryName}>{cat.name}</Text>
-                    <Text style={styles.categoryCount}>{cat.exercises} exercises</Text>
-                    <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
+                      </View>
+                      <Text style={styles.categoryName}>{cat.name}</Text>
+                      <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
                     </TouchableOpacity>
-                ))}
+                  ))}
                 </View>
-            </FadeUpItem>
+              </FadeUpItem>
             )}
-
             {/* Gym categories */}
             {activeFilter === 'gym' && (
-            <FadeUpItem delay={200}>
+              <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Gym workouts</Text>
-                <Text style={styles.sectionSub}>Full equipment</Text>
+                  <Text style={styles.sectionTitle}>Gym workouts</Text>
+                  <Text style={styles.sectionSub}>Full equipment</Text>
                 </View>
                 <View style={styles.categoryGrid}>
-                {[
-                    { name: 'Push Day', icon: 'chevrons-up', color: '#2563EB', bg: '#EFF6FF', exercises: 6 },
-                    { name: 'Pull Day', icon: 'chevrons-down', color: '#7C3AED', bg: '#EDE9FE', exercises: 5 },
-                    { name: 'Leg Day', icon: 'trending-down', color: '#059669', bg: '#D1FAE5', exercises: 6 },
-                    { name: 'Upper Body', icon: 'trending-up', color: '#D97706', bg: '#FEF3C7', exercises: 8 },
-                    { name: 'Lower Body', icon: 'arrow-down', color: '#DC2626', bg: '#FEE2E2', exercises: 6 },
-                    { name: 'Full Body', icon: 'user', color: '#0891B2', bg: '#CFFAFE', exercises: 10 },
-                ].map((cat, index) => (
+                  {[
+                    { name: 'Chest',     icon: 'chevrons-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'chest-gym' },
+                    { name: 'Back',      icon: 'chevrons-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'back-gym' },
+                    { name: 'Shoulders', icon: 'trending-up',   color: '#D97706', bg: '#FEF3C7', categoryKey: 'shoulders-gym' },
+                    { name: 'Triceps',   icon: 'zap',           color: '#DC2626', bg: '#FEE2E2', categoryKey: 'triceps-gym' },
+                    { name: 'Biceps',    icon: 'activity',      color: '#059669', bg: '#D1FAE5', categoryKey: 'biceps-gym' },
+                    { name: 'Legs',      icon: 'trending-down', color: '#0891B2', bg: '#CFFAFE', categoryKey: 'legs-gym' },
+                    { name: 'Core',      icon: 'target',        color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-gym' },
+                    { name: 'Cardio',    icon: 'heart',         color: '#DC2626', bg: '#FEE2E2', categoryKey: 'cardio-gym' },
+                    { 
+                      name: 'Intense Cardio', 
+                      icon: 'zap', 
+                      color: '#DC2626', 
+                      bg: '#FEE2E2', 
+                      categoryKey: 'intense-cardio-gym',
+                      isCircuit: true,
+                      circuitType: 'gym'
+                    },
+                  ].map((cat, index) => (
                     <TouchableOpacity key={index} style={styles.categoryCard}
-                    onPress={() => router.push(`/workout/${cat.name.toLowerCase().replace(/ /g, '-')}`)}>
-                    <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
+                    onPress={() => cat.isCircuit
+                      ? router.push({ pathname: '/workout/circuits', params: { type: cat.circuitType } })
+                      : router.push({ pathname: '/workout/library', params: { category: cat.categoryKey } })
+                    }>
+                      <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
                         <Feather name={cat.icon} size={22} color={cat.color} />
-                    </View>
-                    <Text style={styles.categoryName}>{cat.name}</Text>
-                    <Text style={styles.categoryCount}>{cat.exercises} exercises</Text>
-                    <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
+                      </View>
+                      <Text style={styles.categoryName}>{cat.name}</Text>
+                      <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
                     </TouchableOpacity>
-                ))}
+                  ))}
                 </View>
-            </FadeUpItem>
+              </FadeUpItem>
             )}
 
             {/* Fasting categories */}
             {activeFilter === 'fasting' && (
-            <FadeUpItem delay={200}>
+              <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Fasting workouts</Text>
-                <Text style={styles.sectionSub}>Low intensity, high benefit</Text>
+                  <Text style={styles.sectionTitle}>Fasting workouts</Text>
+                  <Text style={styles.sectionSub}>Low intensity, high benefit</Text>
                 </View>
                 <View style={styles.categoryGrid}>
-                {[
-                    { name: 'Light Full Body', icon: 'sun', color: '#D97706', bg: '#FEF3C7', exercises: 5 },
-                    { name: 'Mobility', icon: 'wind', color: '#059669', bg: '#D1FAE5', exercises: 6 },
-                    { name: 'Core and Balance', icon: 'target', color: '#7C3AED', bg: '#EDE9FE', exercises: 5 },
-                    { name: 'Low Intensity Cardio', icon: 'heart', color: '#DC2626', bg: '#FEE2E2', exercises: 4 },
-                ].map((cat, index) => (
+                  {[
+                    { name: 'Light Full Body',      icon: 'sun',    color: '#D97706', bg: '#FEF3C7', categoryKey: 'light-full-body' },
+                    { name: 'Core and Balance',     icon: 'target', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-and-balance' },
+                    { name: 'Low Intensity Cardio', icon: 'heart',  color: '#DC2626', bg: '#FEE2E2', categoryKey: 'low-intensity-cardio' },
+                  ].map((cat, index) => (
                     <TouchableOpacity key={index} style={styles.categoryCard}
-                    onPress={() => router.push(`/workout/${cat.name.toLowerCase().replace(/ /g, '-')}`)}>
-                    <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
+                      onPress={() => router.push({ pathname: '/workout/library', params: { category: cat.categoryKey } })}>
+                      <View style={[styles.categoryIcon, { backgroundColor: cat.bg }]}>
                         <Feather name={cat.icon} size={22} color={cat.color} />
-                    </View>
-                    <Text style={styles.categoryName}>{cat.name}</Text>
-                    <Text style={styles.categoryCount}>{cat.exercises} exercises</Text>
-                    <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
+                      </View>
+                      <Text style={styles.categoryName}>{cat.name}</Text>
+                      <Feather name="chevron-right" size={16} color={colors.greyLight} style={styles.categoryArrow} />
                     </TouchableOpacity>
-                ))}
+                  ))}
                 </View>
-            </FadeUpItem>
+              </FadeUpItem>
+            )}
+
+            {activeFilter === 'all' && (
+              <FadeUpItem delay={200}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Exercise Library</Text>
+                  <Text style={styles.sectionSub}>All 190 exercises</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.libraryButton}
+                  onPress={() => router.push({ pathname: '/workout/library', params: { category: 'all' } })}
+                >
+                  <Feather name="search" size={20} color={colors.blue} />
+                  <Text style={styles.libraryButtonText}>Browse all exercises</Text>
+                  <Feather name="chevron-right" size={16} color={colors.greyLight} />
+                </TouchableOpacity>
+              </FadeUpItem>
             )}
 
             </View>
@@ -866,5 +907,27 @@ const animatedStyle = useAnimatedStyle(() => ({
       
       statusBadgeTextMissed: {
         color: '#DC2626',
+      },
+
+      libraryButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: colors.white,
+        borderRadius: 16,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: colors.greyBorder,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
+      },
+      libraryButtonText: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.black,
       },
 });

@@ -302,14 +302,23 @@ export async function getExercise(exerciseId) {
 
 // Returns exercises from the database with optional filters
 
-export async function getExercises(muscleGroup = null, equipment = null) {
+export async function getExercises({
+  muscleGroup = null,
+  equipmentList = null,
+  equipment = null,
+  difficulty = null,
+  movementPattern = null,
+} = {}) {
   const token = await getToken();
   if (!token) throw new Error('Not logged in');
 
-  let url = `${BASE_URL}/workouts/exercises?token=${token}`;
-  if (muscleGroup) url += `&muscle_group=${muscleGroup}`;
-  if (equipment) url += `&equipment=${equipment}`;
-
+   // Build the URL dynamically — only add params that were provided
+   let url = `${BASE_URL}/workouts/exercises?token=${token}`;
+   if (muscleGroup) url += `&muscle_group=${muscleGroup}`;
+   if (equipmentList) url += `&equipment_list=${equipmentList}`;
+   if (equipment) url += `&equipment=${equipment}`;
+   if (difficulty) url += `&difficulty=${difficulty}`;
+   if (movementPattern) url += `&movement_pattern=${movementPattern}`;
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' }
@@ -317,6 +326,27 @@ export async function getExercises(muscleGroup = null, equipment = null) {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || 'Failed to get exercises');
+  return data;
+}
+
+
+// Fetches a curated category workout from the backend
+// category is the key like 'chest-gym', 'full-body-home', 'cardio-home'
+// fitness level is read from the user's profile on the backend automatically
+export async function getCategoryPlan(category) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/workouts/category-plan?token=${token}&category=${category}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get category plan');
   return data;
 }
 
