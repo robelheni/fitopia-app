@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback} from 'react-native';
 import { router } from 'expo-router';
 import {colors} from '../constants/colors';
-import {useState } from 'react';
+import {useState, useRef } from 'react';
 import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
 import { Feather } from '@expo/vector-icons';
@@ -16,20 +16,24 @@ export default function SignupScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [referral, setReferral] = useState('');
+    const [username, setUsername] = useState('');
+    const usernameRef = useRef('');
     
     const [errors, setErrors] = useState({
         name: '',
         email: '',
         password: '',
+        username: '',
     });
 
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState('');
     const { answers } = useOnboarding();
 
-
-
     async function handleSignup() {
+        const currentUsername = usernameRef.current || username;
+        console.log('Username at submit:', currentUsername);
+
         const newErrors = {
             name: !name ? 'Name is required' : '',
             email: !email
@@ -42,18 +46,24 @@ export default function SignupScreen() {
                 : password.length < 8 || !/\d/.test(password) || !/[A-Z]/.test(password)
                 ? 'Password must be at least 8 characters, contain one number and one capital letter'
                 : '',
+            username: !currentUsername
+                ? 'Username is required'
+                : currentUsername.length < 3
+                ? 'Username must be at least 3 characters'
+                : !/^[a-zA-Z0-9_]+$/.test(currentUsername)
+                ? 'Username can only contain letters, numbers and underscores'
+                : '',
         };
         setErrors(newErrors);
         const hasErrors = Object.values(newErrors).some(error => error !== '');
         if (hasErrors) return;
 
-        // Call the real API
         try {
             setLoading(true);
             setServerError('');
         
-            // Step 1 — create account and get token
-            await signupUser(name, email, password, referral);
+            console.log('Username at submit:', username);
+            await signupUser(name, email, password, username, referral);
         
             // Small wait
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -81,6 +91,7 @@ export default function SignupScreen() {
                 weight: answers.personalInfo?.weight ? parseFloat(answers.personalInfo.weight) : null,
                 goal_weight: answers.personalInfo?.goalWeight ? parseFloat(answers.personalInfo.goalWeight) : null,
               });
+
             // Step 4 — clean up and navigate
             await AsyncStorage.removeItem('onboarding_answers');
             router.navigate('/onboarding/complete');
@@ -92,11 +103,7 @@ export default function SignupScreen() {
           }
     }
 
-    
-
     return (
-
-        
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <KeyboardAvoidingView
                 style={{ flex: 1, backgroundColor: colors.white }}
@@ -110,8 +117,6 @@ export default function SignupScreen() {
                 >
                     <BackgroundCircles variant="default" />
 
-                    {/* Header row — logo right, subtitle left */}
-                    {/* Logo top right */}
                     <FadeUpItem delay={0}>
                     <View style={styles.logoHeader}>
                         <TouchableOpacity onPress={() => router.replace('/onboarding-intro')}>
@@ -123,7 +128,6 @@ export default function SignupScreen() {
                     </View>
                     </FadeUpItem>
 
-                    {/* Subtitle below — separate */}
                     <FadeUpItem delay={100}>
                     <Text style={styles.title}>Almost there.</Text>
                     <Text style={styles.subtitle}>
@@ -143,6 +147,23 @@ export default function SignupScreen() {
                             />
                         </FadeUpItem>
                         {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+
+                        <FadeUpItem delay={150}>
+                            <View style={styles.usernameInput}>
+                                <Text style={styles.usernameAt}>@</Text>
+                                <TextInput
+                                    style={styles.usernameField}
+                                    placeholder="username"
+                                    placeholderTextColor={colors.greyLight}
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    value={username}
+                                    onChangeText={(text) => setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                                />
+                            </View>
+                        </FadeUpItem>
+{errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
+                        {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
 
                         <FadeUpItem delay={200}>
                             <TextInput
@@ -240,16 +261,16 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 32,
-       
         gap: 16,
     },
+
     title: {
         fontSize: 24,
         fontWeight: '600',
         color: colors.black,
         letterSpacing: -1,
         marginBottom: 8,
-      },
+    },
 
     subtitle: {
         fontSize: 15,
@@ -257,7 +278,7 @@ const styles = StyleSheet.create({
         fontWeight: '300',
         lineHeight: 22,
         marginBottom: 32,
-      },
+    },
 
     logoContainer: {
         flexDirection: 'row',
@@ -358,8 +379,33 @@ const styles = StyleSheet.create({
     requirementNotMet: {
         color: 'red',
     },
+
     logoHeader: {
         alignItems: 'flex-end',
         marginBottom: 16,
-      },
+    },
+
+    usernameInput: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: colors.greyBorder,
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: colors.white,
+    },
+    
+    usernameAt: {
+        fontSize: 15,
+        color: colors.blue,
+        fontWeight: '600',
+        marginRight: 4,
+    },
+    
+    usernameField: {
+        flex: 1,
+        fontSize: 15,
+        color: colors.black,
+    },
 });

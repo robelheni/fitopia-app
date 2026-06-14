@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { getCurrentUser } from '../../services/api';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -40,6 +41,15 @@ const celebrations = [
 
 export default function CompleteScreen() {
     const { workoutName } = useLocalSearchParams();
+    const [userName, setUserName] = useState('');
+
+    useEffect(() => {
+    async function fetchUser() {
+        const user = await getCurrentUser();
+        if (user) setUserName(user.name.split(' ')[0]); // first name only
+    }
+    fetchUser();
+    }, []);
 
     const quote = quotes[Math.floor(Math.random() * quotes.length)];
     const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
@@ -102,7 +112,8 @@ export default function CompleteScreen() {
 
             {/* Name */}
             <Animated.Text style={[styles.name, nameStyle]}>
-                Heni! 💪
+            <Text style={styles.name}>{userName ? `${userName}!` : 'Well done!'}</Text>
+            <Feather name="star" size={28} color={colors.white} />
             </Animated.Text>
 
             {/* Stats */}
@@ -163,4 +174,10 @@ const styles = StyleSheet.create({
     doneButton: { backgroundColor: colors.white, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
     doneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
     seeYou: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
+    nameRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 24,
+    },
 });

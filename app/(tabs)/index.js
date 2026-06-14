@@ -24,11 +24,12 @@ export default function HomeScreen() {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(8);
   const { setCollapsed } = useTabBar();
-  const [trainingDays, setTrainingDays] = useState(['mon', 'wed', 'fri']); 
+  const [trainingDays, setTrainingDays] = useState([]);
   const lastScrollY = useRef(0);
   const [userName, setUserName] = useState('');
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState([]);
+
 
   const [nutritionTargets, setNutritionTargets] = useState({
     calories: 0,
@@ -136,18 +137,18 @@ export default function HomeScreen() {
   }
 
   
-  const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const todayIndex = new Date().getDay();
   const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
-  const todayKey = dayKeys[reorderedIndex];
+  const todayKey = DAY_KEYS[reorderedIndex];
   const isTrainingDay = trainingDays.includes(todayKey);
 
   const nextTrainingDay = (() => {
     for (let i = 1; i <= 7; i++) {
       const nextIndex = (reorderedIndex + i) % 7;
-      if (trainingDays.includes(dayKeys[nextIndex])) {
-        return dayNames[nextIndex];
+      if (trainingDays.includes(DAY_KEYS[nextIndex])) {
+        return DAY_NAMES[nextIndex];
       }
     }
     return 'soon';
@@ -184,20 +185,15 @@ export default function HomeScreen() {
               <View style={styles.streakRight}>
                 <Text style={styles.streakWeekLabel}>This week</Text>
                 <View style={styles.streakDots}>
-                {['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map((day, index) => {
-                    const completedDays = [];
-                    const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-                    const todayIndex = new Date().getDay();
-                    const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
-                    const today = dayKeys[reorderedIndex];
-                    const isTrainingDay = trainingDays.includes(day); // ← uses component state
+                {DAY_KEYS.map((day, index) => {
+                    const isTrainingDay = trainingDays.includes(day);
                     const isCompleted = completedDays.includes(day);
-                    const isToday = day === today;
-                    const isPast = index < dayKeys.indexOf(today);
+                    const isToday = day === todayKey;
+                    const isPast = index < DAY_KEYS.indexOf(todayKey);
 
                     let dotStyle = styles.streakDotRest;
                     if (isCompleted) dotStyle = styles.streakDotCompleted;
-                    else if (isToday && isTrainingDay) dotStyle = styles.streakDotActive;
+                    else if (isToday && isTrainingDay && !isCompleted) dotStyle = styles.streakDotActive;
                     else if (isPast && isTrainingDay && !isCompleted) dotStyle = styles.streakDotMissed;
                     else if (isTrainingDay) dotStyle = styles.streakDotPending;
 
@@ -209,7 +205,7 @@ export default function HomeScreen() {
                         <Text style={styles.streakDayLabel}>{labels[index]}</Text>
                       </View>
                     );
-                  })}
+                })}
                 </View>
               </View>
             </View>

@@ -8,7 +8,7 @@ import { loginUser } from '../services/api';
 
 
 export default function LoginScreen () {
-    const [email, setEmail] = useState('');
+    const [emailOrUsername, setEmailOrUsername] = useState('');
     const [password, setPassword] = useState('');
 
     const [ error, setError] = useState('');
@@ -17,16 +17,16 @@ export default function LoginScreen () {
 
     async function handleLogin(){
         setError('');
-
-        if(!email || !password){
-            setError('please fill in all fields');
+    
+        if(!emailOrUsername || !password){
+            setError('Please fill in all fields');
             return;
         }
-
+    
         try{
             setLoading(true);
             setServerError('');
-            await loginUser(email, password);
+            await loginUser(emailOrUsername, password);
             router.replace('/(tabs)')
         } catch (error) {
             setServerError(error.message);
@@ -51,12 +51,12 @@ export default function LoginScreen () {
             <FadeUpItem delay={100}>
             <TextInput
                 style={styles.input}
-                placeholder="Email address"
+                placeholder="Email or username"
                 placeholderTextColor={colors.greyLight}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
+                value={emailOrUsername}
+                onChangeText={setEmailOrUsername}
             />
             </FadeUpItem>
             

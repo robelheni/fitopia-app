@@ -5,7 +5,7 @@ const BASE_URL = 'https://web-production-9079c.up.railway.app';
 
 // ─── Auth ────────────────────────────────────────────────────────
 
-export async function signupUser(name, email, password, referralCode = null) {
+export async function signupUser(name, email, password,username = null, referralCode = null) {
     const response = await fetch(`${BASE_URL}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -13,6 +13,7 @@ export async function signupUser(name, email, password, referralCode = null) {
         name,
         email,
         password,
+        username,
         referral_code: referralCode,
       }),
     });
@@ -43,13 +44,13 @@ export async function signupUser(name, email, password, referralCode = null) {
     return data;
   }
 
-export async function loginUser(email, password) {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-
+  export async function loginUser(emailOrUsername, password) {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailOrUsername, password }),
+    });
+  
   const data = await response.json();
 
   if (!response.ok) {

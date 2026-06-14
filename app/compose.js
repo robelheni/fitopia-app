@@ -6,6 +6,7 @@ import { colors } from '../constants/colors';
 import {createPost, getCurrentUser} from '../services/api';
 
 const tags = [
+  { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
   { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
   { key: 'questions', label: 'Question', color: '#7C3AED', bg: '#EDE9FE' },
   { key: 'challenges', label: 'Challenge', color: '#059669', bg: '#D1FAE5' },
@@ -32,7 +33,8 @@ export default function ComposeScreen() {
     : '??';
 
 
-  const canPost = text.trim().length > 0 && selectedTag !== null;
+    const canPost = text.trim().length > 0;
+
 
   return (
     <View style={styles.container}>
@@ -52,7 +54,7 @@ export default function ComposeScreen() {
           onPress={async () => {
             try {
               setPosting(true);
-              await createPost(text.trim(), selectedTag);
+              await createPost(text.trim(), selectedTag || 'general');
               router.back();
             } catch (err) {
               console.log('Post failed:', err.message);
