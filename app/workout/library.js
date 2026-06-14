@@ -179,9 +179,11 @@ export default function LibraryScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Exercise count */}
-          <Text style={styles.countText}>
-            {filtered.length} exercise{filtered.length !== 1 ? 's' : ''}
-          </Text>
+          {category !== 'all' && (
+  <Text style={styles.countText}>
+    {filtered.length} exercise{filtered.length !== 1 ? 's' : ''}
+  </Text>
+)}
 
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>

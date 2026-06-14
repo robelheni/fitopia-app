@@ -6,7 +6,6 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { Feather } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
@@ -15,6 +14,7 @@ import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
 import {getNutrition, getWorkoutPlan} from "../../services/api";
+import { Feather, Ionicons } from '@expo/vector-icons';
 
 
 
@@ -134,7 +134,7 @@ export default function WorkoutsScreen() {
     { key: 'home', label: 'Home' },
     { key: 'gym', label: 'Gym' },
     { key: 'fasting', label: 'Fasting' },
-    { key: 'all', label: 'All' },
+    { key: 'all', label: 'Library' },
   ];
     
 
@@ -315,19 +315,32 @@ const animatedStyle = useAnimatedStyle(() => ({
 
         
         <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
-            <Text style={styles.title}>Workouts</Text>
-            <TouchableOpacity
-                style={styles.myPlanButton}
-                onPress={() => setMyPlanVisible(true)}
-                activeOpacity={0.7}
-            >
-                <View style={styles.myPlanInitials}>
-                  <Text style={styles.myPlanInitialsText}>{userInitials}</Text>
-                </View>
-                <Text style={styles.myPlanText}>My Plan</Text>
-                <Feather name="chevron-right" size={14} color={colors.grey} />
-            </TouchableOpacity>
-        </Animated.View>
+          <Text style={styles.title}>Workouts</Text>
+          
+          <View style={styles.headerRight}>
+              {/* Saved exercises button */}
+              <TouchableOpacity
+                  style={styles.savedButton}
+                  onPress={() => router.push('/workout/liked')}
+              >
+                  <Ionicons name="heart" size={18} color="#DC2626" />
+              </TouchableOpacity>
+
+              {/* My Plan button */}
+              <TouchableOpacity
+                  style={styles.myPlanButton}
+                  onPress={() => setMyPlanVisible(true)}
+                  activeOpacity={0.7}
+              >
+                  <View style={styles.myPlanInitials}>
+                    <Text style={styles.myPlanInitialsText}>{userInitials}</Text>
+                  </View>
+                  <Text style={styles.myPlanText}>My Plan</Text>
+                  <Feather name="chevron-right" size={14} color={colors.grey} />
+              </TouchableOpacity>
+          </View>
+      </Animated.View>
+
             
 
         <ScrollView
@@ -563,7 +576,7 @@ const animatedStyle = useAnimatedStyle(() => ({
               <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Exercise Library</Text>
-                  <Text style={styles.sectionSub}>All 190 exercises</Text>
+                  <Text style={styles.sectionSub}>Discover New Exercises</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.libraryButton}
@@ -929,5 +942,17 @@ const animatedStyle = useAnimatedStyle(() => ({
         fontSize: 16,
         fontWeight: '600',
         color: colors.black,
+      },
+
+      headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+      },
+      
+      savedButton: {
+        width: 40, height: 40, borderRadius: 20,
+        backgroundColor: '#FEE2E2',
+        alignItems: 'center', justifyContent: 'center',
       },
 });

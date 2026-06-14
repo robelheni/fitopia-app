@@ -5,14 +5,20 @@ import { Feather } from '@expo/vector-icons';
 import { colors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { exerciseData } from '../../data/exercises';
+import { Ionicons } from '@expo/vector-icons';
+import { toggleLikeExercise, getLikeStatus } from '../../services/api';
 
 
-    export default function ExerciseDetailScreen() {
-        const { id, exerciseData: exerciseParam, dayKey, exerciseId, sessionExercises } = useLocalSearchParams();
+export default function ExerciseDetailScreen() {
+    const { id, exerciseData: exerciseParam, dayKey, exerciseId, sessionExercises } = useLocalSearchParams();
 
-        // If real exercise data was passed as a param use it
-        // Otherwise fall back to local hardcoded data for library exercises
-        const exercise = exerciseParam ? JSON.parse(exerciseParam) : exerciseData[id];
+    // If real exercise data was passed as a param use it
+    // Otherwise fall back to local hardcoded data for library exercises
+    const exercise = exerciseParam ? JSON.parse(exerciseParam) : exerciseData[id];
+
+    const [liked, setLiked] = useState(false);
+    const [likeLoading, setLikeLoading] = useState(false);
+
 
     // Timer state for timed exercises
     const [timerRunning, setTimerRunning] = useState(false);
@@ -43,6 +49,32 @@ import { exerciseData } from '../../data/exercises';
         );
     }
 
+    // Fetch like status when screen loads
+    // We use the exercise id to check if user has already liked it
+    useEffect(() => {
+        async function fetchLikeStatus() {
+        try {
+            const result = await getLikeStatus(id);
+            setLiked(result.liked);
+        } catch (err) {
+            console.log('Failed to get like status:', err.message);
+        }
+        }
+        if (id) fetchLikeStatus();
+    }, [id]);
+    
+    async function handleLike() {
+        try {
+        setLikeLoading(true);
+        const result = await toggleLikeExercise(id);
+        setLiked(result.liked);
+        } catch (err) {
+        console.log('Like failed:', err.message);
+        } finally {
+        setLikeLoading(false);
+        }
+    }
+
     return (
         <View style={styles.container}>
 
@@ -55,7 +87,17 @@ import { exerciseData } from '../../data/exercises';
             <Feather name="arrow-left" size={20} color={colors.black} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Exercise</Text>
-            <View style={{ width: 40 }} />
+            <TouchableOpacity
+                style={styles.likeButton}
+                onPress={handleLike}
+                disabled={likeLoading}
+                >
+                <Ionicons
+                    name={liked ? "heart" : "heart-outline"}
+                    size={22}
+                    color={liked ? '#DC2626' : colors.grey}
+                />
+            </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -446,4 +488,12 @@ import { exerciseData } from '../../data/exercises';
         color: colors.grey,
         fontWeight: '400',
     },
+    likeButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.greyCard,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
 });
