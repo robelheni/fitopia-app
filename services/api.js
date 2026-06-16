@@ -491,3 +491,29 @@ export async function toggleFollow(userId) {
   if (!response.ok) throw new Error(data.detail || 'Failed to toggle follow');
   return data;
 }
+
+
+// Updates the current user's name, username, and bio
+// We only send fields the user actually changed — the backend
+// handles partial updates so unchanged fields stay the same
+export async function updateProfile({ name, username, bio }) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/auth/update-profile?token=${token}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      // JSON.stringify converts the JS object to a JSON string
+      // Only send fields that were provided
+      body: JSON.stringify({ name, username, bio }),
+    }
+  );
+
+  const data = await response.json();
+  // If the username is taken, the backend returns a 400 error
+  // response.ok is false for any status code 400 and above
+  if (!response.ok) throw new Error(data.detail || 'Failed to update profile');
+  return data;
+}
