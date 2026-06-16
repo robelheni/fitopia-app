@@ -454,3 +454,40 @@ export async function createComment(postId, text) {
   if(!response.ok) throw new Error(data.detail || 'Failed to post comment');
   return data;
 }
+
+// Fetches a user's full profile — name, follower count, following count, posts
+export async function getUserProfile(userId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/users/${userId}/profile?token=${token}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get profile');
+  return data;
+}
+
+// Toggles follow/unfollow for a user
+// Returns { following: true } or { following: false }
+export async function toggleFollow(userId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/users/${userId}/follow?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to toggle follow');
+  return data;
+}

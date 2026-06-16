@@ -15,8 +15,7 @@ import { useCallback, useRef } from 'react';
 import { router } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getNutrition, getWeeklyMeals, getStreak, completeWorkout } from '../../services/api';
-
+import { getNutrition, getWeeklyMeals, getStreak, completeWorkout, getWorkoutPlan } from '../../services/api';
 
 
 export default function HomeScreen() {
@@ -29,6 +28,8 @@ export default function HomeScreen() {
   const [userName, setUserName] = useState('');
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState([]);
+  const [todaySession, setTodaySession] = useState(null);
+  
 
 
   const [nutritionTargets, setNutritionTargets] = useState({
@@ -55,6 +56,15 @@ export default function HomeScreen() {
         try {
           // Get nutrition
           const nutritionData = await getNutrition();
+          const _todayIndex = new Date().getDay();
+          const _reorderedIndex = _todayIndex === 0 ? 6 : _todayIndex - 1;
+          const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+          const _todayKey = _dayKeys[_reorderedIndex];
+
+          const plan = await getWorkoutPlan();
+          if (plan && plan[_todayKey]) {
+              setTodaySession(plan[_todayKey]);
+          }
           setUserName(nutritionData.user.name);
           const days = nutritionData.user.training_days?.split(',') || ['mon', 'wed', 'fri'];
           setTrainingDays(days);
@@ -220,51 +230,61 @@ export default function HomeScreen() {
             </View>
 
             {isTrainingDay ? (
-                <TouchableOpacity style={styles.workoutCard}>
-                    
-                    <View style={styles.workoutFooter}>
-                    <View style={styles.workoutStat}>
-                        <Feather name="clock" size={12} color={colors.grey} />
-                        <Text style={styles.workoutStatText}>45 min</Text>
-                    </View>
-                    <View style={styles.workoutStat}>
-                        <Feather name="activity" size={12} color={colors.grey} />
-                        <Text style={styles.workoutStatText}>6 exercises</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.startButton}
-                        onPress={() => router.push('/workout/upper-body')}
-                    >
-                        <Text style={styles.startButtonText}>Start</Text>
-                        <Feather name="arrow-right" size={14} color={colors.white} />
-                    </TouchableOpacity>
-                    </View>
+              <TouchableOpacity 
+                  style={styles.workoutCard}
+                  onPress={() => todaySession && router.push({
+                      pathname: '/workout/[id]',
+                      params: {
+                          id: todayKey,
+                          sessionData: JSON.stringify(todaySession),
+                          workoutName: todaySession?.session_type || "Today's Workout",
+                      }
+                  })}
+              >
+                  <View style={styles.workoutFooter}>
+                      <View style={styles.workoutStat}>
+                          <Feather name="clock" size={12} color={colors.grey} />
+                          <Text style={styles.workoutStatText}>
+                              {todaySession ? `${todaySession.exercises?.length || 0} exercises` : 'Loading...'}
+                          </Text>
+                      </View>
+                      <View style={styles.workoutStat}>
+                          <Feather name="activity" size={12} color={colors.grey} />
+                          <Text style={styles.workoutStatText}>
+                              {todaySession?.session_type || 'Your workout'}
+                          </Text>
+                      </View>
+                      <View style={styles.startButton}>
+                          <Text style={styles.startButtonText}>Start</Text>
+                          <Feather name="arrow-right" size={14} color={colors.white} />
+                      </View>
+                  </View>
 
-                    {/* Complete button */}
-                    {!completedDays.includes(todayKey) ? (
-                    <TouchableOpacity
-                        style={styles.completeButton}
-                        onPress={async () => {
-                        try {
-                            await completeWorkout('Upper Body Strength');
-                            const streakData = await getStreak();
-                            setStreak(streakData.streak);
-                            setCompletedDays(streakData.completed_days);
-                        } catch (e) {
-                            console.log('Complete error:', e.message);
-                        }
-                        }}
-                    >
-                        <Feather name="check" size={16} color={colors.white} />
-                        <Text style={styles.completeButtonText}>Mark as complete</Text>
-                    </TouchableOpacity>
-                    ) : (
-                    <View style={styles.completedBadge}>
-                        <Feather name="check-circle" size={16} color="#059669" />
-                        <Text style={styles.completedBadgeText}>Completed today</Text>
-                    </View>
-                    )}
-                </TouchableOpacity>
+                  {/* Complete button */}
+                  {!completedDays.includes(todayKey) ? (
+                  <TouchableOpacity
+                      style={styles.completeButton}
+                      onPress={async () => {
+                      try {
+                          await completeWorkout(todaySession?.session_type || "Today's Workout");
+                          const streakData = await getStreak();
+                          setStreak(streakData.streak);
+                          setCompletedDays(streakData.completed_days);
+                      } catch (e) {
+                          console.log('Complete error:', e.message);
+                      }
+                      }}
+                  >
+                      <Feather name="check" size={16} color={colors.white} />
+                      <Text style={styles.completeButtonText}>Mark as complete</Text>
+                  </TouchableOpacity>
+                  ) : (
+                  <View style={styles.completedBadge}>
+                      <Feather name="check-circle" size={16} color="#059669" />
+                      <Text style={styles.completedBadgeText}>Completed today</Text>
+                  </View>
+                  )}
+              </TouchableOpacity>
             ) : (
               <View style={styles.restDayCard}>
                 <View style={styles.restDayIcon}>

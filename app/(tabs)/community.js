@@ -243,12 +243,18 @@ const headerTranslateY = useSharedValue(0);
           {/* Posts */}
           <FadeUpItem delay={300}>
             <View style={styles.posts}>
-              {filteredPosts.map(post => (
-                <View key={post.id} style={styles.postCard}>
+            {filteredPosts.map(post => (
+              <View key={post.id} style={styles.postCard}>
 
-                  {/* Post header */}
-                  <View style={styles.postHeader}>
-                  <View style={[styles.avatar, { 
+                {/* Post header */}
+                <View style={styles.postHeader}>
+                  <TouchableOpacity
+                    onPress={() => router.push({
+                      pathname: '/profile/[id]',
+                      params: { id: post.user_id, name: post.name }
+                    })}
+                  >
+                    <View style={[styles.avatar, { 
                       backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard,
                       borderWidth: 1, 
                       borderColor: colors.greyBorder 
@@ -259,64 +265,80 @@ const headerTranslateY = useSharedValue(0);
                         color={post.gender === 'female' ? '#7C3AED' : post.gender === 'male' ? colors.blue : colors.greyLight}
                       />
                     </View>
-                    <View style={styles.postMeta}>
+                  </TouchableOpacity>
+
+                  <View style={styles.postMeta}>
+                    <TouchableOpacity
+                      onPress={() => router.push({
+                        pathname: '/profile/[id]',
+                        params: { id: post.user_id, name: post.name }
+                      })}
+                    >
                       <Text style={styles.postName}>{post.name}</Text>
-                      <Text style={styles.postLocation}>{timeAgo(post.created_at)}</Text>
-                    </View>
-                    <View style={[styles.postTag, post.tag === 'questions' && styles.postTagQuestion, post.tag === 'challenges' && styles.postTagChallenge]}>
-                      <Text style={[styles.postTagText, post.tag === 'questions' && styles.postTagTextQuestion, post.tag === 'challenges' && styles.postTagTextChallenge]}>
-                        {post.tag}
-                      </Text>
-                    </View>
+                    </TouchableOpacity>
+                    <Text style={styles.postLocation}>{timeAgo(post.created_at)}</Text>
                   </View>
 
-                  {/* Post text */}
+                  <View style={[styles.postTag, post.tag === 'questions' && styles.postTagQuestion, post.tag === 'challenges' && styles.postTagChallenge]}>
+                    <Text style={[styles.postTagText, post.tag === 'questions' && styles.postTagTextQuestion, post.tag === 'challenges' && styles.postTagTextChallenge]}>
+                      {post.tag}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Post body — tapping opens comments */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => router.push({
+                    pathname: '/comments',
+                    params: {
+                      postId: post.id,
+                      postText: post.text,
+                      postName: post.name,
+                    }
+                  })}
+                >
                   <Text style={styles.postText}>{post.text}</Text>
+                </TouchableOpacity>
 
-                    {/* Photo placeholder — shows on some posts */}
-                    {post.hasPhoto && (
-                    <View style={styles.postPhoto}>
-                        <Feather name="image" size={24} color={colors.greyLight} />
-                        <Text style={styles.postPhotoText}>Photo</Text>
-                    </View>
-                    )}
-
-                  {/* Post actions */}
-                  <View style={styles.postActions}>
+                {/* Post actions */}
+                <View style={styles.postActions}>
                   <TouchableOpacity
                     style={styles.postAction}
                     onPress={() => toggleLike(post.id)}
                   >
-                   <Ionicons
-                    name={post.liked_by_me ? "heart" : "heart-outline"}
-                    size={16}
-                    color={post.liked_by_me ? '#DC2626' : colors.greyLight}
-                  />
+                    <Ionicons
+                      name={post.liked_by_me ? "heart" : "heart-outline"}
+                      size={16}
+                      color={post.liked_by_me ? '#DC2626' : colors.greyLight}
+                    />
                     <Text style={[styles.postActionText, post.liked_by_me && styles.postActionTextLiked]}>
                       {post.like_count}
                     </Text>
                   </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.postAction}
-                        onPress={() => router.push({
-                            pathname: '/comments',
-                            params: {
-                            postId: post.id,
-                            postText: post.text,
-                            postName: post.name,
-                            }
-                        })}
-                        >
+
+                  <TouchableOpacity
+                    style={styles.postAction}
+                    onPress={() => router.push({
+                      pathname: '/comments',
+                      params: {
+                        postId: post.id,
+                        postText: post.text,
+                        postName: post.name,
+                      }
+                    })}
+                  >
                     <Feather name="message-circle" size={16} color={colors.greyLight} />
                     <Text style={styles.postActionText}>{post.comment_count}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.postAction}>
-                      <Feather name="share-2" size={16} color={colors.greyLight} />
-                    </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
 
+                  <TouchableOpacity style={styles.postAction}>
+                    <Feather name="share-2" size={16} color={colors.greyLight} />
+                  </TouchableOpacity>
                 </View>
-              ))}
+
+              </View>
+            ))}           
             </View>
           </FadeUpItem>
 
