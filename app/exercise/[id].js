@@ -192,7 +192,7 @@ export default function ExerciseDetailScreen() {
             <FadeUpItem delay={300}>
             <Text style={styles.sectionTitle}>How to do it</Text>
             <View style={styles.instructionsList}>
-                {exercise.instructions.map((instruction, index) => (
+                {(exercise.instructions || []).map((instruction, index) => (
                 <View key={index} style={styles.instructionItem}>
                     <View style={styles.instructionNumber}>
                     <Text style={styles.instructionNumberText}>{index + 1}</Text>

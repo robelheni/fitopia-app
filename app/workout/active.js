@@ -12,8 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { exerciseData } from '../../data/exercises';
-import { completeWorkout } from '../../services/api';
-
+import { completeWorkout, getMotivationalQuote } from '../../services/api';
 const celebrations = [
     "That's what we're talking about,",
     "Look at you go,",
@@ -33,7 +32,7 @@ const celebrations = [
 ];
 
 const quotes = [
-    { text: "Every morning in Africa, a gazelle wakes up. It knows it must run faster than the fastest lion or it will be killed. Every morning a lion wakes up. It knows it must outrun the slowest gazelle or it will starve. It doesn't matter whether you are a lion or a gazelle — when the sun comes up, you'd better be running.", author: "African Proverb" },
+    { text: "A gazelle wakes up every morning. It knows it must run faster than the fastest lion or it will be killed. Every morning a lion wakes up. It knows it must outrun the slowest gazelle or it will starve. It doesn't matter whether you are a lion or a gazelle — when the sun comes up, you'd better be running.", author: "Fitopia" },
     { text: "I have never felt that winning was everything. I have always felt that pushing yourself to the limit was the most important thing.", author: "Haile Gebrselassie" },
     { text: "The body does not want you to do this. As you run, it tells you to stop but the mind must be strong. You always go too far for your body. You must handle the pain with strategy.", author: "Haile Gebrselassie" },
     { text: "When you run the marathon, you run against the distance, not against the other runners and not against the time.", author: "Haile Gebrselassie" },
@@ -112,7 +111,7 @@ const workoutData = {
     ]},
 };
 
-function CompletionScreen({ quote, celebration, totalExercises, workout }) {
+function CompletionScreen({ quote, celebration, totalExercises, workout, userName }) {
     const iconScale = useSharedValue(0);
     const greetingOpacity = useSharedValue(0);
     const greetingY = useSharedValue(30);
@@ -152,6 +151,7 @@ function CompletionScreen({ quote, celebration, totalExercises, workout }) {
     const quoteStyle = useAnimatedStyle(() => ({ opacity: quoteOpacity.value, transform: [{ translateY: quoteY.value }] }));
     const buttonStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value, transform: [{ translateY: buttonY.value }] }));
 
+    
     return (
         <View style={styles.completeContainer}>
             <Animated.View style={[styles.celebrationCircle1, circle1Style]} />
@@ -160,7 +160,9 @@ function CompletionScreen({ quote, celebration, totalExercises, workout }) {
                 <Feather name="check" size={40} color={colors.white} />
             </Animated.View>
             <Animated.Text style={[styles.completeGreeting, greetingStyle]}>{celebration}</Animated.Text>
-            <Animated.Text style={[styles.completeName, nameStyle]}>Heni! 💪</Animated.Text>
+            <Animated.Text style={[styles.completeName, nameStyle]}>
+                {userName ? `${userName}!` : 'Well done!'}
+            </Animated.Text>
             <Animated.View style={[styles.completeStats, statsStyle]}>
                 <View style={styles.completeStat}>
                     <Text style={styles.completeStatValue}>{totalExercises}</Text>
@@ -194,6 +196,19 @@ function CompletionScreen({ quote, celebration, totalExercises, workout }) {
 
 export default function ActiveWorkoutScreen() {
     const { id, sessionData, workoutName } = useLocalSearchParams();
+    const [userName, setUserName] = useState('');
+    const [aiQuote, setAiQuote] = useState(null);
+
+    useEffect(() => {
+      async function fetchUser() {
+          const { getCurrentUser } = await import('../../services/api');
+          const user = await getCurrentUser();
+          if (user) setUserName(user.name.split(' ')[0]);
+      }
+      fetchUser();
+  }, []);
+  
+
 
     let workout;
 
@@ -277,11 +292,13 @@ export default function ActiveWorkoutScreen() {
                 // No cardio — finish workout
                 progress.value = withTiming(100, { duration: 500 });
                 try {
-                    await completeWorkout(workout.name);
-                } catch (e) {
-                    console.log('Complete workout error:', e.message);
-                }
-                setWorkoutDone(true);
+                  await completeWorkout(workout.name);
+                  const quote = await getMotivationalQuote(workout.name);
+                  if (quote) setAiQuote(quote);
+              } catch (e) {
+                  console.log('Complete workout error:', e.message);
+              }
+              setWorkoutDone(true);
             }
         } else {
             setCurrentIndex(prev => prev + 1);
@@ -292,9 +309,9 @@ export default function ActiveWorkoutScreen() {
     }
 
     if (workoutDone) {
-        const quote = quotes[Math.floor(Math.random() * quotes.length)];
-        const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
-        return <CompletionScreen quote={quote} celebration={celebration} totalExercises={totalExercises} workout={workout} />;
+      const quote = aiQuote || quotes[Math.floor(Math.random() * quotes.length)];
+      const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
+      return <CompletionScreen quote={quote} celebration={celebration} totalExercises={totalExercises} workout={workout} userName={userName} />;
     }
 
     return (
