@@ -517,3 +517,24 @@ export async function updateProfile({ name, username, bio }) {
   if (!response.ok) throw new Error(data.detail || 'Failed to update profile');
   return data;
 }
+
+
+// Searches users by name or username
+// q is the search query — e.g. "heni" or "bekele"
+// Returns an array of matching users
+export async function searchUsers(q) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/users/search?token=${token}&q=${encodeURIComponent(q)}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Search failed');
+  return data;
+}

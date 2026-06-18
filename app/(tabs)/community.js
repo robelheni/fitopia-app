@@ -166,6 +166,12 @@ const headerTranslateY = useSharedValue(0);
             >
             <Feather name="edit-2" size={16} color={colors.white} />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => router.push('/search')}
+            >
+              <Feather name="search" size={18} color={colors.grey} />
+            </TouchableOpacity>
         </View>
         </Animated.View>
                 
@@ -630,5 +636,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.grey,
     fontWeight: '300',
+  },
+  searchButton: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.greyCard,
+    alignItems: 'center', justifyContent: 'center',
   },
 });

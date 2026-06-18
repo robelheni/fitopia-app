@@ -15,8 +15,7 @@ import { useCallback, useRef } from 'react';
 import { router } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getNutrition, getWeeklyMeals, getStreak, completeWorkout, getWorkoutPlan } from '../../services/api';
-
+import { getNutrition, getWeeklyMeals, getStreak, completeWorkout, getWorkoutPlan, getCommunityPosts } from '../../services/api';
 
 export default function HomeScreen() {
   const [contentKey, setContentKey] = useState(0);
@@ -29,6 +28,7 @@ export default function HomeScreen() {
   const [streak, setStreak] = useState(0);
   const [completedDays, setCompletedDays] = useState([]);
   const [todaySession, setTodaySession] = useState(null);
+  const [recentPosts, setRecentPosts] = useState([]);
   
 
 
@@ -60,6 +60,10 @@ export default function HomeScreen() {
           const _reorderedIndex = _todayIndex === 0 ? 6 : _todayIndex - 1;
           const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
           const _todayKey = _dayKeys[_reorderedIndex];
+
+          // Fetch 2 most recent community posts for the home screen preview
+          const posts = await getCommunityPosts();
+          setRecentPosts(posts.slice(0, 2)); // only show first 2
 
           const plan = await getWorkoutPlan();
           if (plan && plan[_todayKey]) {
@@ -399,28 +403,7 @@ export default function HomeScreen() {
     </View>
   </TouchableOpacity>
 </FadeUpItem>
-          <FadeUpItem delay={400}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>This week</Text>
-            </View>
-            <View style={styles.weeklyCard}>
-              <View style={styles.weeklyItem}>
-                <Text style={styles.weeklyNumber}>0</Text>
-                <Text style={styles.weeklyLabel}>Workouts</Text>
-              </View>
-              <View style={styles.weeklyDivider} />
-              <View style={styles.weeklyItem}>
-                <Text style={styles.weeklyNumber}>3</Text>
-                <Text style={styles.weeklyLabel}>Goal</Text>
-              </View>
-              <View style={styles.weeklyDivider} />
-              <View style={styles.weeklyItem}>
-                <Text style={styles.weeklyNumber}>0</Text>
-                <Text style={styles.weeklyLabel}>Minutes</Text>
-              </View>
-            </View>
-          </FadeUpItem>
-
+          
           <FadeUpItem delay={500}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Community</Text>
@@ -429,30 +412,38 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.communityCard}>
-              <View style={styles.communityPost}>
-                <View style={styles.communityAvatar}>
-                  <Text style={styles.communityAvatarText}>AT</Text>
+              {recentPosts.length === 0 ? (
+                <View style={styles.communityEmpty}>
+                  <Text style={styles.communityEmptyText}>No posts yet — be the first!</Text>
                 </View>
-                <View style={styles.communityPostContent}>
-                  <Text style={styles.communityPostName}>Abebu T.</Text>
-                  <Text style={styles.communityPostText}>Completed week 3 of my plan. Feeling stronger every day.</Text>
-                </View>
-                <Feather name="heart" size={16} color={colors.greyLight} />
-              </View>
-              <View style={styles.communityDivider} />
-              <View style={styles.communityPost}>
-                <View style={[styles.communityAvatar, { backgroundColor: colors.gold }]}>
-                  <Text style={styles.communityAvatarText}>MH</Text>
-                </View>
-                <View style={styles.communityPostContent}>
-                  <Text style={styles.communityPostName}>Meron H.</Text>
-                  <Text style={styles.communityPostText}>First fasting day workout done. The adapted plan really works.</Text>
-                </View>
-                <Feather name="heart" size={16} color={colors.greyLight} />
-              </View>
+              ) : (
+                recentPosts.map((post, index) => (
+                  <View key={post.id}>
+                    <View style={styles.communityPost}>
+                      {/* Avatar with gender colour */}
+                      <View style={[styles.communityAvatar, {
+                        backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard
+                      }]}>
+                        <Text style={[styles.communityAvatarText, {
+                          color: post.gender === 'female' ? '#7C3AED' : post.gender === 'male' ? colors.blue : colors.grey
+                        }]}>
+                          {post.name ? post.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??'}
+                        </Text>
+                      </View>
+                      <View style={styles.communityPostContent}>
+                        <Text style={styles.communityPostName}>{post.name}</Text>
+                        <Text style={styles.communityPostText} numberOfLines={2}>{post.text}</Text>
+                      </View>
+                    </View>
+                    {/* Divider between posts but not after the last one */}
+                    {index < recentPosts.length - 1 && (
+                      <View style={styles.communityDivider} />
+                    )}
+                  </View>
+                ))
+              )}
             </View>
           </FadeUpItem>
-
         </View>
       </ScrollView>
     </Animated.View>
@@ -556,28 +547,40 @@ const styles = StyleSheet.create({
   mealStats: { flexDirection: 'row', gap: 16, marginTop: 4 },
   mealStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   mealStatText: { fontSize: 12, color: colors.grey },
-  weeklyCard: {
-    backgroundColor: colors.white, borderRadius: 20, padding: 20,
-    flexDirection: 'row', alignItems: 'center', marginBottom: 24,
-    borderWidth: 1, borderColor: colors.greyBorder,
-    shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
-  },
-  weeklyItem: { flex: 1, alignItems: 'center' },
-  weeklyNumber: { fontSize: 32, fontWeight: '700', color: colors.black, letterSpacing: -1, marginBottom: 4 },
-  weeklyLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
-  weeklyDivider: { width: 0.5, height: 40, backgroundColor: colors.greyBorder },
+  
   communityCard: {
     backgroundColor: colors.white, borderRadius: 20, padding: 20,
     borderWidth: 1, borderColor: colors.greyBorder,
     shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
   },
-  communityPost: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  communityAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  communityAvatarText: { fontSize: 12, fontWeight: '600', color: colors.white },
+  communityPost: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',  // change from 'center' to 'flex-start'
+    gap: 12,
+    paddingVertical: 4,        // add this
+  },  
+  communityAvatar: {
+    width: 42,        // was 36
+    height: 42,       // was 36
+    borderRadius: 21, // was 18
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  
+  communityAvatarText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   communityPostContent: { flex: 1 },
   communityPostName: { fontSize: 13, fontWeight: '600', color: colors.black, marginBottom: 2 },
-  communityPostText: { fontSize: 12, color: colors.grey, fontWeight: '300', lineHeight: 18 },
-  communityDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginVertical: 14 },
+  communityPostText: {
+    fontSize: 13,
+    color: colors.grey,
+    fontWeight: '300',
+    lineHeight: 20,  // add this
+    marginTop: 2,    // add this
+  },  communityDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginVertical: 14 },
 
   mealPlanBanner: {
     backgroundColor: colors.white,
@@ -713,5 +716,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#059669',
+  },
+  communityEmpty: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  communityEmptyText: {
+    fontSize: 13,
+    color: colors.greyLight,
+    fontWeight: '300',
   },
 });
