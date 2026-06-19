@@ -11,7 +11,9 @@ import Animated, {
     withSequence,
     runOnJS,
 } from 'react-native-reanimated';
-import { completeWorkout } from '../../services/api';
+
+import { getCurrentUser, getMotivationalQuote, completeWorkout } from '../../services/api';
+import WorkoutCompletionScreen from '../../components/WorkoutCompletionScreen';
 
 export default function CardioScreen() {
     const { circuitData, workoutName } = useLocalSearchParams();
@@ -29,6 +31,20 @@ export default function CardioScreen() {
 
     const contentOpacity = useSharedValue(1);
     const countdownScale = useSharedValue(1);
+
+    const [showCompletion, setShowCompletion] = useState(false);
+    const [userName, setUserName] = useState('');
+    const [aiQuote, setAiQuote] = useState(null);
+
+    const fallbackQuotes = [
+        { text: "The only bad workout is the one that didn't happen.", author: "Fitopia" },
+        { text: "You showed up. You did the work. That is what separates you.", author: "Fitopia" },
+    ];
+    const celebrations = [
+        "That's what we're talking about,",
+        "Look at you go,",
+        "Absolutely crushing it,",
+    ];
 
     useEffect(() => {
         return () => {
@@ -157,16 +173,36 @@ export default function CardioScreen() {
     async function handleFinish() {
         try {
             await completeWorkout(workoutName || 'Workout');
+
+            const user = await getCurrentUser();
+            if (user) setUserName(user.name.split(' ')[0]);
+
+            const quote = await getMotivationalQuote(workoutName || 'Workout');
+            if (quote) setAiQuote(quote);
         } catch (e) {
             console.log('Complete workout error:', e.message);
         }
-        router.replace({
-            pathname: '/workout/complete',
-            params: { workoutName }
-        });
+        setShowCompletion(true);
     }
 
     const currentExercise = circuit.exercises[exerciseIndex];
+
+    // Show the completion screen once the circuit and workout are fully done —
+    // this check must come before any phase-based checks since 'phase' stays
+    // whatever it was last set to (likely 'rest') when handleFinish runs
+    if (showCompletion) {
+        const quote = aiQuote || fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+        const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
+        return (
+            <WorkoutCompletionScreen
+                quote={quote}
+                celebration={celebration}
+                totalExercises={circuit.exercises.length}
+                workoutName={workoutName}
+                userName={userName}
+            />
+        );
+    }
 
     // ── INTRO SCREEN ──────────────────────────────────────────────
     if (phase === 'intro') {
@@ -307,7 +343,6 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 17, fontWeight: '600', color: colors.white },
     headerRound: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
-    // Intro
     introContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
     zapCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
     introTitle: { fontSize: 32, fontWeight: '700', color: colors.white, textAlign: 'center', letterSpacing: -0.5, marginBottom: 12 },
@@ -319,15 +354,12 @@ const styles = StyleSheet.create({
     introExerciseDuration: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
     startBtn: { backgroundColor: colors.white, paddingHorizontal: 48, paddingVertical: 16, borderRadius: 100, flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center' },
     startBtnText: { fontSize: 16, fontWeight: '700', color: '#DC2626' },
-    // Countdown
     upNextLabel: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
     upNextExercise: { fontSize: 22, fontWeight: '600', color: colors.white, textAlign: 'center', marginBottom: 32 },
     countdownNumber: { fontSize: 120, fontWeight: '700', color: colors.white, letterSpacing: -4, lineHeight: 130 },
     roundLabel: { fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 16, marginBottom: 32 },
-    // Round complete
     roundCompleteTitle: { fontSize: 28, fontWeight: '700', color: colors.white, textAlign: 'center', marginBottom: 8 },
     roundCompleteSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.7)', textAlign: 'center', fontWeight: '300' },
-    // Work / rest
     phaseLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 16 },
     exerciseName: { fontSize: 28, fontWeight: '700', color: colors.white, textAlign: 'center', letterSpacing: -0.5, marginBottom: 8 },
     exercisePosition: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 48 },

@@ -13,6 +13,7 @@ import Animated, {
 
 import { exerciseData } from '../../data/exercises';
 import { completeWorkout, getMotivationalQuote } from '../../services/api';
+import WorkoutCompletionScreen from '../../components/WorkoutCompletionScreen';
 const celebrations = [
     "That's what we're talking about,",
     "Look at you go,",
@@ -311,8 +312,17 @@ export default function ActiveWorkoutScreen() {
     if (workoutDone) {
       const quote = aiQuote || quotes[Math.floor(Math.random() * quotes.length)];
       const celebration = celebrations[Math.floor(Math.random() * celebrations.length)];
-      return <CompletionScreen quote={quote} celebration={celebration} totalExercises={totalExercises} workout={workout} userName={userName} />;
+      return (
+        <WorkoutCompletionScreen
+          quote={quote}
+          celebration={celebration}
+          totalExercises={totalExercises}
+          workoutName={workout.name}
+          userName={userName}
+        />
+      );
     }
+    
 
     return (
         <View style={styles.container}>
