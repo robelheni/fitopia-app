@@ -16,6 +16,7 @@ import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import { logout, getCurrentUser, getUserProfile, updateProfile } from '../../services/api';
+import YearHeatmap from '../../components/YearHeatmap';
 
 function getInitials(name) {
   if (!name) return '??';
@@ -228,6 +229,13 @@ export default function ProfileScreen() {
                 <Text style={styles.statLabel}>Following</Text>
               </View>
             </View>
+          </FadeUpItem>
+
+          {/* Workout activity heatmap */}
+          <FadeUpItem delay={120}>
+            
+            <Text style={styles.sectionTitle}>Activity</Text>
+            <YearHeatmap accountCreatedAt={user?.created_at} />
           </FadeUpItem>
 
           {/* Subscription card */}
@@ -698,4 +706,5 @@ const styles = StyleSheet.create({
 
   usernameAt: { fontSize: 15, color: colors.blue, fontWeight: '600', marginRight: 4 },
   usernameInput: { flex: 1, fontSize: 15, color: colors.black },
+  
 });

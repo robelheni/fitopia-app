@@ -538,3 +538,20 @@ export async function searchUsers(q) {
   if (!response.ok) throw new Error(data.detail || 'Search failed');
   return data;
 }
+
+export async function getYearStats(year) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/workouts/year-stats?token=${token}&year=${year}`,
+    {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get year stats');
+  return data;
+}
