@@ -63,7 +63,7 @@ export default function Step3() {
     <ScreenWrapper style={styles.container}>
       <BackgroundCircles variant="topLeft" />
 
-      <ProgressBar currentStep={3} totalSteps={9} />
+      <ProgressBar currentStep={3} totalSteps={8} />
 
       <Text style={styles.question}>How many days a week can you work out?</Text>
       <Text style={styles.subtitle}>Be realistic — consistency beats intensity.</Text>

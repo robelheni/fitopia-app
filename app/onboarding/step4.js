@@ -24,7 +24,7 @@ export default function Step4() {
         <ScreenWrapper style={styles.container}>
             <BackgroundCircles variant="bottomRight" />
 
-            <ProgressBar currentStep={4} totalSteps={9} />
+            <ProgressBar currentStep={4} totalSteps={8} />
 
             <Text style={styles.question}>How long can you work out?</Text>
             <Text style={styles.subtitle}>We'll fit your plan around your schedule.</Text>

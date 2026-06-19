@@ -128,7 +128,7 @@ export default function Step7() {
   
       {/* Fixed top — completely outside KeyboardAvoidingView so it never moves */}
       <View style={styles.fixedTop}>
-        <ProgressBar currentStep={7} totalSteps={9} />
+        <ProgressBar currentStep={7} totalSteps={8} />
         <Text style={styles.question}>Tell us about yourself.</Text>
         <Text style={styles.subtitle}>This helps us personalise your plan accurately.</Text>
       </View>

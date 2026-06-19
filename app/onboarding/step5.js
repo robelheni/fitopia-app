@@ -24,7 +24,7 @@ export default function Step5() {
         <ScreenWrapper style={styles.container}>
             <BackgroundCircles variant="default" />
 
-            <ProgressBar currentStep={5} totalSteps={9} />
+            <ProgressBar currentStep={5} totalSteps={8} />
 
             <Text style={styles.question}>What equipment do you have?</Text>
             <Text style={styles.subtitle}>We'll build your plan around what you have access to.</Text>

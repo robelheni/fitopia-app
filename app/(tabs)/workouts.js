@@ -13,9 +13,8 @@ import MyPlanModal from '../../components/MyPlanModal';
 import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
-import {getNutrition, getWorkoutPlan} from "../../services/api";
 import { Feather, Ionicons } from '@expo/vector-icons';
-
+import { getNutrition, getWorkoutPlan, getStreak, getCurrentUser } from "../../services/api";
 
 
 
@@ -116,6 +115,7 @@ export default function WorkoutsScreen() {
     const [expandedDay, setExpandedDay] = useState(null);
     const [userInitials, setUserInitials] = useState('');
     const [userName, setUserName] = useState('');
+    const [accountCreatedAt, setAccountCreatedAt] = useState(null);
 
     // Stores the raw plan from the backend
   const [workoutPlan, setWorkoutPlan] = useState(null);
@@ -178,97 +178,105 @@ export default function WorkoutsScreen() {
     
             // Fetch user data for initials and name
             async function fetchUser() {
-                try {
-                    const data = await getNutrition();
-                    const name = data.user.name || '';
-                    const parts = name.trim().split(' ');
-                    const initials = parts[0]?.[0] || 'M';
-                    setUserInitials(initials.toUpperCase());
-                    setUserName(parts[0]);
-                } catch (e) {
-                    console.log('Fetch user error:', e.message);
-                }
-            }
+              try {
+                  const data = await getNutrition();
+                  const user = await getCurrentUser();
+                  setAccountCreatedAt(user.created_at);
+                  const name = data.user.name || '';
+                  const parts = name.trim().split(' ');
+                  const initials = parts[0]?.[0] || 'M';
+                  setUserInitials(initials.toUpperCase());
+                  setUserName(parts[0]);
+              } catch (e) {
+                  console.log('Fetch user error:', e.message);
+              }
+          }
     
             // Fetch the workout plan from the backend
             // The plan comes back as a dictionary keyed by day
             // e.g. { mon: { session_type: 'upper', exercises: [...] } }
             // We transform it into the format WeeklyPlanCard expects
             async function fetchPlan() {
-                try {
-                    setPlanLoading(true);
-    
-                    const plan = await getWorkoutPlan();
-    
-                    // Map session type keys to display names
-                    // e.g. 'upper' becomes 'Upper Body'
-                    const sessionNames = {
-                        push:       'Push Day',
-                        pull:       'Pull Day',
-                        legs:       'Leg Day',
-                        upper:      'Upper Body',
-                        lower:      'Lower Body',
-                        full_body:  'Full Body',
-                    };
-    
-                    // Day key to display name map
-                    const dayDisplayNames = {
-                        mon: 'Mon', tue: 'Tue', wed: 'Wed',
-                        thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
-                    };
-    
-                    // Day order for calculating past vs future
-                    const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    
-                    // Get today's day key
-                    const todayIndex = new Date().getDay();
-                    const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
-                    const todayKey = dayOrder[reorderedIndex];
-                    const todayPosition = dayOrder.indexOf(todayKey);
-    
-                    // Get the training days from the plan keys
-                    // These are the days the user actually trains
-                    const planDays = Object.keys(plan);
-                    setTrainingDays(planDays);
-    
-                    // Transform the plan into WeeklyPlanCard format
-                    const transformed = planDays.map(dayKey => {
-                        const session = plan[dayKey];
-                        const itemPosition = dayOrder.indexOf(dayKey);
-                        const isPast = itemPosition < todayPosition;
-                        const isToday = dayKey === todayKey;
-    
-                        /// Extract strength exercise names
-                        const exerciseNames = session.exercises.map(ex => ex.name);
+              try {
+                  setPlanLoading(true);
+          
+                  const plan = await getWorkoutPlan();
+          
+                  // Fetch real completed days for this week so we can mark
+                  // past days as actually completed instead of always false
+                  const streakData = await getStreak();
+                  const completedDays = streakData.completed_days; // e.g. ['mon', 'wed']
+          
+                  const sessionNames = {
+                      push:       'Push Day',
+                      pull:       'Pull Day',
+                      legs:       'Leg Day',
+                      upper:      'Upper Body',
+                      lower:      'Lower Body',
+                      full_body:  'Full Body',
+                  };
+          
+                  const dayDisplayNames = {
+                      mon: 'Mon', tue: 'Tue', wed: 'Wed',
+                      thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+                  };
+          
+                  const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+          
+                  const todayIndex = new Date().getDay();
+                  const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
+                  const todayKey = dayOrder[reorderedIndex];
+                  const todayPosition = dayOrder.indexOf(todayKey);
+          
+                  const dayOrderForSort = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                  const planDays = Object.keys(plan).sort(
+                    (a, b) => dayOrderForSort.indexOf(a) - dayOrderForSort.indexOf(b)
+                  );
+                  setTrainingDays(planDays);
 
-                        // Add cardio circuit exercises if they exist
-                        if (session.cardio_circuit && session.cardio_circuit.exercises) {
-                            session.cardio_circuit.exercises.forEach(ex => {
-                                exerciseNames.push(`${ex.name} (cardio)`);
-                            });
-                        }
-    
-                        return {
-                            day: dayDisplayNames[dayKey] || dayKey,
-                            workout: sessionNames[session.session_type] || session.session_type,
-                            dayKey: dayKey,
-                            // Store the full session data for when we navigate to the workout
-                            sessionData: session,
-                            completed: false, // Will be updated by streak data later
-                            exercises: exerciseNames,
-                            isPast,
-                            isToday,
-                        };
-                    });
-    
-                    setWeeklyPlanItems(transformed);
-    
-                } catch (e) {
-                    console.log('Fetch plan error:', e.message);
-                } finally {
-                    setPlanLoading(false);
-                }
-            }
+                  const transformed = planDays.map(dayKey => {
+                      const session = plan[dayKey];
+                      const itemPosition = dayOrder.indexOf(dayKey);
+                      const isPast = itemPosition < todayPosition;
+                      const isToday = dayKey === todayKey;
+
+                      const exerciseNames = session.exercises.map(ex => ex.name);
+
+                      if (session.cardio_circuit && session.cardio_circuit.exercises) {
+                          session.cardio_circuit.exercises.forEach(ex => {
+                              exerciseNames.push(`${ex.name} (cardio)`);
+                          });
+                      }
+
+                      // Calculate the actual calendar date for this day within the current week
+                      const today = new Date();
+                      const dayOffsetFromToday = itemPosition - todayPosition;
+                      const itemDate = new Date(today);
+                      itemDate.setDate(today.getDate() + dayOffsetFromToday);
+                      itemDate.setHours(0, 0, 0, 0);
+
+                      const isBeforeAccount = accountCreatedAt &&
+                          itemDate < new Date(new Date(accountCreatedAt).setHours(0, 0, 0, 0));
+
+                      return {
+                          day: dayDisplayNames[dayKey] || dayKey,
+                          workout: sessionNames[session.session_type] || session.session_type,
+                          dayKey: dayKey,
+                          sessionData: session,
+                          completed: completedDays.includes(dayKey),
+                          exercises: exerciseNames,
+                          isPast: isPast && !isBeforeAccount,
+                          isToday,
+                      };
+                  }); // ← closes .map()
+
+                  setWeeklyPlanItems(transformed);
+              } catch (e) {
+                  console.log('Fetch plan error:', e.message);
+              } finally {
+                  setPlanLoading(false);
+              }
+          }
     
             fetchUser();
             fetchPlan();

@@ -16,7 +16,7 @@ export default function Step8(){
     function handleContinue(){
         if(!selected) return;
         updateAnswer('location', selected);
-        router.navigate('/onboarding/step9');
+        router.navigate('/signup'); 
 
     }
 
@@ -24,7 +24,7 @@ export default function Step8(){
         <ScreenWrapper style={styles.container}>
             <BackgroundCircles variant="centered" />
 
-            <ProgressBar currentStep={8} totalSteps={9} />
+            <ProgressBar currentStep={8} totalSteps={8} />
 
             <FadeUpItem delay={100}>
                 <Text style={styles.question}>Where are you based?</Text>

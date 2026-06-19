@@ -24,7 +24,7 @@ export default function Step1() {
             <BackgroundCircles variant="bottomRight" />
 
 
-        <ProgressBar currentStep={1} totalSteps={9} />
+        <ProgressBar currentStep={1} totalSteps={8} />
 
         <FadeUpItem delay={10}>
             <Text style={styles.question}>What is your fitness level?</Text>

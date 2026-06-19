@@ -23,7 +23,7 @@ export default function Step2() {
         <ScreenWrapper style={styles.container}>
             <BackgroundCircles variant="centered" />
 
-        <ProgressBar currentStep={2} totalSteps={9} />
+        <ProgressBar currentStep={2} totalSteps={8} />
 
         <Text style={styles.question}>What is your main goal?</Text>
         <Text style={styles.subtitle}>We'll build your plan around this.</Text>

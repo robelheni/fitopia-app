@@ -15,7 +15,7 @@ import { useCallback, useRef } from 'react';
 import { router } from 'expo-router';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getNutrition, getWeeklyMeals, getStreak, completeWorkout, getWorkoutPlan, getCommunityPosts } from '../../services/api';
+import { getNutrition, getWeeklyMeals, getStreak, getWorkoutPlan, getCommunityPosts, getCurrentUser } from '../../services/api';
 
 export default function HomeScreen() {
   const [contentKey, setContentKey] = useState(0);
@@ -29,8 +29,7 @@ export default function HomeScreen() {
   const [completedDays, setCompletedDays] = useState([]);
   const [todaySession, setTodaySession] = useState(null);
   const [recentPosts, setRecentPosts] = useState([]);
-  
-
+  const [accountCreatedAt, setAccountCreatedAt] = useState(null);
 
   const [nutritionTargets, setNutritionTargets] = useState({
     calories: 0,
@@ -41,7 +40,7 @@ export default function HomeScreen() {
     explanation: 'Loading your personalised plan...',
   });
   const [todaysMeals, setTodaysMeals] = useState([]);
-  
+
   useFocusEffect(
     useCallback(() => {
       setContentKey(prev => prev + 1);
@@ -54,27 +53,30 @@ export default function HomeScreen() {
 
       async function fetchPlan() {
         try {
-          // Get nutrition
           const nutritionData = await getNutrition();
           const _todayIndex = new Date().getDay();
           const _reorderedIndex = _todayIndex === 0 ? 6 : _todayIndex - 1;
           const _dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
           const _todayKey = _dayKeys[_reorderedIndex];
+          const userData = await getCurrentUser();
+          setAccountCreatedAt(userData.created_at);
 
-          // Fetch 2 most recent community posts for the home screen preview
           const posts = await getCommunityPosts();
-          setRecentPosts(posts.slice(0, 2)); // only show first 2
+          setRecentPosts(posts.slice(0, 2));
 
           const plan = await getWorkoutPlan();
           if (plan && plan[_todayKey]) {
-              setTodaySession(plan[_todayKey]);
+            setTodaySession(plan[_todayKey]);
           }
+
           setUserName(nutritionData.user.name);
           const days = nutritionData.user.training_days?.split(',') || ['mon', 'wed', 'fri'];
           setTrainingDays(days);
+
           const streakData = await getStreak();
           setStreak(streakData.streak);
           setCompletedDays(streakData.completed_days);
+
           setNutritionTargets({
             calories: nutritionData.nutrition.calories,
             protein: nutritionData.nutrition.protein,
@@ -83,13 +85,11 @@ export default function HomeScreen() {
             goal: nutritionData.user.goal,
             explanation: nutritionData.nutrition.explanation,
           });
-      
-          // Try to read today's meals from AsyncStorage (saved by weekly screen)
+
           const cached = await AsyncStorage.getItem('todays_meals');
           if (cached) {
             setTodaysMeals(JSON.parse(cached));
           } else {
-            // No cache yet — fetch weekly and cache it
             const weeklyData = await getWeeklyMeals();
             const dayMap = { 0:'mon', 1:'tue', 2:'wed', 3:'thu', 4:'fri', 5:'sat', 6:'sun' };
             const todayKey = dayMap[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
@@ -150,13 +150,16 @@ export default function HomeScreen() {
     lastScrollY.current = currentY;
   }
 
-  
   const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const todayIndex = new Date().getDay();
   const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
   const todayKey = DAY_KEYS[reorderedIndex];
   const isTrainingDay = trainingDays.includes(todayKey);
+
+  // This is the key flag that drives the whole new card design —
+  // true only when the streak data confirms a real workout was logged today
+  const isCompletedToday = completedDays.includes(todayKey);
 
   const nextTrainingDay = (() => {
     for (let i = 1; i <= 7; i++) {
@@ -200,17 +203,28 @@ export default function HomeScreen() {
                 <Text style={styles.streakWeekLabel}>This week</Text>
                 <View style={styles.streakDots}>
                 {DAY_KEYS.map((day, index) => {
-                    const isTrainingDay = trainingDays.includes(day);
-                    const isCompleted = completedDays.includes(day);
-                    const isToday = day === todayKey;
-                    const isPast = index < DAY_KEYS.indexOf(todayKey);
+                  const isTrainingDayDot = trainingDays.includes(day);
+                  const isCompleted = completedDays.includes(day);
+                  const isToday = day === todayKey;
+                  const isPast = index < DAY_KEYS.indexOf(todayKey);
 
-                    let dotStyle = styles.streakDotRest;
-                    if (isCompleted) dotStyle = styles.streakDotCompleted;
-                    else if (isToday && isTrainingDay && !isCompleted) dotStyle = styles.streakDotActive;
-                    else if (isPast && isTrainingDay && !isCompleted) dotStyle = styles.streakDotMissed;
-                    else if (isTrainingDay) dotStyle = styles.streakDotPending;
+                  // Figure out the actual calendar date for this dot —
+                  // we need this to compare against accountCreatedAt
+                  const todayDate = new Date();
+                  const dayOffset = index - reorderedIndex;
+                  const dotDate = new Date(todayDate);
+                  dotDate.setDate(todayDate.getDate() + dayOffset);
+                  dotDate.setHours(0, 0, 0, 0);
 
+                  const isBeforeAccount = accountCreatedAt && dotDate < new Date(new Date(accountCreatedAt).setHours(0, 0, 0, 0));
+
+                  let dotStyle = styles.streakDotRest;
+                  if (isBeforeAccount) dotStyle = styles.streakDotRest; // always neutral, never red
+                  else if (isCompleted) dotStyle = styles.streakDotCompleted;
+                  else if (isToday && isTrainingDayDot && !isCompleted) dotStyle = styles.streakDotActive;
+                  else if (isPast && isTrainingDayDot && !isCompleted) dotStyle = styles.streakDotMissed;
+                  else if (isTrainingDayDot) dotStyle = styles.streakDotPending;
+                  
                     const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
                     return (
@@ -219,7 +233,7 @@ export default function HomeScreen() {
                         <Text style={styles.streakDayLabel}>{labels[index]}</Text>
                       </View>
                     );
-                })}
+                  })}
                 </View>
               </View>
             </View>
@@ -234,60 +248,68 @@ export default function HomeScreen() {
             </View>
 
             {isTrainingDay ? (
-              <TouchableOpacity 
-                  style={styles.workoutCard}
-                  onPress={() => todaySession && router.push({
-                      pathname: '/workout/[id]',
-                      params: {
-                          id: todayKey,
-                          sessionData: JSON.stringify(todaySession),
-                          workoutName: todaySession?.session_type || "Today's Workout",
-                      }
-                  })}
+              // Single tappable card — its whole appearance changes based on completion.
+              // Tapping always navigates into the workout screen, whether to start it
+              // fresh or to review what was already done.
+              <TouchableOpacity
+                style={[styles.workoutCard, isCompletedToday && styles.workoutCardCompleted]}
+                activeOpacity={0.85}
+                onPress={() => todaySession && router.push({
+                  pathname: '/workout/[id]',
+                  params: {
+                    id: todayKey,
+                    sessionData: JSON.stringify(todaySession),
+                    workoutName: todaySession?.session_type || "Today's Workout",
+                  }
+                })}
               >
-                  <View style={styles.workoutFooter}>
-                      <View style={styles.workoutStat}>
-                          <Feather name="clock" size={12} color={colors.grey} />
-                          <Text style={styles.workoutStatText}>
-                              {todaySession ? `${todaySession.exercises?.length || 0} exercises` : 'Loading...'}
-                          </Text>
+                {isCompletedToday ? (
+                  // ── COMPLETED STATE ──────────────────────────────
+                  // A calmer, rewarding layout — no countdown pressure,
+                  // just confirmation that today's work is done.
+                  <>
+                    <View style={styles.completedTopRow}>
+                      <View style={styles.completedIconCircle}>
+                        <Feather name="check" size={20} color={colors.white} />
                       </View>
-                      <View style={styles.workoutStat}>
-                          <Feather name="activity" size={12} color={colors.grey} />
-                          <Text style={styles.workoutStatText}>
-                              {todaySession?.session_type || 'Your workout'}
-                          </Text>
+                      <View style={styles.completedTextBlock}>
+                        <Text style={styles.completedTitle}>Workout complete</Text>
+                        <Text style={styles.completedSubtitle}>
+                          {todaySession?.session_type || 'Today\'s session'} · {todaySession?.exercises?.length || 0} exercises
+                        </Text>
                       </View>
-                      <View style={styles.startButton}>
-                          <Text style={styles.startButtonText}>Start</Text>
-                          <Feather name="arrow-right" size={14} color={colors.white} />
-                      </View>
-                  </View>
+                    </View>
 
-                  {/* Complete button */}
-                  {!completedDays.includes(todayKey) ? (
-                  <TouchableOpacity
-                      style={styles.completeButton}
-                      onPress={async () => {
-                      try {
-                          await completeWorkout(todaySession?.session_type || "Today's Workout");
-                          const streakData = await getStreak();
-                          setStreak(streakData.streak);
-                          setCompletedDays(streakData.completed_days);
-                      } catch (e) {
-                          console.log('Complete error:', e.message);
-                      }
-                      }}
-                  >
-                      <Feather name="check" size={16} color={colors.white} />
-                      <Text style={styles.completeButtonText}>Mark as complete</Text>
-                  </TouchableOpacity>
-                  ) : (
-                  <View style={styles.completedBadge}>
-                      <Feather name="check-circle" size={16} color="#059669" />
-                      <Text style={styles.completedBadgeText}>Completed today</Text>
+                    <Text style={styles.completedMessage}>
+                      Nice work today. Your streak is locked in — rest well and come back stronger.
+                    </Text>
+
+                    <View style={styles.viewWorkoutButton}>
+                      <Text style={styles.viewWorkoutText}>View workout</Text>
+                      <Feather name="arrow-right" size={14} color="#059669" />
+                    </View>
+                  </>
+                ) : (
+                  // ── NOT STARTED STATE ────────────────────────────
+                  <View style={styles.workoutFooter}>
+                    <View style={styles.workoutStat}>
+                      <Feather name="clock" size={12} color={colors.grey} />
+                      <Text style={styles.workoutStatText}>
+                        {todaySession ? `${todaySession.exercises?.length || 0} exercises` : 'Loading...'}
+                      </Text>
+                    </View>
+                    <View style={styles.workoutStat}>
+                      <Feather name="activity" size={12} color={colors.grey} />
+                      <Text style={styles.workoutStatText}>
+                        {todaySession?.session_type || 'Your workout'}
+                      </Text>
+                    </View>
+                    <View style={styles.startButton}>
+                      <Text style={styles.startButtonText}>Start workout</Text>
+                      <Feather name="arrow-right" size={14} color={colors.white} />
+                    </View>
                   </View>
-                  )}
+                )}
               </TouchableOpacity>
             ) : (
               <View style={styles.restDayCard}>
@@ -356,54 +378,53 @@ export default function HomeScreen() {
           </FadeUpItem>
 
           <FadeUpItem delay={450}>
-  <TouchableOpacity
-    style={styles.mealPlanBanner}
-    onPress={() => router.push({
-      pathname: '/meals/weekly',
-      params: { startDay: todayKey }
-    })}
-    activeOpacity={0.9}
-  >
-    {/* Background glow */}
-    <View style={styles.mealPlanGlow} />
+            <TouchableOpacity
+              style={styles.mealPlanBanner}
+              onPress={() => router.push({
+                pathname: '/meals/weekly',
+                params: { startDay: todayKey }
+              })}
+              activeOpacity={0.9}
+            >
+              <View style={styles.mealPlanGlow} />
 
-    <View style={styles.mealPlanContent}>
-    <View style={styles.mealPlanIconContainer}>
-  <MaterialCommunityIcons name="noodles" size={32} color={colors.blue} />
-</View>
-      <Text style={styles.mealPlanTitle}>Your meal plan{'\n'}is ready</Text>
-      <Text style={styles.mealPlanSub}>
-        Every meal personalised to your body and {'\n'}your goals.
-      </Text>
+              <View style={styles.mealPlanContent}>
+                <View style={styles.mealPlanIconContainer}>
+                  <MaterialCommunityIcons name="noodles" size={32} color={colors.blue} />
+                </View>
+                <Text style={styles.mealPlanTitle}>Your meal plan{'\n'}is ready</Text>
+                <Text style={styles.mealPlanSub}>
+                  Every meal personalised to your body and {'\n'}your goals.
+                </Text>
 
-      <View style={styles.mealPlanStats}>
-  <View style={styles.mealPlanStat}>
-    <Feather name="sun" size={18} color={colors.blue} />
-    <Text style={styles.mealPlanStatNumber}>4</Text>
-    <Text style={styles.mealPlanStatLabel}>Meals today</Text>
-  </View>
-  <View style={styles.mealPlanStatDivider} />
-  <View style={styles.mealPlanStat}>
-    <Feather name="calendar" size={18} color={colors.blue} />
-    <Text style={styles.mealPlanStatNumber}>7</Text>
-    <Text style={styles.mealPlanStatLabel}>Days planned</Text>
-  </View>
-  <View style={styles.mealPlanStatDivider} />
-  <View style={styles.mealPlanStat}>
-  <Feather name="shuffle" size={18} color={colors.blue} />
-    <Text style={styles.mealPlanStatNumber}>70+</Text>
-    <Text style={styles.mealPlanStatLabel}>Food choices</Text>
-</View>
-</View>
+                <View style={styles.mealPlanStats}>
+                  <View style={styles.mealPlanStat}>
+                    <Feather name="sun" size={18} color={colors.blue} />
+                    <Text style={styles.mealPlanStatNumber}>4</Text>
+                    <Text style={styles.mealPlanStatLabel}>Meals today</Text>
+                  </View>
+                  <View style={styles.mealPlanStatDivider} />
+                  <View style={styles.mealPlanStat}>
+                    <Feather name="calendar" size={18} color={colors.blue} />
+                    <Text style={styles.mealPlanStatNumber}>7</Text>
+                    <Text style={styles.mealPlanStatLabel}>Days planned</Text>
+                  </View>
+                  <View style={styles.mealPlanStatDivider} />
+                  <View style={styles.mealPlanStat}>
+                    <Feather name="shuffle" size={18} color={colors.blue} />
+                    <Text style={styles.mealPlanStatNumber}>70+</Text>
+                    <Text style={styles.mealPlanStatLabel}>Food choices</Text>
+                  </View>
+                </View>
 
-<View style={styles.mealPlanButton}>
-  <Text style={styles.mealPlanButtonText}>View my meal plan</Text>
-  <Feather name="arrow-right" size={16} color={colors.blue} />
-</View>
-    </View>
-  </TouchableOpacity>
-</FadeUpItem>
-          
+                <View style={styles.mealPlanButton}>
+                  <Text style={styles.mealPlanButtonText}>View my meal plan</Text>
+                  <Feather name="arrow-right" size={16} color={colors.blue} />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </FadeUpItem>
+
           <FadeUpItem delay={500}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Community</Text>
@@ -420,7 +441,6 @@ export default function HomeScreen() {
                 recentPosts.map((post, index) => (
                   <View key={post.id}>
                     <View style={styles.communityPost}>
-                      {/* Avatar with gender colour */}
                       <View style={[styles.communityAvatar, {
                         backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard
                       }]}>
@@ -435,7 +455,6 @@ export default function HomeScreen() {
                         <Text style={styles.communityPostText} numberOfLines={2}>{post.text}</Text>
                       </View>
                     </View>
-                    {/* Divider between posts but not after the last one */}
                     {index < recentPosts.length - 1 && (
                       <View style={styles.communityDivider} />
                     )}
@@ -487,17 +506,20 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
   sectionLink: { fontSize: 14, color: colors.blue, fontWeight: '500' },
+
   workoutCard: {
     backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 20,
     borderWidth: 1, borderColor: colors.greyBorder,
     shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
   },
-  workoutCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  workoutIconContainer: { width: 36, height: 36, borderRadius: 10, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
-  workoutBadge: { backgroundColor: colors.blueLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
-  workoutBadgeText: { fontSize: 11, color: colors.blue, fontWeight: '500' },
-  workoutName: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5, marginBottom: 4 },
-  workoutSub: { fontSize: 13, color: colors.grey, fontWeight: '300', marginBottom: 16 },
+
+  // Completed state swaps the card to a soft green theme —
+  // visually distinct at a glance from the "not started" white card
+  workoutCardCompleted: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+
   workoutFooter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   workoutStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   workoutStatText: { fontSize: 12, color: colors.grey },
@@ -507,6 +529,42 @@ const styles = StyleSheet.create({
     shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
   startButtonText: { fontSize: 13, color: colors.white, fontWeight: '600' },
+
+  // ── Completed card internals ──────────────────────────────
+  completedTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  completedIconCircle: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: '#22C55E',
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
+  },
+  completedTextBlock: { flex: 1 },
+  completedTitle: {
+    fontSize: 17, fontWeight: '700', color: '#166534', letterSpacing: -0.3,
+  },
+  completedSubtitle: {
+    fontSize: 12, color: '#15803D', fontWeight: '400', marginTop: 2,
+  },
+  completedMessage: {
+    fontSize: 13, color: '#166534', fontWeight: '300', lineHeight: 19, marginBottom: 16,
+  },
+  viewWorkoutButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    backgroundColor: '#DCFCE7',
+    paddingVertical: 10,
+    borderRadius: 100,
+  },
+  viewWorkoutText: {
+    fontSize: 13, fontWeight: '600', color: '#059669',
+  },
+
   restDayCard: {
     flexDirection: 'row', alignItems: 'center', gap: 16,
     backgroundColor: colors.blueLight, borderRadius: 20, padding: 20, marginBottom: 20,
@@ -516,6 +574,7 @@ const styles = StyleSheet.create({
   restDayTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.3, marginBottom: 4 },
   restDaySub: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
   restDayContent: { flex: 1 },
+
   nutritionCard: {
     backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 20,
     borderWidth: 1, borderColor: colors.greyBorder,
@@ -530,24 +589,7 @@ const styles = StyleSheet.create({
   nutritionBar: { width: '80%', height: 4, borderRadius: 2, overflow: 'hidden' },
   nutritionBarFill: { height: 4, borderRadius: 2 },
   nutritionDivider: { width: 0.5, height: 50, backgroundColor: colors.greyBorder },
-  mealsList: { gap: 12, marginBottom: 20 },
-  mealCard: {
-    backgroundColor: colors.white, borderRadius: 20, padding: 16,
-    borderWidth: 1, borderColor: colors.greyBorder,
-    shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, gap: 6,
-  },
-  mealHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  mealTypeContainer: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  mealType: { fontSize: 12, fontWeight: '600', color: colors.blue, textTransform: 'uppercase', letterSpacing: 0.5 },
-  ethiopianBadge: { backgroundColor: colors.greyCard, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 100 },
-  ethiopianBadgeText: { fontSize: 10 },
-  mealTime: { fontSize: 11, color: colors.greyLight, fontWeight: '300' },
-  mealName: { fontSize: 16, fontWeight: '700', color: colors.black, letterSpacing: -0.3 },
-  mealDescription: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
-  mealStats: { flexDirection: 'row', gap: 16, marginTop: 4 },
-  mealStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  mealStatText: { fontSize: 12, color: colors.grey },
-  
+
   communityCard: {
     backgroundColor: colors.white, borderRadius: 20, padding: 20,
     borderWidth: 1, borderColor: colors.greyBorder,
@@ -555,175 +597,59 @@ const styles = StyleSheet.create({
   },
   communityPost: {
     flexDirection: 'row',
-    alignItems: 'flex-start',  // change from 'center' to 'flex-start'
+    alignItems: 'flex-start',
     gap: 12,
-    paddingVertical: 4,        // add this
-  },  
+    paddingVertical: 4,
+  },
   communityAvatar: {
-    width: 42,        // was 36
-    height: 42,       // was 36
-    borderRadius: 21, // was 18
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 42, height: 42, borderRadius: 21,
+    alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
   },
-  
-  communityAvatarText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  communityAvatarText: { fontSize: 13, fontWeight: '600' },
   communityPostContent: { flex: 1 },
   communityPostName: { fontSize: 13, fontWeight: '600', color: colors.black, marginBottom: 2 },
   communityPostText: {
-    fontSize: 13,
-    color: colors.grey,
-    fontWeight: '300',
-    lineHeight: 20,  // add this
-    marginTop: 2,    // add this
-  },  communityDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginVertical: 14 },
+    fontSize: 13, color: colors.grey, fontWeight: '300',
+    lineHeight: 20, marginTop: 2,
+  },
+  communityDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginVertical: 14 },
 
   mealPlanBanner: {
-    backgroundColor: colors.white,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 20,
+    borderWidth: 1, borderColor: colors.greyBorder,
+    shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
   },
   mealPlanGlow: {
-    position: 'absolute',
-    top: -40,
-    right: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    position: 'absolute', top: -40, right: -40, width: 160, height: 160,
+    borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  mealPlanContent: {
-    padding: 24,
-    gap: 16,
-    alignItems: 'center',
-  },
-  mealPlanEmoji: {
-    fontSize: 40,
-  },
+  mealPlanContent: { padding: 24, gap: 16, alignItems: 'center' },
   mealPlanTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -1,
-    lineHeight: 36,
-    textAlign: 'center',
+    fontSize: 32, fontWeight: '700', color: colors.black,
+    letterSpacing: -1, lineHeight: 36, textAlign: 'center',
   },
   mealPlanSub: {
-    fontSize: 14,
-    color: colors.grey,
-    fontWeight: '300',
-    lineHeight: 20,
-    textAlign: 'center',
-
+    fontSize: 14, color: colors.grey, fontWeight: '300', lineHeight: 20, textAlign: 'center',
   },
   mealPlanStats: {
-    flexDirection: 'row',
-    backgroundColor: colors.blueLight,
-    borderRadius: 16,
-    padding: 16,
+    flexDirection: 'row', backgroundColor: colors.blueLight, borderRadius: 16, padding: 16,
   },
-  mealPlanStat: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 6,
-  },
-  mealPlanStatNumber: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.blue,
-    letterSpacing: -0.5,
-  },
-  mealPlanStatLabel: {
-    fontSize: 11,
-    color: colors.blue,
-    fontWeight: '300',
-  },
-  mealPlanStatDivider: {
-    width: 0.5,
-    backgroundColor: colors.greyBorder,
-  },
+  mealPlanStat: { flex: 1, alignItems: 'center', gap: 6 },
+  mealPlanStatNumber: { fontSize: 22, fontWeight: '700', color: colors.blue, letterSpacing: -0.5 },
+  mealPlanStatLabel: { fontSize: 11, color: colors.blue, fontWeight: '300' },
+  mealPlanStatDivider: { width: 0.5, backgroundColor: colors.greyBorder },
   mealPlanButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.blue,  // ← blue button
-    paddingVertical: 16,
-    borderRadius: 100,
-    width: '100%',
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100, width: '100%',
+    shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  mealPlanButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
-  },
+  mealPlanButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
   mealPlanIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colors.blueLight, 
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 56, height: 56, borderRadius: 16,
+    backgroundColor: colors.blueLight, alignItems: 'center', justifyContent: 'center',
   },
-  completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#059669',
-    paddingVertical: 12,
-    borderRadius: 100,
-    marginTop: 12,
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  completeButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  completedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#D1FAE5',
-    paddingVertical: 12,
-    borderRadius: 100,
-    marginTop: 12,
-  },
-  completedBadgeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#059669',
-  },
-  communityEmpty: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  communityEmptyText: {
-    fontSize: 13,
-    color: colors.greyLight,
-    fontWeight: '300',
-  },
+
+  communityEmpty: { paddingVertical: 20, alignItems: 'center' },
+  communityEmptyText: { fontSize: 13, color: colors.greyLight, fontWeight: '300' },
 });

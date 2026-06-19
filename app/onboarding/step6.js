@@ -34,7 +34,7 @@ export default function Step6(){
         <ScreenWrapper style={styles.container}>
             <BackgroundCircles variant="topLeft" />
     
-            <ProgressBar currentStep={6} totalSteps={9} />
+            <ProgressBar currentStep={6} totalSteps={8} />
         
             <Text style={styles.question}>What are your food choices?</Text>
             <Text style={styles.subtitle}>Select all that apply to you.</Text>
