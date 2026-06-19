@@ -1,6 +1,5 @@
 import { useFocusEffect } from 'expo-router';
 
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,9 +12,9 @@ import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
 import { router } from 'expo-router';
-import { getCommunityPosts, togglePostLike } from '../../services/api';
-
-
+import { Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share } from 'react-native';
+import { getCommunityPosts, togglePostLike, getCurrentUser, reportPost } from '../../services/api';
 
 
 const challenges = [
@@ -66,6 +65,7 @@ export default function CommunityScreen() {
   const lastScrollY = useRef(0);
   const headerOpacity = useSharedValue(1);
 const headerTranslateY = useSharedValue(0);
+const [currentUserId, setCurrentUserId] = useState(null);
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -95,13 +95,18 @@ const headerTranslateY = useSharedValue(0);
           setError(null);
           const data = await getCommunityPosts();
           setPosts(data);
-        
+    
+          // We need to know who the logged-in user is so we can decide
+          // whether to show "Delete" (own post) or "Report" (someone else's)
+          const user = await getCurrentUser();
+          setCurrentUserId(user.id);
+    
         } catch(err){
           setError('could not load posts');
         } finally {
           setLoading(false);
         }
-      }
+    }
       fetchPosts();
     }, [])
   );
@@ -144,7 +149,53 @@ const headerTranslateY = useSharedValue(0);
       console.log('Like failed:', err.message);
     }
   }
-
+  function handlePostOptions(post) {
+    const isOwnPost = post.user_id === currentUserId;
+  
+    // Build the buttons array dynamically — Report only shows on posts
+    // that aren't your own, since reporting yourself makes no sense
+    const buttons = [
+      {
+        text: 'Share',
+        onPress: async () => {
+          try {
+            await Share.share({
+              message: `${post.name} on Fitopia: "${post.text}"`,
+            });
+          } catch (err) {
+            console.log('Share error:', err.message);
+          }
+        },
+      },
+      {
+        text: 'Save',
+        // Placeholder — does nothing yet, feature coming later
+        onPress: () => {
+          Alert.alert('Coming soon', 'Saving posts will be available in a future update.');
+        },
+      },
+    ];
+  
+    // Only add Report if this isn't the user's own post
+    if (!isOwnPost) {
+      buttons.push({
+        text: 'Report',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await reportPost(post.id);
+            Alert.alert('Reported', 'Thanks — we\'ll review this post.');
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      });
+    }
+  
+    buttons.push({ text: 'Cancel', style: 'cancel' });
+  
+    Alert.alert('Post options', null, buttons);
+  }
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <BackgroundCircles variant="bottomRight" />
@@ -290,6 +341,14 @@ const headerTranslateY = useSharedValue(0);
                       {post.tag}
                     </Text>
                   </View>
+
+                  {/* Options button — now correctly inside postHeader's row */}
+                  <TouchableOpacity
+                    style={styles.optionsButton}
+                    onPress={() => handlePostOptions(post)}
+                  >
+                    <Feather name="more-horizontal" size={18} color={colors.greyLight} />
+                  </TouchableOpacity>
                 </View>
 
                 {/* Post body — tapping opens comments */}
@@ -641,5 +700,11 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: colors.greyCard,
     alignItems: 'center', justifyContent: 'center',
+  },
+  optionsButton: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -555,3 +555,39 @@ export async function getYearStats(year) {
   if (!response.ok) throw new Error(data.detail || 'Failed to get year stats');
   return data;
 }
+
+// Deletes a post — backend verifies ownership, will reject if you don't own it
+export async function deletePost(postId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}?token=${token}`,
+    {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to delete post');
+  return data;
+}
+
+// Reports a post for review
+export async function reportPost(postId, reason = 'Not specified') {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/report?token=${token}&reason=${encodeURIComponent(reason)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to report post');
+  return data;
+}

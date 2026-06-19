@@ -3,7 +3,7 @@ import { useCallback, useState, useRef } from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
   Clipboard, Modal, TextInput, KeyboardAvoidingView,
-  Platform, ActivityIndicator
+  Platform, ActivityIndicator, Alert
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -15,10 +15,8 @@ import { colors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
-import { logout, getCurrentUser, getUserProfile, updateProfile } from '../../services/api';
 import YearHeatmap from '../../components/YearHeatmap';
-
-function getInitials(name) {
+import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, reportPost } from '../../services/api';function getInitials(name) {
   if (!name) return '??';
   const parts = name.split(' ');
   if (parts.length === 1) return name.substring(0, 2).toUpperCase();
@@ -34,6 +32,7 @@ function timeAgo(isoString) {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
 }
+
 
 export default function ProfileScreen() {
   const [contentKey, setContentKey] = useState(0);
@@ -69,7 +68,31 @@ export default function ProfileScreen() {
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
-
+  function handleDeletePost(postId) {
+    Alert.alert(
+      'Delete post?',
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePost(postId);
+              setProfile(prev => ({
+                ...prev,
+                posts: prev.posts.filter(p => p.id !== postId),
+                post_count: prev.post_count - 1,
+              }));
+            } catch (err) {
+              Alert.alert('Error', err.message);
+            }
+          },
+        },
+      ]
+    );
+  }
   useFocusEffect(
     useCallback(() => {
       setContentKey(prev => prev + 1);
@@ -293,6 +316,14 @@ export default function ProfileScreen() {
                         </Text>
                       </View>
                       <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
+
+                      {/* Delete button — only your own posts appear here, so no ownership check needed */}
+                      <TouchableOpacity
+                        style={styles.postOptionsButton}
+                        onPress={() => handleDeletePost(post.id)}
+                      >
+                        <Feather name="trash-2" size={14} color={colors.greyLight} />
+                      </TouchableOpacity>
                     </View>
                     <Text style={styles.postText}>{post.text}</Text>
                     <View style={styles.postStats}>
@@ -706,5 +737,8 @@ const styles = StyleSheet.create({
 
   usernameAt: { fontSize: 15, color: colors.blue, fontWeight: '600', marginRight: 4 },
   usernameInput: { flex: 1, fontSize: 15, color: colors.black },
-  
+  postOptionsButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
 });
