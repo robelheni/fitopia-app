@@ -295,6 +295,8 @@ export default function ActiveWorkoutScreen() {
                 try {
                   await completeWorkout(workout.name);
                   const quote = await getMotivationalQuote(workout.name);
+                  console.log('Quote received:', quote); // add this
+
                   if (quote) setAiQuote(quote);
               } catch (e) {
                   console.log('Complete workout error:', e.message);
