@@ -193,7 +193,7 @@ export default function HomeScreen() {
         <View key={contentKey}>
 
           <FadeUpItem delay={200}>
-            <View style={styles.streakCard}>
+          <TouchableOpacity style={styles.streakCard} onPress={() => router.push('/consistency')} activeOpacity={0.9}>
               <View style={styles.streakLeft}>
                 <Text style={styles.streakNumber}>{streak}</Text>
                 <Text style={styles.streakLabel}>day streak</Text>
@@ -236,7 +236,7 @@ export default function HomeScreen() {
                   })}
                 </View>
               </View>
-            </View>
+            </TouchableOpacity>
           </FadeUpItem>
 
           <FadeUpItem delay={300}>

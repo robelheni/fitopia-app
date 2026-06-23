@@ -591,3 +591,19 @@ export async function reportPost(postId, reason = 'Not specified') {
   if (!response.ok) throw new Error(data.detail || 'Failed to report post');
   return data;
 }
+
+
+// Returns deeper consistency stats
+export async function getConsistencyStats() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/workouts/consistency?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get consistency stats');
+  return data;
+}

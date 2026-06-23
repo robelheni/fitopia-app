@@ -199,14 +199,21 @@ export default function WorkoutsScreen() {
             async function fetchPlan() {
               try {
                   setPlanLoading(true);
-          
+            
                   const plan = await getWorkoutPlan();
-          
-                  // Fetch real completed days for this week so we can mark
-                  // past days as actually completed instead of always false
+            
+                  // Fetch the user's account creation date here, in the same
+                  // function, so we guarantee it's available before we use it below.
+                  // Fetching it in a separate fetchUser() call created a race
+                  // condition where this plan could finish building before
+                  // accountCreatedAt was actually set, causing early days to
+                  // incorrectly show as "missed" instead of "before account".
+                  const userData = await getCurrentUser();
+                  const accountCreated = userData?.created_at;
+            
                   const streakData = await getStreak();
-                  const completedDays = streakData.completed_days; // e.g. ['mon', 'wed']
-          
+                  const completedDays = streakData.completed_days;
+            
                   const sessionNames = {
                       push:       'Push Day',
                       pull:       'Pull Day',
@@ -215,49 +222,51 @@ export default function WorkoutsScreen() {
                       lower:      'Lower Body',
                       full_body:  'Full Body',
                   };
-          
+            
                   const dayDisplayNames = {
                       mon: 'Mon', tue: 'Tue', wed: 'Wed',
                       thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
                   };
-          
+            
                   const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-          
+            
                   const todayIndex = new Date().getDay();
                   const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
                   const todayKey = dayOrder[reorderedIndex];
                   const todayPosition = dayOrder.indexOf(todayKey);
-          
+            
                   const dayOrderForSort = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
                   const planDays = Object.keys(plan).sort(
                     (a, b) => dayOrderForSort.indexOf(a) - dayOrderForSort.indexOf(b)
                   );
                   setTrainingDays(planDays);
-
+            
                   const transformed = planDays.map(dayKey => {
                       const session = plan[dayKey];
                       const itemPosition = dayOrder.indexOf(dayKey);
                       const isPast = itemPosition < todayPosition;
                       const isToday = dayKey === todayKey;
-
+            
                       const exerciseNames = session.exercises.map(ex => ex.name);
-
+            
                       if (session.cardio_circuit && session.cardio_circuit.exercises) {
                           session.cardio_circuit.exercises.forEach(ex => {
                               exerciseNames.push(`${ex.name} (cardio)`);
                           });
                       }
-
-                      // Calculate the actual calendar date for this day within the current week
+            
                       const today = new Date();
                       const dayOffsetFromToday = itemPosition - todayPosition;
                       const itemDate = new Date(today);
                       itemDate.setDate(today.getDate() + dayOffsetFromToday);
                       itemDate.setHours(0, 0, 0, 0);
-
-                      const isBeforeAccount = accountCreatedAt &&
-                          itemDate < new Date(new Date(accountCreatedAt).setHours(0, 0, 0, 0));
-
+            
+                      // Use the locally fetched accountCreated value directly —
+                      // no longer relying on the accountCreatedAt state, which
+                      // could still be stale/null due to React's state update timing
+                      const isBeforeAccount = accountCreated &&
+                          itemDate < new Date(new Date(accountCreated).setHours(0, 0, 0, 0));
+            
                       return {
                           day: dayDisplayNames[dayKey] || dayKey,
                           workout: sessionNames[session.session_type] || session.session_type,
@@ -268,15 +277,16 @@ export default function WorkoutsScreen() {
                           isPast: isPast && !isBeforeAccount,
                           isToday,
                       };
-                  }); // ← closes .map()
-
+                  });
+            
                   setWeeklyPlanItems(transformed);
+            
               } catch (e) {
                   console.log('Fetch plan error:', e.message);
               } finally {
                   setPlanLoading(false);
               }
-          }
+            }
     
             fetchUser();
             fetchPlan();

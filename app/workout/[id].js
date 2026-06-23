@@ -140,6 +140,45 @@ const workoutData = {
     },
     };
 
+function calculateSessionDuration(session) {
+    let totalSeconds = 0;
+
+    // Strength exercises — each set takes roughly 45s of work,
+    // plus the rest period between sets (we default rest to 60s
+    // since the actual rest value isn't stored on the session object yet)
+    session.exercises.forEach(ex => {
+        const sets = ex.sets_range ? ex.sets_range[0] : 3;
+        const workSecondsPerSet = ex.is_timed
+            ? (ex.seconds_range ? ex.seconds_range[0] : 30)
+            : 45;
+        const restSecondsPerSet = 60;
+
+        // Last set doesn't need a rest after it, so we use (sets - 1) rests
+        totalSeconds += (sets * workSecondsPerSet) + ((sets - 1) * restSecondsPerSet);
+    });
+
+    // Add warmup — flat 5 minute estimate if one exists
+    if (session.warmup) {
+        totalSeconds += 5 * 60;
+    }
+
+    // Add cardio circuit time if it exists
+    if (session.cardio_circuit && session.cardio_circuit.exercises) {
+        const { rounds, work_seconds, rest_seconds, exercises } = session.cardio_circuit;
+        const exercisesPerRound = exercises.length;
+        // Each round: every exercise gets work + rest time
+        const secondsPerRound = exercisesPerRound * (work_seconds + rest_seconds);
+        totalSeconds += rounds * secondsPerRound;
+    }
+
+    // Add finisher — flat 3 minute estimate if one exists
+    if (session.finisher) {
+        totalSeconds += 3 * 60;
+    }
+
+    const totalMinutes = Math.round(totalSeconds / 60);
+    return totalMinutes;
+}
 
 
     export default function WorkoutDetailScreen() {
@@ -189,14 +228,18 @@ const workoutData = {
                 workout = {
                     name: workoutName || sessionNames[session.session_type] || 'Workout',
                     category: 'Personal Plan',
-                    duration: `${session.exercises.length * 5} min`,
+                    duration: session.duration ? `${session.duration} min` : '45 min',
                     difficulty: 'Personalised',
                     description: `Your personalised ${workoutName} session built around your goals and equipment.`,
                     exercises: session.exercises.map(ex => ({
                         id: ex.id,
                         name: ex.name,
                         sets: ex.sets_range ? ex.sets_range[0] : 3,
-                        reps: ex.reps_range ? ex.reps_range[0] : null,
+                        reps: ex.reps_range
+                            ? (ex.reps_range[0] === ex.reps_range[1]
+                                ? `${ex.reps_range[0]}`
+                                : `${ex.reps_range[0]}-${ex.reps_range[1]}`)
+                            : null,
                         rest: '60s',
                         muscle: ex.muscle_group,
                         equipment: ex.equipment,
