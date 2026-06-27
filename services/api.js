@@ -380,7 +380,7 @@ export async function getCommunityPosts() {
 }
 
 //creates a new post
-export async function createPost(text, tag) {
+export async function createPost(text, tag, challengeId = null) {
   const token = await getToken();
   if (!token) throw new Error('Not logged in');
 
@@ -389,7 +389,7 @@ export async function createPost(text, tag) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, tag }),
+      body: JSON.stringify({ text, tag, challenge_id: challengeId }),
     }
   );
 
@@ -397,7 +397,6 @@ export async function createPost(text, tag) {
   if (!response.ok) throw new Error(data.detail || 'Failed to create post');
   return data;
 }
-
 //Toggles like on a post
 export async function togglePostLike(postId) {
   const token = await getToken();
@@ -605,5 +604,142 @@ export async function getConsistencyStats() {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || 'Failed to get consistency stats');
+  return data;
+}
+
+
+// Returns high-level app stats for the admin dashboard
+export async function getAdminOverview() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/overview?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get admin overview');
+  return data;
+}
+
+// Returns all users for the admin user management screen
+export async function getAdminUsers() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/users?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get users');
+  return data;
+}
+
+// Toggles a user's Pro status — admin only
+export async function toggleUserPro(userId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/users/${userId}/toggle-pro?token=${token}`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to toggle pro status');
+  return data;
+}
+
+// Admin-only: creates a new challenge
+export async function createChallenge({ name, description, color }) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/challenges?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description, color }),
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to create challenge');
+  return data;
+}
+
+// Returns all challenges, ranked by popularity (post count)
+export async function getChallenges() {
+  const response = await fetch(`${BASE_URL}/community/challenges`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get challenges');
+  return data;
+}
+
+// Returns a single challenge's details plus its posts
+export async function getChallengeDetail(challengeId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/community/challenges/${challengeId}?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get challenge');
+  return data;
+}
+
+// Admin: lists every challenge with post count, for management
+export async function getAdminChallenges() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/challenges?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get challenges');
+  return data;
+}
+
+// Admin: moves a challenge up or down in display order
+export async function reorderChallenge(challengeId, direction) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/challenges/${challengeId}/reorder?token=${token}&direction=${direction}`,
+    { method: 'PUT', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to reorder');
+  return data;
+}
+
+// Admin: deletes a challenge
+export async function deleteChallenge(challengeId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const response = await fetch(
+    `${BASE_URL}/admin/challenges/${challengeId}?token=${token}`,
+    { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to delete challenge');
   return data;
 }

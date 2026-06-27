@@ -4,8 +4,7 @@ import {colors} from '../constants/colors';
 import { useState } from 'react';
 import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
-import { loginUser } from '../services/api';
-
+import { loginUser, getCurrentUser } from '../services/api';
 
 export default function LoginScreen () {
     const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -27,7 +26,17 @@ export default function LoginScreen () {
             setLoading(true);
             setServerError('');
             await loginUser(emailOrUsername, password);
-            router.replace('/(tabs)')
+    
+            // Admins get redirected to the admin dashboard instead of
+            // the normal app tabs — a completely separate experience
+            const user = await getCurrentUser();
+            console.log('Logged in user:', JSON.stringify(user));
+            console.log('Is admin?', user?.is_admin);
+            if (user?.is_admin) {
+                router.replace('/admin');
+            } else {
+                router.replace('/(tabs)');
+            }
         } catch (error) {
             setServerError(error.message);
         } finally{

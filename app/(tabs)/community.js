@@ -14,32 +14,10 @@ import { useCallback, useState, useRef } from 'react';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share } from 'react-native';
-import { getCommunityPosts, togglePostLike, getCurrentUser, reportPost } from '../../services/api';
+import { getCommunityPosts, togglePostLike, getCurrentUser, reportPost, getChallenges } from '../../services/api';
 
 
-const challenges = [
-  {
-    id: 'c1',
-    name: '30 Day Strength',
-    members: 142,
-    daysLeft: 18,
-    color: colors.blue,
-  },
-  {
-    id: 'c2',
-    name: 'Fasting Fitness',
-    members: 89,
-    daysLeft: 24,
-    color: '#7C3AED',
-  },
-  {
-    id: 'c3',
-    name: 'Home Warrior',
-    members: 203,
-    daysLeft: 11,
-    color: '#059669',
-  },
-];
+
 
 // Converts a raw timestamp like "2026-06-12T11:23:00" into "2h ago"
 function timeAgo(isoString) {
@@ -64,8 +42,9 @@ export default function CommunityScreen() {
   const { setCollapsed } = useTabBar();
   const lastScrollY = useRef(0);
   const headerOpacity = useSharedValue(1);
-const headerTranslateY = useSharedValue(0);
-const [currentUserId, setCurrentUserId] = useState(null);
+  const headerTranslateY = useSharedValue(0);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [challenges, setChallenges] = useState([]);
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -95,6 +74,8 @@ const [currentUserId, setCurrentUserId] = useState(null);
           setError(null);
           const data = await getCommunityPosts();
           setPosts(data);
+          const challengesData = await getChallenges();
+          setChallenges(challengesData);
     
           // We need to know who the logged-in user is so we can decide
           // whether to show "Delete" (own post) or "Report" (someone else's)
@@ -252,28 +233,43 @@ const [currentUserId, setCurrentUserId] = useState(null);
 
           {/* Active challenges */}
           <FadeUpItem delay={100}>
-            <Text style={styles.sectionTitle}>Active challenges</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.challengesRow}
-            >
-              {challenges.map(challenge => (
-                <TouchableOpacity
-                  key={challenge.id}
-                  style={[styles.challengeCard, { backgroundColor: challenge.color }]}
-                >
-                  <Text style={styles.challengeName}>{challenge.name}</Text>
-                  <Text style={styles.challengeMembers}>{challenge.members} members</Text>
-                  <View style={styles.challengeFooter}>
-                    <Text style={styles.challengeDays}>{challenge.daysLeft} days left</Text>
-                    <View style={styles.joinButton}>
-                      <Text style={styles.joinButtonText}>Join</Text>
+            <View style={styles.challengesSectionHeader}>
+              <Text style={styles.sectionTitle}>Challenges</Text>
+              <TouchableOpacity onPress={() => router.push('/challenges')}>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
+            </View>
+
+            {challenges.length === 0 ? (
+              <View style={styles.noChallengesCard}>
+                <Text style={styles.noChallengesText}>No challenges yet</Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.challengesRow}
+              >
+                {challenges.slice(0, 5).map(challenge => (
+                  <TouchableOpacity
+                    key={challenge.id}
+                    style={[styles.challengeCard, { backgroundColor: challenge.color || colors.blue }]}
+                    onPress={() => router.push({
+                      pathname: '/challenge/[id]',
+                      params: { id: challenge.id, name: challenge.name }
+                    })}
+                  >
+                    <Text style={styles.challengeName}>{challenge.name}</Text>
+                    <Text style={styles.challengeMembers}>{challenge.post_count} posts</Text>
+                    <View style={styles.challengeFooter}>
+                      <View style={styles.joinButton}>
+                        <Text style={styles.joinButtonText}>View</Text>
+                      </View>
                     </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </FadeUpItem>
 
           {/* Filter tabs */}
@@ -706,5 +702,27 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  challengesSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  
+  seeAllText: {
+    fontSize: 14, color: colors.blue, fontWeight: '500',
+  },
+  
+  noChallengesCard: {
+    paddingVertical: 24,
+    alignItems: 'center',
+    backgroundColor: colors.greyCard,
+    borderRadius: 16,
+    marginBottom: 20,
+  },
+  
+  noChallengesText: {
+    fontSize: 13, color: colors.greyLight, fontWeight: '300',
   },
 });

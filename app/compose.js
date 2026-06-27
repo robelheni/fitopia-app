@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
-import {createPost, getCurrentUser} from '../services/api';
+import { createPost, getCurrentUser } from '../services/api';
 
 const tags = [
   { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
@@ -13,8 +13,13 @@ const tags = [
 ];
 
 export default function ComposeScreen() {
+  // If navigated here from a challenge page, these params arrive pre-filled —
+  // letting someone post their attempt directly without manually picking the tag
+  const { challengeId, challengeName } = useLocalSearchParams();
+
   const [text, setText] = useState('');
-  const [selectedTag, setSelectedTag] = useState(null);
+  // Default to the "challenges" tag automatically when arriving from a challenge page
+  const [selectedTag, setSelectedTag] = useState(challengeId ? 'challenges' : null);
   const [posting, setPosting] = useState(false);
 
   const [user, setUser] = useState(null);
@@ -27,14 +32,11 @@ export default function ComposeScreen() {
     fetchUser();
   }, []);
 
-  // Gets the first two letters of the user's name as uppercase initials
   const initials = user?.name
     ? user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
     : '??';
 
-
-    const canPost = text.trim().length > 0;
-
+  const canPost = text.trim().length > 0;
 
   return (
     <View style={styles.container}>
@@ -54,7 +56,13 @@ export default function ComposeScreen() {
           onPress={async () => {
             try {
               setPosting(true);
-              await createPost(text.trim(), selectedTag || 'general');
+              // Pass the challengeId through if this post is tagged to a challenge —
+              // it'll be null for normal posts, which the backend treats as "no challenge"
+              await createPost(
+                text.trim(),
+                selectedTag || 'general',
+                challengeId ? parseInt(challengeId) : null
+              );
               router.back();
             } catch (err) {
               console.log('Post failed:', err.message);
@@ -62,10 +70,10 @@ export default function ComposeScreen() {
             }
           }}
         >
-  <Text style={[styles.postButtonText, (!canPost || posting) && styles.postButtonTextDisabled]}>
-    {posting ? 'Posting...' : 'Post'}
-  </Text>
-</TouchableOpacity>
+          <Text style={[styles.postButtonText, (!canPost || posting) && styles.postButtonTextDisabled]}>
+            {posting ? 'Posting...' : 'Post'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -74,14 +82,26 @@ export default function ComposeScreen() {
         keyboardShouldPersistTaps="handled"
       >
 
+        {/* Challenge banner — only shows when posting from a challenge page */}
+        {challengeId && (
+          <View style={styles.challengeBanner}>
+            <Feather name="zap" size={14} color={colors.blue} />
+            <Text style={styles.challengeBannerText}>
+              Posting to <Text style={styles.challengeBannerName}>{challengeName}</Text>
+            </Text>
+          </View>
+        )}
+
         {/* User avatar and text input */}
         <View style={styles.inputRow}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
           <TextInput
             style={styles.textInput}
-            placeholder="Share your progress, ask a question, or start a challenge..."
+            placeholder={challengeId
+              ? "Share how it went — your attempt, your numbers, anything..."
+              : "Share your progress, ask a question, or start a challenge..."}
             placeholderTextColor={colors.greyLight}
             multiline
             autoFocus
@@ -101,29 +121,33 @@ export default function ComposeScreen() {
           <Text style={styles.photoPlaceholderSub}>Coming soon</Text>
         </TouchableOpacity>
 
-        {/* Tag selector */}
-        <Text style={styles.tagLabel}>Tag your post</Text>
-        <View style={styles.tags}>
-          {tags.map(tag => (
-            <TouchableOpacity
-              key={tag.key}
-              style={[
-                styles.tag,
-                { backgroundColor: tag.bg },
-                selectedTag === tag.key && styles.tagSelected,
-                selectedTag === tag.key && { borderColor: tag.color },
-              ]}
-              onPress={() => setSelectedTag(tag.key)}
-            >
-              {selectedTag === tag.key && (
-                <Feather name="check" size={12} color={tag.color} />
-              )}
-              <Text style={[styles.tagText, { color: tag.color }]}>
-                {tag.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Tag selector — hidden when posting from a challenge, since it's locked to "challenges" */}
+        {!challengeId && (
+          <>
+            <Text style={styles.tagLabel}>Tag your post</Text>
+            <View style={styles.tags}>
+              {tags.map(tag => (
+                <TouchableOpacity
+                  key={tag.key}
+                  style={[
+                    styles.tag,
+                    { backgroundColor: tag.bg },
+                    selectedTag === tag.key && styles.tagSelected,
+                    selectedTag === tag.key && { borderColor: tag.color },
+                  ]}
+                  onPress={() => setSelectedTag(tag.key)}
+                >
+                  {selectedTag === tag.key && (
+                    <Feather name="check" size={12} color={tag.color} />
+                  )}
+                  <Text style={[styles.tagText, { color: tag.color }]}>
+                    {tag.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
 
         {/* Guidelines */}
         <View style={styles.guidelines}>
@@ -203,6 +227,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 40,
+  },
+
+  challengeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.blueLight,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+
+  challengeBannerText: {
+    fontSize: 13,
+    color: colors.blue,
+    fontWeight: '400',
+  },
+
+  challengeBannerName: {
+    fontWeight: '700',
   },
 
   inputRow: {
