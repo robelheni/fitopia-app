@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
+import FloatingCoachButton from '../../components/FloatingCoachButton';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -437,6 +438,7 @@ export default function HomeScreen() {
           </FadeUpItem>
         </View>
       </ScrollView>
+      <FloatingCoachButton />
     </Animated.View>
   );
 }

@@ -1,10 +1,12 @@
 import { useFocusEffect, router } from 'expo-router';
 import { useCallback, useState, useRef } from 'react';
+import FloatingCoachButton from '../../components/FloatingCoachButton';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   Clipboard, Modal, TextInput, KeyboardAvoidingView,
   Platform, ActivityIndicator, Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -16,7 +18,7 @@ import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import YearHeatmap from '../../components/YearHeatmap';
-import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, reportPost } from '../../services/api';function getInitials(name) {
+import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, reportPost, uploadProfilePicture } from '../../services/api';function getInitials(name) {
   if (!name) return '??';
   const parts = name.split(' ');
   if (parts.length === 1) return name.substring(0, 2).toUpperCase();
@@ -47,6 +49,7 @@ export default function ProfileScreen() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [profilePicture, setProfilePicture] = useState(null);
 
   // Edit profile modal
   const [editVisible, setEditVisible] = useState(false);
@@ -115,6 +118,7 @@ export default function ProfileScreen() {
           setLoading(true);
           const userData = await getCurrentUser();
           setUser(userData);
+          if (userData.profile_picture) setProfilePicture(userData.profile_picture);
           const profileData = await getUserProfile(userData.id);
           setProfile(profileData);
         } catch (err) {
@@ -154,6 +158,30 @@ export default function ProfileScreen() {
     setEditBio(user?.bio || '');
     setSaveError('');
     setEditVisible(true);
+  }
+
+  async function handleAvatarPress() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Please allow access to your photo library.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      try {
+        const data = await uploadProfilePicture(result.assets[0].uri);
+        setProfilePicture(data.profile_picture);
+      } catch (err) {
+        Alert.alert('Upload failed', err.message);
+      }
+    }
   }
 
   async function handleSave() {
@@ -215,8 +243,19 @@ export default function ProfileScreen() {
           {/* Profile card */}
           <FadeUpItem delay={0}>
             <View style={styles.profileCard}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+              <View style={{ position: 'relative', marginBottom: 8 }}>
+                <TouchableOpacity onPress={handleAvatarPress} activeOpacity={0.85}>
+                  {profilePicture ? (
+                    <Image source={{ uri: profilePicture }} style={styles.avatar} />
+                  ) : (
+                    <View style={styles.avatar}>
+                      <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+                <View style={styles.avatarEditBadge}>
+                  <Feather name="camera" size={12} color={colors.white} />
+                </View>
               </View>
               <Text style={styles.userName}>{user?.name}</Text>
               {user?.username && (
@@ -528,6 +567,7 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
+      <FloatingCoachButton />
     </Animated.View>
   );
 }
@@ -560,10 +600,23 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: colors.blue,
     alignItems: 'center', justifyContent: 'center',
-    marginBottom: 8,
     shadowColor: colors.blue,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3, shadowRadius: 12, elevation: 6,
+  },
+
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
   },
 
   avatarText: { fontSize: 28, fontWeight: '700', color: colors.white },

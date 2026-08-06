@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet,
+  View, Text, Image, ScrollView, StyleSheet,
   TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -141,17 +141,21 @@ export default function UserProfileScreen() {
           {/* Avatar and name */}
           <FadeUpItem delay={0}>
             <View style={styles.profileTop}>
-              <View style={[
-                styles.avatar,
-                { backgroundColor: getAvatarColor(profile.gender).bg }
-              ]}>
-                <Text style={[
-                  styles.avatarText,
-                  { color: getAvatarColor(profile.gender).color }
+              {profile.profile_picture ? (
+                <Image source={{ uri: profile.profile_picture }} style={styles.avatar} />
+              ) : (
+                <View style={[
+                  styles.avatar,
+                  { backgroundColor: getAvatarColor(profile.gender).bg }
                 ]}>
-                  {getInitials(profile.name)}
-                </Text>
-              </View>
+                  <Text style={[
+                    styles.avatarText,
+                    { color: getAvatarColor(profile.gender).color }
+                  ]}>
+                    {getInitials(profile.name)}
+                  </Text>
+                </View>
+              )}
 
               <Text style={styles.profileName}>{profile.name}</Text>
               {profile.username && (

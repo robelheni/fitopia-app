@@ -1,31 +1,29 @@
 import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
+import { View, StyleSheet, Animated, StatusBar } from 'react-native';
 import { router } from 'expo-router';
 
 import { getCurrentUser } from '../services/api';
 
 export default function SplashScreen() {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const fitSlide = useRef(new Animated.Value(-100)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const fitSlide  = useRef(new Animated.Value(-100)).current;
   const opiaSlide = useRef(new Animated.Value(100)).current;
-  
+  const navigated = useRef(false);
 
-
-
-useEffect(() => {
-  async function checkAuth() {
-    try {
-      const user = await getCurrentUser();
-      if (user) {
-        // User is already logged in — skip to tabs
-        router.replace('/(tabs)');
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          navigated.current = true;
+          router.replace('/(tabs)');
+        }
+      } catch (_) {
+        // No token or invalid token -- fall through to language selection
       }
-    } catch (error) {
-      // No token or invalid token — stay on splash
     }
-  }
-  checkAuth();
-}, []);
+    checkAuth();
+  }, []);
 
   useEffect(() => {
     Animated.sequence([
@@ -50,7 +48,9 @@ useEffect(() => {
       ]),
       Animated.delay(800),
     ]).start(() => {
-      router.replace('/language');
+      if (!navigated.current) {
+        router.replace('/language');
+      }
     });
   }, []);
 

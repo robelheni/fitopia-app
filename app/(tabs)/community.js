@@ -1,4 +1,5 @@
 import { useFocusEffect } from 'expo-router';
+import FloatingCoachButton from '../../components/FloatingCoachButton';
 
 import Animated, {
   useSharedValue,
@@ -13,7 +14,7 @@ import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share } from 'react-native';
 import { getCommunityPosts, togglePostLike, getCurrentUser, reportPost, getChallenges } from '../../services/api';
 
 
@@ -307,17 +308,21 @@ export default function CommunityScreen() {
                       params: { id: post.user_id, name: post.name }
                     })}
                   >
-                    <View style={[styles.avatar, { 
-                      backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard,
-                      borderWidth: 1, 
-                      borderColor: colors.greyBorder 
-                    }]}>
-                      <Feather
-                        name="user"
-                        size={20}
-                        color={post.gender === 'female' ? '#7C3AED' : post.gender === 'male' ? colors.blue : colors.greyLight}
-                      />
-                    </View>
+                    {post.profile_picture ? (
+                      <Image source={{ uri: post.profile_picture }} style={styles.avatar} />
+                    ) : (
+                      <View style={[styles.avatar, {
+                        backgroundColor: post.gender === 'female' ? '#EDE9FE' : post.gender === 'male' ? colors.blueLight : colors.greyCard,
+                        borderWidth: 1,
+                        borderColor: colors.greyBorder,
+                      }]}>
+                        <Feather
+                          name="user"
+                          size={20}
+                          color={post.gender === 'female' ? '#7C3AED' : post.gender === 'male' ? colors.blue : colors.greyLight}
+                        />
+                      </View>
+                    )}
                   </TouchableOpacity>
 
                   <View style={styles.postMeta}>
@@ -405,6 +410,7 @@ export default function CommunityScreen() {
 
         </View>
       </ScrollView>
+      <FloatingCoachButton />
     </Animated.View>
   );
 }

@@ -1,4 +1,5 @@
 import { useFocusEffect } from 'expo-router';
+import FloatingCoachButton from '../../components/FloatingCoachButton';
 
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, {
@@ -608,6 +609,7 @@ const animatedStyle = useAnimatedStyle(() => ({
             visible={myPlanVisible}
             onClose={() => setMyPlanVisible(false)}
         />
+        <FloatingCoachButton />
         </Animated.View>
     );
 }

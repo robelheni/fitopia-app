@@ -713,6 +713,33 @@ export async function reorderChallenge(challengeId, direction) {
   return data;
 }
 
+// Uploads a profile picture to Cloudinary via our backend.
+// imageUri is the local file URI returned by expo-image-picker.
+export async function uploadProfilePicture(imageUri) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const formData = new FormData();
+  formData.append('file', {
+    uri: imageUri,
+    type: 'image/jpeg',
+    name: 'profile.jpg',
+  });
+
+  const response = await fetch(
+    `${BASE_URL}/upload/profile-picture?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'multipart/form-data' },
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Upload failed');
+  return data;
+}
+
 // Admin: deletes a challenge
 export async function deleteChallenge(challengeId) {
   const token = await getToken();
