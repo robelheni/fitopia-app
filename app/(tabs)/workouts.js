@@ -14,7 +14,7 @@ import { router } from 'expo-router';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useState, useRef } from 'react';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { getNutrition, getWorkoutPlan, getStreak, getCurrentUser } from "../../services/api";
+import { getWorkoutPlan, getStreak, getCurrentUser } from "../../services/api";
 
 
 
@@ -177,12 +177,10 @@ export default function WorkoutsScreen() {
             });
     
             // Fetch user data for initials and name
-            async function fetchUser() {
+            async function fetchUser(currentUser) {
               try {
-                  const data = await getNutrition();
-                  const user = await getCurrentUser();
-                  setAccountCreatedAt(user.created_at);
-                  const name = data.user.name || '';
+                  const name = currentUser.name || '';
+                  setAccountCreatedAt(currentUser.created_at);
                   const parts = name.trim().split(' ');
                   const initials = parts[0]?.[0] || 'M';
                   setUserInitials(initials.toUpperCase());
@@ -196,20 +194,12 @@ export default function WorkoutsScreen() {
             // The plan comes back as a dictionary keyed by day
             // e.g. { mon: { session_type: 'upper', exercises: [...] } }
             // We transform it into the format WeeklyPlanCard expects
-            async function fetchPlan() {
+            async function fetchPlan(currentUser) {
               try {
                   setPlanLoading(true);
-            
+
                   const plan = await getWorkoutPlan();
-            
-                  // Fetch the user's account creation date here, in the same
-                  // function, so we guarantee it's available before we use it below.
-                  // Fetching it in a separate fetchUser() call created a race
-                  // condition where this plan could finish building before
-                  // accountCreatedAt was actually set, causing early days to
-                  // incorrectly show as "missed" instead of "before account".
-                  const userData = await getCurrentUser();
-                  const accountCreated = userData?.created_at;
+                  const accountCreated = currentUser?.created_at;
             
                   const streakData = await getStreak();
                   const completedDays = streakData.completed_days;
@@ -288,8 +278,12 @@ export default function WorkoutsScreen() {
               }
             }
     
-            fetchUser();
-            fetchPlan();
+            async function init() {
+              const currentUser = await getCurrentUser();
+              fetchUser(currentUser);
+              fetchPlan(currentUser);
+            }
+            init();
     
         }, [])
     );
