@@ -1,19 +1,24 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 
 export default function LanguageScreen() {
+  const { context } = useLocalSearchParams();
+  const isSettings = context === 'settings';
+
   return (
     <View style={styles.container}>
 
-      {/* Header — same pattern as search.js */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color={colors.black} />
-        </TouchableOpacity>
+        {isSettings ? (
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Feather name="arrow-left" size={20} color={colors.black} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backButton} />
+        )}
         <Text style={styles.headerTitle}>Language</Text>
-        {/* Spacer balances the back button so the title stays centred */}
         <View style={styles.headerSpacer} />
       </View>
 
@@ -21,7 +26,14 @@ export default function LanguageScreen() {
       <View style={styles.optionsList}>
 
         {/* English — currently active */}
-        <TouchableOpacity style={styles.optionRow} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.optionRow}
+          activeOpacity={0.7}
+          onPress={() => {
+            if (isSettings) router.back();
+            else router.replace('/welcome');
+          }}
+        >
           <Text style={styles.optionLabel}>English</Text>
           <Feather name="check" size={18} color={colors.blue} />
         </TouchableOpacity>

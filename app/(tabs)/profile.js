@@ -58,6 +58,7 @@ export default function ProfileScreen() {
 
   // Settings modal
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const returningFromLanguage = useRef(false);
 
   const headerAnimStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
@@ -95,6 +96,12 @@ export default function ProfileScreen() {
   }
   useFocusEffect(
     useCallback(() => {
+      if (returningFromLanguage.current) {
+        returningFromLanguage.current = false;
+        setSettingsVisible(true);
+        return;
+      }
+
       setContentKey(prev => prev + 1);
       opacity.value = 0;
       translateY.value = 8;
@@ -487,7 +494,8 @@ export default function ProfileScreen() {
                 style={styles.settingsItem}
                 onPress={() => {
                   setSettingsVisible(false);
-                  setTimeout(() => router.push('/language'), 300);
+                  returningFromLanguage.current = true;
+                  setTimeout(() => router.push('/language?context=settings'), 300);
                 }}
               >
                 <View style={styles.settingsIconContainer}>

@@ -187,7 +187,7 @@ export default function CommunityScreen() {
         <View style={styles.headerButtons}>
             <TouchableOpacity
             style={styles.trainersButton}
-            onPress={() => router.push('/search')}
+            onPress={() => router.push('/trainers')}
             >
             <Feather name="users" size={14} color={colors.blue} />
             <Text style={styles.trainersButtonText}>Trainers</Text>
