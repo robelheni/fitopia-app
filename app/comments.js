@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
@@ -107,11 +107,15 @@ export default function CommentsScreen() {
           <View style={styles.commentsList}>
             {comments.map(comment => (
               <View key={comment.id} style={styles.commentCard}>
-                <View style={[styles.avatar, { backgroundColor: comment.avatarColor || colors.blue }]}>
-                  <Text style={styles.avatarText}>
-                    {comment.name ? comment.name.substring(0, 2).toUpperCase() : 'U'}
-                  </Text>
-                </View>
+                {comment.profile_picture ? (
+                  <Image source={{ uri: comment.profile_picture }} style={styles.avatar} />
+                ) : (
+                  <View style={[styles.avatar, { backgroundColor: colors.blue }]}>
+                    <Text style={styles.avatarText}>
+                      {comment.name ? comment.name.substring(0, 2).toUpperCase() : 'U'}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.commentContent}>
                   <View style={styles.commentHeader}>
                     <Text style={styles.commentName}>{comment.name}</Text>
@@ -128,10 +132,13 @@ export default function CommentsScreen() {
 
       {/* Comment input */}
       <View style={styles.inputContainer}>
-        <View style={styles.inputAvatar}>
-        <Text style={styles.inputAvatarText}>{initials}</Text>
-
-        </View>
+        {user?.profile_picture ? (
+          <Image source={{ uri: user.profile_picture }} style={styles.inputAvatar} />
+        ) : (
+          <View style={styles.inputAvatar}>
+            <Text style={styles.inputAvatarText}>{initials}</Text>
+          </View>
+        )}
         <TextInput
           style={styles.input}
           placeholder="Add a comment..."
