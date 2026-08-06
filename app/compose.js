@@ -46,6 +46,7 @@ export default function ComposeScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
 
   imagePreview: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 16,
   },
 

@@ -8,7 +8,7 @@ import { getComments, createComment, getCurrentUser} from '../services/api';
 
 
 export default function CommentsScreen() {
-  const { postId, postText, postName } = useLocalSearchParams();
+  const { postId, postText, postName, postImage } = useLocalSearchParams();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
@@ -88,6 +88,13 @@ export default function CommentsScreen() {
         <View style={styles.originalPost}>
           <Text style={styles.originalPostName}>{postName}</Text>
           <Text style={styles.originalPostText}>{postText}</Text>
+          {postImage ? (
+            <Image
+              source={{ uri: postImage }}
+              style={styles.originalPostImage}
+              resizeMode="cover"
+            />
+          ) : null}
         </View>
 
         <View style={styles.divider} />
@@ -214,6 +221,13 @@ const styles = StyleSheet.create({
     color: colors.grey,
     lineHeight: 22,
     fontWeight: '300',
+    marginBottom: 12,
+  },
+
+  originalPostImage: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 12,
   },
 
   divider: {

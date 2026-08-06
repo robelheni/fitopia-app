@@ -361,6 +361,7 @@ export default function CommunityScreen() {
                       postId: post.id,
                       postText: post.text,
                       postName: post.name,
+                      postImage: post.image_url || '',
                     }
                   })}
                 >
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
 
   postImage: {
     width: '100%',
-    height: 200,
+    aspectRatio: 1,
     borderRadius: 12,
     marginBottom: 14,
     marginTop: -4,
