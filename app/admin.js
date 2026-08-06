@@ -177,6 +177,18 @@ export default function AdminScreen() {
         </TouchableOpacity>
 </View>
 
+        <View style={styles.searchBar}>
+          <Feather name="search" size={16} color={colors.greyLight} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by name, email, or username"
+            placeholderTextColor={colors.greyLight}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+          />
+        </View>
+
         <View style={styles.usersList}>
           {filteredUsers.map(u => (
             <View key={u.id} style={styles.userCard}>

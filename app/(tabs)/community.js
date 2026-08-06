@@ -48,6 +48,7 @@ export default function CommunityScreen() {
 
   const filters = [
     { key: 'all', label: 'All' },
+    { key: 'general', label: 'General' },
     { key: 'progress', label: 'Progress' },
     { key: 'questions', label: 'Questions' },
     { key: 'challenges', label: 'Challenges' },
@@ -186,8 +187,7 @@ export default function CommunityScreen() {
         <View style={styles.headerButtons}>
             <TouchableOpacity
             style={styles.trainersButton}
-            onPress={() => router.push('/trainers')}
-            
+            onPress={() => router.push('/search')}
             >
             <Feather name="users" size={14} color={colors.blue} />
             <Text style={styles.trainersButtonText}>Trainers</Text>
@@ -416,11 +416,6 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 120,
   },
   header: {
     flexDirection: 'row',

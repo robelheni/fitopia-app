@@ -487,7 +487,7 @@ export default function ProfileScreen() {
                 style={styles.settingsItem}
                 onPress={() => {
                   setSettingsVisible(false);
-                  router.push('/language');
+                  setTimeout(() => router.push('/language'), 300);
                 }}
               >
                 <View style={styles.settingsIconContainer}>

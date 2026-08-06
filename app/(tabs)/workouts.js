@@ -747,6 +747,11 @@ const animatedStyle = useAnimatedStyle(() => ({
         backgroundColor: colors.blue,
         borderColor: colors.blue,
       },
+
+      weeklyPlanCardPast: {
+        backgroundColor: colors.greyCard,
+        opacity: 0.7,
+      },
       
       weeklyPlanLeft: {
         gap: 4,
