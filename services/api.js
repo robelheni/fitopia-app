@@ -364,7 +364,7 @@ export async function getCommunityPosts() {
 }
 
 //creates a new post
-export async function createPost(text, tag, challengeId = null) {
+export async function createPost(text, tag, challengeId = null, imageUrl = null) {
   const token = await getToken();
   if (!token) throw new Error('Not logged in');
 
@@ -373,12 +373,37 @@ export async function createPost(text, tag, challengeId = null) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, tag, challenge_id: challengeId }),
+      body: JSON.stringify({ text, tag, challenge_id: challengeId, image_url: imageUrl }),
     }
   );
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || 'Failed to create post');
+  return data;
+}
+
+export async function uploadPostImage(imageUri) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+
+  const formData = new FormData();
+  formData.append('file', {
+    uri: imageUri,
+    type: 'image/jpeg',
+    name: 'post.jpg',
+  });
+
+  const response = await fetch(
+    `${BASE_URL}/upload/post-image?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'multipart/form-data' },
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Upload failed');
   return data;
 }
 //Toggles like on a post

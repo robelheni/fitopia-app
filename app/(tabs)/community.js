@@ -365,6 +365,13 @@ export default function CommunityScreen() {
                   })}
                 >
                   <Text style={styles.postText}>{post.text}</Text>
+                  {post.image_url && (
+                    <Image
+                      source={{ uri: post.image_url }}
+                      style={styles.postImage}
+                      resizeMode="cover"
+                    />
+                  )}
                 </TouchableOpacity>
 
                 {/* Post actions */}
@@ -605,6 +612,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontWeight: '300',
     marginBottom: 14,
+  },
+
+  postImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 14,
+    marginTop: -4,
   },
   postActions: {
     flexDirection: 'row',

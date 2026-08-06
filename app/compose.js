@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../constants/colors';
-import { createPost, getCurrentUser } from '../services/api';
+import { createPost, getCurrentUser, uploadPostImage } from '../services/api';
 
 const tags = [
   { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
@@ -21,6 +22,8 @@ export default function ComposeScreen() {
   // Default to the "challenges" tag automatically when arriving from a challenge page
   const [selectedTag, setSelectedTag] = useState(challengeId ? 'challenges' : null);
   const [posting, setPosting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [user, setUser] = useState(null);
 
@@ -35,6 +38,21 @@ export default function ComposeScreen() {
   const initials = user?.name
     ? user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
     : '??';
+
+  async function handlePickImage() {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setSelectedImage(result.assets[0].uri);
+    }
+  }
 
   const canPost = text.trim().length > 0;
 
@@ -56,22 +74,29 @@ export default function ComposeScreen() {
           onPress={async () => {
             try {
               setPosting(true);
-              // Pass the challengeId through if this post is tagged to a challenge —
-              // it'll be null for normal posts, which the backend treats as "no challenge"
+              let imageUrl = null;
+              if (selectedImage) {
+                setUploadingImage(true);
+                const uploaded = await uploadPostImage(selectedImage);
+                imageUrl = uploaded.image_url;
+                setUploadingImage(false);
+              }
               await createPost(
                 text.trim(),
                 selectedTag || 'general',
-                challengeId ? parseInt(challengeId) : null
+                challengeId ? parseInt(challengeId) : null,
+                imageUrl
               );
               router.back();
             } catch (err) {
               console.log('Post failed:', err.message);
               setPosting(false);
+              setUploadingImage(false);
             }
           }}
         >
           <Text style={[styles.postButtonText, (!canPost || posting) && styles.postButtonTextDisabled]}>
-            {posting ? 'Posting...' : 'Post'}
+            {uploadingImage ? 'Uploading...' : posting ? 'Posting...' : 'Post'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -94,9 +119,13 @@ export default function ComposeScreen() {
 
         {/* User avatar and text input */}
         <View style={styles.inputRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
+          {user?.profile_picture ? (
+            <Image source={{ uri: user.profile_picture }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
           <TextInput
             style={styles.textInput}
             placeholder={challengeId
@@ -114,12 +143,24 @@ export default function ComposeScreen() {
         {/* Character count */}
         <Text style={styles.charCount}>{text.length}/500</Text>
 
-        {/* Photo placeholder */}
-        <TouchableOpacity style={styles.photoPlaceholder}>
-          <Feather name="camera" size={24} color={colors.greyLight} />
-          <Text style={styles.photoPlaceholderText}>Add a photo</Text>
-          <Text style={styles.photoPlaceholderSub}>Coming soon</Text>
-        </TouchableOpacity>
+        {/* Photo picker */}
+        {selectedImage ? (
+          <View style={styles.imagePreviewContainer}>
+            <Image source={{ uri: selectedImage }} style={styles.imagePreview} />
+            <TouchableOpacity
+              style={styles.removeImageButton}
+              onPress={() => setSelectedImage(null)}
+            >
+              <Feather name="x" size={16} color={colors.white} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.photoPlaceholder} onPress={handlePickImage}>
+            <Feather name="camera" size={24} color={colors.greyLight} />
+            <Text style={styles.photoPlaceholderText}>Add a photo</Text>
+            <Text style={styles.photoPlaceholderSub}>Tap to choose from library</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Tag selector — hidden when posting from a challenge, since it's locked to "challenges" */}
         {!challengeId && (
@@ -310,6 +351,31 @@ const styles = StyleSheet.create({
   photoPlaceholderSub: {
     fontSize: 12,
     color: colors.greyLight,
+  },
+
+  imagePreviewContainer: {
+    marginBottom: 24,
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 16,
+  },
+
+  removeImageButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   tagLabel: {
