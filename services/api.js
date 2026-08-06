@@ -122,22 +122,6 @@ export async function saveOnboarding(answers, tokenOverride = null) {
     return data;
   }
   
-  export async function getTodaysMeals(isFasting = false) {
-    const token = await getToken();
-    if (!token) throw new Error('Not logged in');
-  
-    const response = await fetch(
-      `${BASE_URL}/plan/meals/today?token=${token}&is_fasting=${isFasting}`,
-      {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-  
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || 'Failed to get meals');
-    return data;
-  }
   export async function getSwaps(mealId, swapGroup, targetCalories) {
     const token = await getToken();
     if (!token) throw new Error('Not logged in');
