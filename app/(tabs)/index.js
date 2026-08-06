@@ -328,7 +328,7 @@ export default function HomeScreen() {
 
           <FadeUpItem delay={400}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Your nutrition</Text>
+              <Text style={styles.sectionTitle}>Nutrition & Meals</Text>
               <TouchableOpacity onPress={() => router.push('/nutrition/details')}>
                 <Text style={styles.sectionLink}>Details</Text>
               </TouchableOpacity>
@@ -375,52 +375,24 @@ export default function HomeScreen() {
                 </View>
               </View>
             </View>
-          </FadeUpItem>
 
-          <FadeUpItem delay={450}>
             <TouchableOpacity
-              style={styles.mealPlanBanner}
+              style={styles.mealPlanCard}
               onPress={() => router.push({
                 pathname: '/meals/weekly',
                 params: { startDay: todayKey }
               })}
-              activeOpacity={0.9}
+              activeOpacity={0.85}
             >
-              <View style={styles.mealPlanGlow} />
-
-              <View style={styles.mealPlanContent}>
-                <View style={styles.mealPlanIconContainer}>
-                  <MaterialCommunityIcons name="noodles" size={32} color={colors.blue} />
-                </View>
-                <Text style={styles.mealPlanTitle}>Your meal plan{'\n'}is ready</Text>
-                <Text style={styles.mealPlanSub}>
-                  Every meal personalised to your body and {'\n'}your goals.
-                </Text>
-
-                <View style={styles.mealPlanStats}>
-                  <View style={styles.mealPlanStat}>
-                    <Feather name="sun" size={18} color={colors.blue} />
-                    <Text style={styles.mealPlanStatNumber}>4</Text>
-                    <Text style={styles.mealPlanStatLabel}>Meals today</Text>
-                  </View>
-                  <View style={styles.mealPlanStatDivider} />
-                  <View style={styles.mealPlanStat}>
-                    <Feather name="calendar" size={18} color={colors.blue} />
-                    <Text style={styles.mealPlanStatNumber}>7</Text>
-                    <Text style={styles.mealPlanStatLabel}>Days planned</Text>
-                  </View>
-                  <View style={styles.mealPlanStatDivider} />
-                  <View style={styles.mealPlanStat}>
-                    <Feather name="shuffle" size={18} color={colors.blue} />
-                    <Text style={styles.mealPlanStatNumber}>70+</Text>
-                    <Text style={styles.mealPlanStatLabel}>Food choices</Text>
-                  </View>
-                </View>
-
-                <View style={styles.mealPlanButton}>
-                  <Text style={styles.mealPlanButtonText}>View my meal plan</Text>
-                  <Feather name="arrow-right" size={16} color={colors.blue} />
-                </View>
+              <View style={styles.mealPlanIcon}>
+                <MaterialCommunityIcons name="noodles" size={20} color={colors.blue} />
+              </View>
+              <View style={styles.mealPlanText}>
+                <Text style={styles.mealPlanTitle}>Your meal plan</Text>
+                <Text style={styles.mealPlanSub}>Tap to view today's meals</Text>
+              </View>
+              <View style={styles.mealPlanArrow}>
+                <Feather name="arrow-right" size={16} color={colors.blue} />
               </View>
             </TouchableOpacity>
           </FadeUpItem>
@@ -615,38 +587,21 @@ const styles = StyleSheet.create({
   },
   communityDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginVertical: 14 },
 
-  mealPlanBanner: {
+  mealPlanCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 16,
     backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 20,
     borderWidth: 1, borderColor: colors.greyBorder,
     shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3,
   },
-  mealPlanGlow: {
-    position: 'absolute', top: -40, right: -40, width: 160, height: 160,
-    borderRadius: 80, backgroundColor: 'rgba(255,255,255,0.08)',
+  mealPlanIcon: {
+    width: 48, height: 48, borderRadius: 24,
+    backgroundColor: colors.blueLight, alignItems: 'center', justifyContent: 'center', flexShrink: 0,
   },
-  mealPlanContent: { padding: 24, gap: 16, alignItems: 'center' },
-  mealPlanTitle: {
-    fontSize: 32, fontWeight: '700', color: colors.black,
-    letterSpacing: -1, lineHeight: 36, textAlign: 'center',
-  },
-  mealPlanSub: {
-    fontSize: 14, color: colors.grey, fontWeight: '300', lineHeight: 20, textAlign: 'center',
-  },
-  mealPlanStats: {
-    flexDirection: 'row', backgroundColor: colors.blueLight, borderRadius: 16, padding: 16,
-  },
-  mealPlanStat: { flex: 1, alignItems: 'center', gap: 6 },
-  mealPlanStatNumber: { fontSize: 22, fontWeight: '700', color: colors.blue, letterSpacing: -0.5 },
-  mealPlanStatLabel: { fontSize: 11, color: colors.blue, fontWeight: '300' },
-  mealPlanStatDivider: { width: 0.5, backgroundColor: colors.greyBorder },
-  mealPlanButton: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-    backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100, width: '100%',
-    shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
-  },
-  mealPlanButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
-  mealPlanIconContainer: {
-    width: 56, height: 56, borderRadius: 16,
+  mealPlanText: { flex: 1 },
+  mealPlanTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
+  mealPlanSub: { fontSize: 13, color: colors.grey, fontWeight: '300', marginTop: 2 },
+  mealPlanArrow: {
+    width: 32, height: 32, borderRadius: 16,
     backgroundColor: colors.blueLight, alignItems: 'center', justifyContent: 'center',
   },
 
