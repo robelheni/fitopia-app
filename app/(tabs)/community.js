@@ -7,7 +7,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
@@ -33,6 +34,10 @@ function timeAgo(isoString) {
 }
 
 export default function CommunityScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const [contentKey, setContentKey] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
   const [posts, setPosts] = useState([]);
@@ -179,6 +184,8 @@ export default function CommunityScreen() {
   
     Alert.alert('Post options', null, buttons);
   }
+  const styles = makeStyles(colors, isDark);
+
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
       <BackgroundCircles variant="bottomRight" />
@@ -426,7 +433,10 @@ export default function CommunityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
@@ -594,21 +604,21 @@ const styles = StyleSheet.create({
     borderRadius: 100,
   },
   postTagQuestion: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: isDark ? '#3B0764' : '#EDE9FE',
   },
   postTagChallenge: {
-    backgroundColor: '#D1FAE5',
+    backgroundColor: isDark ? '#052E16' : '#D1FAE5',
   },
   postTagText: {
     fontSize: 10,
-    color: colors.blue,
+    color: isDark ? '#A5B4FC' : colors.blue,
     fontWeight: '500',
   },
   postTagTextQuestion: {
-    color: '#7C3AED',
+    color: isDark ? '#C4B5FD' : '#7C3AED',
   },
   postTagTextChallenge: {
-    color: '#059669',
+    color: isDark ? '#6EE7B7' : '#059669',
   },
   postText: {
     fontSize: 14,
@@ -655,7 +665,7 @@ const styles = StyleSheet.create({
     paddingTop: 52,
     paddingBottom: 16,
     zIndex: 10,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: isDark ? 'rgba(15,15,15,0.95)' : 'rgba(255,255,255,0.95)',
     borderBottomWidth: 0.5,
     borderBottomColor: colors.greyBorder,
   },
@@ -745,4 +755,4 @@ const styles = StyleSheet.create({
   noChallengesText: {
     fontSize: 13, color: colors.greyLight, fontWeight: '300',
   },
-});
+}); }

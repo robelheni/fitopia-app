@@ -9,7 +9,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useRef } from 'react';
@@ -31,6 +32,10 @@ export default function HomeScreen() {
   const [todaySession, setTodaySession] = useState(null);
   const [recentPosts, setRecentPosts] = useState([]);
   const [accountCreatedAt, setAccountCreatedAt] = useState(null);
+
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
 
   const [nutritionTargets, setNutritionTargets] = useState({
     calories: 0,
@@ -171,6 +176,8 @@ export default function HomeScreen() {
     }
     return 'soon';
   })();
+
+  const styles = makeStyles(colors, isDark);
 
   return (
     <Animated.View style={[styles.container, animatedStyle]}>
@@ -443,7 +450,10 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   scroll: { flex: 1 },
   content: { paddingHorizontal: 24, paddingTop: 120, paddingBottom: 120 },
@@ -453,7 +463,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-    zIndex: 10, backgroundColor: 'rgba(255,255,255,0.95)',
+    zIndex: 10, backgroundColor: isDark ? 'rgba(15,15,15,0.95)' : 'rgba(255,255,255,0.95)',
     borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
   },
   streakCard: {
@@ -490,8 +500,8 @@ const styles = StyleSheet.create({
   // Completed state swaps the card to a soft green theme —
   // visually distinct at a glance from the "not started" white card
   workoutCardCompleted: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
+    backgroundColor: isDark ? '#022C22' : '#F0FDF4',
+    borderColor: isDark ? '#064E3B' : '#BBF7D0',
   },
 
   workoutFooter: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -521,22 +531,22 @@ const styles = StyleSheet.create({
   },
   completedTextBlock: { flex: 1 },
   completedTitle: {
-    fontSize: 17, fontWeight: '700', color: '#166534', letterSpacing: -0.3,
+    fontSize: 17, fontWeight: '700', color: isDark ? '#4ADE80' : '#166534', letterSpacing: -0.3,
   },
   completedSubtitle: {
-    fontSize: 12, color: '#15803D', fontWeight: '400', marginTop: 2,
+    fontSize: 12, color: isDark ? '#86EFAC' : '#15803D', fontWeight: '400', marginTop: 2,
   },
   completedMessage: {
-    fontSize: 13, color: '#166534', fontWeight: '300', lineHeight: 19, marginBottom: 16,
+    fontSize: 13, color: isDark ? '#4ADE80' : '#166534', fontWeight: '300', lineHeight: 19, marginBottom: 16,
   },
   viewWorkoutButton: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-    backgroundColor: '#DCFCE7',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#DCFCE7',
     paddingVertical: 10,
     borderRadius: 100,
   },
   viewWorkoutText: {
-    fontSize: 13, fontWeight: '600', color: '#059669',
+    fontSize: 13, fontWeight: '600', color: isDark ? '#4ADE80' : '#059669',
   },
 
   restDayCard: {
@@ -609,4 +619,4 @@ const styles = StyleSheet.create({
 
   communityEmpty: { paddingVertical: 20, alignItems: 'center' },
   communityEmptyText: { fontSize: 13, color: colors.greyLight, fontWeight: '300' },
-});
+}); }

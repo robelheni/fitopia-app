@@ -10,7 +10,8 @@ import Animated, {
   useDerivedValue,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { lightColors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 import { useTabBar } from '../context/TabBarContext';
 import { useEffect } from 'react';
 
@@ -26,6 +27,9 @@ const tabs = [
 ];
 
 export default function TabBar({ state, navigation }) {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
   const { collapsed } = useTabBar();
 
   const bubbleX = useSharedValue(state.index * TAB_WIDTH);
@@ -33,7 +37,6 @@ export default function TabBar({ state, navigation }) {
   const containerBounce = useSharedValue(1);
   const containerWidth = useSharedValue(TAB_BAR_WIDTH);
   const bubbleOpacity = useSharedValue(1);
-  const highlightX = useSharedValue(state.index * TAB_WIDTH);
 
   const pressScale0 = useSharedValue(1);
   const pressScale1 = useSharedValue(1);
@@ -48,7 +51,6 @@ export default function TabBar({ state, navigation }) {
     } else {
       containerWidth.value = withSpring(TAB_BAR_WIDTH, { damping: 18, stiffness: 180 });
       bubbleX.value = withSpring(state.index * TAB_WIDTH, { damping: 18, stiffness: 180 });
-      highlightX.value = withSpring(state.index * TAB_WIDTH, { damping: 20, stiffness: 160 });
       bubbleOpacity.value = withTiming(1, { duration: 200 });
     }
   }, [collapsed, state.index]);
@@ -80,11 +82,6 @@ export default function TabBar({ state, navigation }) {
       });
     });
 
-    // Specular highlight moves slightly behind bubble — depth illusion
-    highlightX.value = withSpring(targetX, {
-      damping: 22, stiffness: 160, mass: 0.7,
-    });
-
     pressScales[index].value = withSpring(1.22, {
       damping: 12, stiffness: 350, mass: 0.4, overshootClamping: true,
     }, () => {
@@ -106,11 +103,6 @@ export default function TabBar({ state, navigation }) {
     opacity: bubbleOpacity.value,
   }));
 
-  const highlightStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: highlightX.value + 16 }],
-    opacity: bubbleOpacity.value,
-  }));
-
   const containerStyle = useAnimatedStyle(() => ({
     width: containerWidth.value,
   }));
@@ -123,18 +115,26 @@ export default function TabBar({ state, navigation }) {
 
   return (
     <Animated.View style={[styles.wrapper, wrapperBounceStyle]}>
-      <Animated.View style={[styles.container, containerStyle]}>
+      <Animated.View style={[
+        styles.container,
+        containerStyle,
+        { backgroundColor: isDark ? 'rgba(20,20,22,0.85)' : 'rgba(255,255,255,0.3)' },
+      ]}>
 
         {/* Layer 1 — Real background blur, strong */}
         <BlurView
           intensity={140}
-          tint="light"
+          tint={isDark ? 'dark' : 'light'}
           style={StyleSheet.absoluteFill}
         />
 
         {/* Layer 2 — Gradient gives depth, not flat white */}
         <LinearGradient
-          colors={[
+          colors={isDark ? [
+            'rgba(255,255,255,0.05)',
+            'rgba(255,255,255,0.01)',
+            'rgba(255,255,255,0.03)',
+          ] : [
             'rgba(255,255,255,0.20)',
             'rgba(255,255,255,0.06)',
             'rgba(255,255,255,0.12)',
@@ -157,13 +157,13 @@ export default function TabBar({ state, navigation }) {
         {/* Layer 6 — Bottom depth */}
         <View style={styles.bottomDepth} />
 
-        {/* Moving specular highlight — trails slightly behind bubble */}
-        <Animated.View style={[styles.specularHighlight, highlightStyle]} />
-
         {/* Active pill — glass not blue */}
-        <Animated.View style={[styles.bubble, bubbleStyle]}>
+        <Animated.View style={[styles.bubble, bubbleStyle, isDark && styles.bubbleDark]}>
           <LinearGradient
-            colors={[
+            colors={isDark ? [
+              'rgba(255,255,255,0.12)',
+              'rgba(255,255,255,0.05)',
+            ] : [
               'rgba(255,255,255,0.55)',
               'rgba(255,255,255,0.25)',
             ]}
@@ -188,7 +188,7 @@ export default function TabBar({ state, navigation }) {
                 <Feather
                   name={tab.icon}
                   size={22}
-                  color={isFocused ? colors.blue : 'rgba(90,90,100,0.5)'}
+                  color={isFocused ? colors.blue : isDark ? 'rgba(180,180,190,0.55)' : 'rgba(90,90,100,0.5)'}
                 />
               </Animated.View>
             </TouchableOpacity>
@@ -261,17 +261,6 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
-  // Moving specular highlight — floats behind active tab
-  specularHighlight: {
-    position: 'absolute',
-    top: 6,
-    width: TAB_WIDTH - 32,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255,255,255,0.22)',
-    zIndex: 1,
-  },
-
   // Active tab pill — glass not blue
   bubble: {
     position: 'absolute',
@@ -294,5 +283,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: '100%',
     zIndex: 4,
+  },
+
+  bubbleDark: {
+    borderColor: 'rgba(255,255,255,0.15)',
+    shadowOpacity: 0.3,
   },
 });

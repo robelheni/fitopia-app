@@ -3,17 +3,22 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, ScrollView,
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 import { createPost, getCurrentUser, uploadPostImage } from '../services/api';
 
-const tags = [
-  { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
-  { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
-  { key: 'questions', label: 'Question', color: '#7C3AED', bg: '#EDE9FE' },
-  { key: 'challenges', label: 'Challenge', color: '#059669', bg: '#D1FAE5' },
-];
+function getTags(colors, isDark) {
+  return [
+    { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
+    { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
+    { key: 'questions', label: 'Question', color: isDark ? '#A78BFA' : '#7C3AED', bg: isDark ? '#2D1B69' : '#EDE9FE' },
+    { key: 'challenges', label: 'Challenge', color: isDark ? '#34D399' : '#059669', bg: isDark ? '#064E3B' : '#D1FAE5' },
+  ];
+}
 
 export default function ComposeScreen() {
+  const { colors, isDark } = useTheme();
+  const tags = getTags(colors, isDark);
+
   // If navigated here from a challenge page, these params arrive pre-filled —
   // letting someone post their attempt directly without manually picking the tag
   const { challengeId, challengeName } = useLocalSearchParams();
@@ -56,6 +61,8 @@ export default function ComposeScreen() {
   }
 
   const canPost = text.trim().length > 0;
+
+  const styles = makeStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -205,7 +212,7 @@ export default function ComposeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(colors) { return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white,
@@ -428,4 +435,4 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: '300',
   },
-});
+}); }

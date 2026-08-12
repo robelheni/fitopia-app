@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { getChallengeDetail, togglePostLike } from '../../services/api';
 
@@ -17,6 +18,10 @@ function timeAgo(isoString) {
 }
 
 export default function ChallengeDetailScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const { id, name } = useLocalSearchParams();
   const [challenge, setChallenge] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +58,8 @@ export default function ChallengeDetailScreen() {
       console.log('Like failed:', err.message);
     }
   }
+
+  const styles = makeStyles(colors, isDark);
 
   return (
     <View style={styles.container}>
@@ -166,7 +173,10 @@ export default function ChallengeDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
@@ -217,4 +227,4 @@ const styles = StyleSheet.create({
   postActions: { flexDirection: 'row', gap: 20 },
   postAction: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   postActionText: { fontSize: 13, color: colors.greyLight },
-});
+}); }

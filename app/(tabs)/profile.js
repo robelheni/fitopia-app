@@ -4,7 +4,7 @@ import FloatingCoachButton from '../../components/FloatingCoachButton';
 import {
   View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   Clipboard, Modal, TextInput, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Alert, Share
+  Platform, ActivityIndicator, Alert, Share, Switch
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, {
@@ -13,7 +13,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
@@ -37,6 +38,7 @@ function timeAgo(isoString) {
 
 
 export default function ProfileScreen() {
+  const { isDark, toggleTheme, colors } = useTheme();
   const [contentKey, setContentKey] = useState(0);
   const [codeCopied, setCodeCopied] = useState(false);
   const opacity = useSharedValue(0);
@@ -257,6 +259,8 @@ export default function ProfileScreen() {
     router.replace('/welcome');
   }
 
+  const styles = makeStyles(colors, isDark);
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -354,7 +358,7 @@ export default function ProfileScreen() {
           <FadeUpItem delay={120}>
             
             <Text style={styles.sectionTitle}>Activity</Text>
-            <YearHeatmap accountCreatedAt={user?.created_at} />
+            <YearHeatmap accountCreatedAt={user?.created_at} colors={colors} />
           </FadeUpItem>
 
           {/* Subscription card */}
@@ -621,6 +625,21 @@ export default function ProfileScreen() {
 
               <View style={styles.settingsDivider} />
 
+              <View style={styles.settingsItem}>
+                <View style={styles.settingsIconContainer}>
+                  <Feather name={isDark ? 'moon' : 'sun'} size={16} color={colors.blue} />
+                </View>
+                <Text style={styles.settingsItemText}>Dark mode</Text>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: colors.greyBorder, true: colors.blue }}
+                  thumbColor={colors.white}
+                />
+              </View>
+
+              <View style={styles.settingsDivider} />
+
               <TouchableOpacity
                 style={styles.settingsItem}
                 onPress={() => {
@@ -664,7 +683,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) { const colors = c || lightColors; const isDark = dark || false; return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
@@ -674,7 +693,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 24, paddingTop: 52, paddingBottom: 16,
-    zIndex: 10, backgroundColor: 'rgba(255,255,255,0.95)',
+    zIndex: 10, backgroundColor: isDark ? 'rgba(15,15,15,0.95)' : 'rgba(255,255,255,0.95)',
     borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
   },
 
@@ -758,12 +777,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4, borderRadius: 100, alignSelf: 'flex-start', marginBottom: 4,
   },
 
-  planBadgeText: { fontSize: 11, color: colors.white, fontWeight: '600' },
-  subscriptionTitle: { fontSize: 16, fontWeight: '700', color: colors.white, letterSpacing: -0.3 },
+  planBadgeText: { fontSize: 11, color: '#FFFFFF', fontWeight: '600' },
+  subscriptionTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
   subscriptionSub: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '300', lineHeight: 18 },
 
   upgradeButton: {
-    backgroundColor: colors.white, paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF', paddingHorizontal: 16,
     paddingVertical: 10, borderRadius: 100, marginLeft: 12,
   },
 
@@ -808,9 +827,9 @@ const styles = StyleSheet.create({
 
   postTag: { backgroundColor: colors.greyCard, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
   postTagProgress: { backgroundColor: colors.blueLight },
-  postTagQuestion: { backgroundColor: '#EDE9FE' },
-  postTagChallenge: { backgroundColor: '#D1FAE5' },
-  postTagText: { fontSize: 10, color: colors.grey, fontWeight: '500' },
+  postTagQuestion: { backgroundColor: isDark ? '#3B0764' : '#EDE9FE' },
+  postTagChallenge: { backgroundColor: isDark ? '#052E16' : '#D1FAE5' },
+  postTagText: { fontSize: 10, color: isDark ? colors.black : colors.grey, fontWeight: '500' },
   postTagTextProgress: { color: colors.blue },
   postTime: { fontSize: 11, color: colors.greyLight },
   postText: { fontSize: 14, color: colors.black, lineHeight: 20, fontWeight: '300', marginBottom: 10 },
@@ -913,4 +932,4 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 4,
   },
-});
+}); }

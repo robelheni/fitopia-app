@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -196,6 +197,10 @@ function CompletionScreen({ quote, celebration, totalExercises, workout, userNam
 }
 
 export default function ActiveWorkoutScreen() {
+    const theme = useTheme();
+    const isDark = theme ? theme.isDark : false;
+    const colors = theme ? theme.colors : lightColors;
+
     const { id, sessionData, workoutName } = useLocalSearchParams();
     const [userName, setUserName] = useState('');
     const [aiQuote, setAiQuote] = useState(null);
@@ -325,6 +330,8 @@ export default function ActiveWorkoutScreen() {
       );
     }
     
+
+    const styles = makeStyles(colors, isDark);
 
     return (
         <View style={styles.container}>
@@ -544,7 +551,10 @@ export default function ActiveWorkoutScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.white },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
     exitButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
@@ -621,4 +631,4 @@ const styles = StyleSheet.create({
     completeDoneButton: { backgroundColor: colors.white, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
     completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
     seeYouText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
-});
+}); }

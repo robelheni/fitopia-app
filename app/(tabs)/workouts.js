@@ -7,7 +7,8 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import MyPlanModal from '../../components/MyPlanModal';
@@ -21,6 +22,10 @@ import { getWorkoutPlan, getStreak, getCurrentUser } from "../../services/api";
 
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
+    const theme = useTheme();
+    const isDark = theme ? theme.isDark : false;
+    const colors = theme ? theme.colors : lightColors;
+    const styles = makeStyles(colors, isDark);
     return (
         <View style={styles.weeklyPlanCardContainer}>
             <TouchableOpacity
@@ -108,6 +113,10 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
   }
 
 export default function WorkoutsScreen() {
+    const theme = useTheme();
+    const isDark = theme ? theme.isDark : false;
+    const colors = theme ? theme.colors : lightColors;
+
     const [contentKey, setContentKey] = useState(0);
     const [activeFilter, setActiveFilter] = useState('forYou');
     const [myPlanVisible, setMyPlanVisible] = useState(false);
@@ -321,6 +330,8 @@ const animatedStyle = useAnimatedStyle(() => ({
   opacity: opacity.value,
   transform: [{ translateY: translateY.value }],
 }));    
+
+    const styles = makeStyles(colors, isDark);
 
     return (
         <Animated.View style={[styles.container, animatedStyle]}>
@@ -614,7 +625,10 @@ const animatedStyle = useAnimatedStyle(() => ({
     );
 }
 
-    const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.white },
     scroll: { flex: 1 },
     content: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 120 },
@@ -862,7 +876,7 @@ const animatedStyle = useAnimatedStyle(() => ({
         paddingTop: 52,
         paddingBottom: 16,
         zIndex: 10,
-        backgroundColor: 'rgba(255,255,255,0.95)',
+        backgroundColor: isDark ? 'rgba(15,15,15,0.95)' : 'rgba(255,255,255,0.95)',
         borderBottomWidth: 0.5,
         borderBottomColor: colors.greyBorder,
       },
@@ -971,7 +985,7 @@ const animatedStyle = useAnimatedStyle(() => ({
       
       savedButton: {
         width: 40, height: 40, borderRadius: 20,
-        backgroundColor: '#FEE2E2',
+        backgroundColor: isDark ? '#3B0000' : '#FEE2E2',
         alignItems: 'center', justifyContent: 'center',
       },
-});
+}); }

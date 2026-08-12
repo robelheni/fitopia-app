@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { lightColors } from '../constants/colors';
 import { getYearStats } from '../services/api';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -43,7 +43,8 @@ function getDayKey(date) {
   return WEEKDAY_KEYS[date.getDay()];
 }
 
-export default function YearHeatmap({ accountCreatedAt }) {
+export default function YearHeatmap({ accountCreatedAt, colors: colorsProp }) {
+  const colors = colorsProp || lightColors;
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [completedMap, setCompletedMap] = useState({}); // dateString -> workout name
@@ -145,6 +146,8 @@ export default function YearHeatmap({ accountCreatedAt }) {
     }
     return `${formattedDate} — Rest day`;
   }
+
+  const styles = makeStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -258,7 +261,7 @@ export default function YearHeatmap({ accountCreatedAt }) {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c) { const colors = c || lightColors; return StyleSheet.create({
   container: {
     backgroundColor: colors.white,
     borderRadius: 16,
@@ -376,4 +379,4 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 3,
   },
-});
+}); }

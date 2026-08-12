@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { getUserProfile, toggleFollow, togglePostLike } from '../../services/api';
 // Same muscle colour helper we use in liked.js and library.js
@@ -20,13 +21,7 @@ const MUSCLE_COLORS = {
   cardio:     { color: '#059669', bg: '#D1FAE5' },
 };
 
-// Tag colours for post tags — same as community.js
-const TAG_COLORS = {
-  progress:   { color: colors.blue, bg: colors.blueLight },
-  questions:  { color: '#7C3AED', bg: '#EDE9FE' },
-  challenges: { color: '#059669', bg: '#D1FAE5' },
-  general:    { color: colors.grey, bg: colors.greyCard },
-};
+// Tag colours — computed inside component via getTagColors(colors, isDark)
 
 // Converts ISO timestamp to "2h ago" format
 // Same function we use in community.js
@@ -41,6 +36,17 @@ function timeAgo(isoString) {
 }
 
 export default function UserProfileScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
+  const TAG_COLORS = {
+    progress:   { color: colors.blue, bg: colors.blueLight },
+    questions:  { color: isDark ? '#C4B5FD' : '#7C3AED', bg: isDark ? '#3B0764' : '#EDE9FE' },
+    challenges: { color: isDark ? '#6EE7B7' : '#059669', bg: isDark ? '#052E16' : '#D1FAE5' },
+    general:    { color: colors.grey, bg: colors.greyCard },
+  };
+
   // useLocalSearchParams reads the URL params — { id, name } passed when navigating here
   // id is the user's database ID, name is passed for instant display before API responds
   const { id, name } = useLocalSearchParams();
@@ -108,6 +114,8 @@ export default function UserProfileScreen() {
     if (gender === 'male') return { bg: colors.blueLight, color: colors.blue };
     return { bg: colors.greyCard, color: colors.grey };
   }
+
+  const styles = makeStyles(colors, isDark);
 
   return (
     <View style={styles.container}>
@@ -299,7 +307,10 @@ export default function UserProfileScreen() {
     );
     }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
 
   header: {
@@ -477,4 +488,4 @@ const styles = StyleSheet.create({
   postActionText: {
     fontSize: 12, color: colors.greyLight,
   },
-});
+}); }

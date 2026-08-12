@@ -2,12 +2,17 @@ import { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { lightColors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
 import { getComments, createComment, getCurrentUser} from '../services/api';
 
 
 
 export default function CommentsScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const { postId, postText, postName, postImage, commentsDisabled } = useLocalSearchParams();
   const isCommentsDisabled = commentsDisabled === '1';
   const [comments, setComments] = useState([]);
@@ -60,6 +65,8 @@ export default function CommentsScreen() {
       setSending(false);
     }
   }
+
+  const styles = makeStyles(colors, isDark);
 
   return (
     <KeyboardAvoidingView
@@ -180,7 +187,10 @@ export default function CommentsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -190,6 +200,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.greyBorder,
+    backgroundColor: colors.white,
   },
 
   backButton: {
@@ -291,7 +302,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   commentContent: {
@@ -350,7 +361,7 @@ const styles = StyleSheet.create({
   inputAvatarText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   input: {
@@ -402,4 +413,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}); }

@@ -1,7 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -182,6 +183,10 @@ function calculateSessionDuration(session) {
 
 
     export default function WorkoutDetailScreen() {
+        const theme = useTheme();
+        const isDark = theme ? theme.isDark : false;
+        const colors = theme ? theme.colors : lightColors;
+
         const { id, sessionData, workoutName } = useLocalSearchParams();
         
 
@@ -275,6 +280,8 @@ function calculateSessionDuration(session) {
                 </View>
             );
         }
+
+    const styles = makeStyles(colors, isDark);
 
     return (
         <View style={styles.container}>
@@ -511,7 +518,10 @@ function calculateSessionDuration(session) {
     );
 }
 
-const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.white,
@@ -721,4 +731,4 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         flexShrink: 0,
     },
-});
+}); }

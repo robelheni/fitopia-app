@@ -38,34 +38,36 @@ export const lightColors = {
 
 
     export const darkColors = {
-        // Brand blue stays the same — it pops on both light and dark backgrounds
-        blue: '#2563EB',
-    
-        // Darker blue stays the same
-        blueDark: '#1D4ED8',
-    
-        // Dark blue tint — replaces the light blue highlight on dark backgrounds
+        // Brighter blue — the standard blue is too heavy on dark backgrounds,
+        // this reads as clearly interactive without feeling washed out
+        blue: '#3B82F6',
+
+        // Original blue becomes the pressed/darker variant
+        blueDark: '#2563EB',
+
+        // Deep navy tint — used for badge and selected state backgrounds
         blueLight: '#1E3A5F',
-    
-        // Main text — slightly warm off-white, easier on the eyes than pure white
+
+        // Main text — warm off-white, easier on the eyes than pure white
         black: '#F1F1F1',
-    
-        // App background — deep off-black, not pure black
-        white: '#0F0F0F',
-    
-        // Secondary text — muted but still readable
-        grey: '#AAAAAA',
-    
-        // Placeholder and inactive — subtle
-        greyLight: '#666666',
-    
-        // Borders — subtle so they don't dominate
-        greyBorder: '#2A2A2A',
-    
-        // Card backgrounds — slightly lighter than app background so cards lift
-        greyCard: '#1A1A1A',
-    
-        // Gold stays the same — achievement color should not change
+
+        // App background — slightly warm near-black
+        white: '#111111',
+
+        // Secondary text — balanced midtone, readable without competing with primary
+        grey: '#9CA3AF',
+
+        // Placeholder and inactive — was #666666 which is nearly invisible on dark,
+        // this is light enough to actually show up as a hint
+        greyLight: '#6B7280',
+
+        // Borders — just enough definition to separate sections without dominating
+        greyBorder: '#2E2E2E',
+
+        // Card backgrounds — lifted above the app background (iOS dark card style)
+        greyCard: '#1C1C1E',
+
+        // Gold stays the same — achievement colour should not change
         gold: '#D4A843',
     };
 

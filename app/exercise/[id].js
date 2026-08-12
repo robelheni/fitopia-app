@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { exerciseData } from '../../data/exercises';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +12,10 @@ import { toggleLikeExercise, getLikeStatus } from '../../services/api';
 
 export default function ExerciseDetailScreen() {
     const { id, exerciseData: exerciseParam, dayKey, exerciseId, sessionExercises } = useLocalSearchParams();
+
+    const theme = useTheme();
+    const isDark = theme ? theme.isDark : false;
+    const colors = theme ? theme.colors : lightColors;
 
     // If real exercise data was passed as a param use it
     // Otherwise fall back to local hardcoded data for library exercises
@@ -40,6 +45,8 @@ export default function ExerciseDetailScreen() {
         }
         return () => clearInterval(intervalRef.current);
     }, [timerRunning]);
+
+    const styles = makeStyles(colors, isDark);
 
     if (!exercise) {
         return (
@@ -227,7 +234,10 @@ export default function ExerciseDetailScreen() {
     );
     }
 
-    const styles = StyleSheet.create({
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.white,
@@ -496,4 +506,4 @@ export default function ExerciseDetailScreen() {
         alignItems: 'center',
         justifyContent: 'center',
       },
-});
+}); }
