@@ -406,6 +406,30 @@ export async function uploadPostImage(imageUri) {
   if (!response.ok) throw new Error(data.detail || 'Upload failed');
   return data;
 }
+export async function togglePostPrivacy(postId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/toggle-privacy?token=${token}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to update privacy');
+  return data;
+}
+
+export async function togglePostComments(postId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/community/posts/${postId}/toggle-comments?token=${token}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to update comments setting');
+  return data;
+}
+
 //Toggles like on a post
 export async function togglePostLike(postId) {
   const token = await getToken();

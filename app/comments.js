@@ -8,7 +8,8 @@ import { getComments, createComment, getCurrentUser} from '../services/api';
 
 
 export default function CommentsScreen() {
-  const { postId, postText, postName, postImage } = useLocalSearchParams();
+  const { postId, postText, postName, postImage, commentsDisabled } = useLocalSearchParams();
+  const isCommentsDisabled = commentsDisabled === '1';
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
@@ -137,36 +138,43 @@ export default function CommentsScreen() {
 
       </ScrollView>
 
-      {/* Comment input */}
-      <View style={styles.inputContainer}>
-        {user?.profile_picture ? (
-          <Image source={{ uri: user.profile_picture }} style={styles.inputAvatar} />
-        ) : (
-          <View style={styles.inputAvatar}>
-            <Text style={styles.inputAvatarText}>{initials}</Text>
-          </View>
-        )}
-        <TextInput
-          style={styles.input}
-          placeholder="Add a comment..."
-          placeholderTextColor={colors.greyLight}
-          value={newComment}
-          onChangeText={setNewComment}
-          multiline
-          maxLength={300}
-        />
-        <TouchableOpacity
-          style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={!newComment.trim() ||sending}
-        >
-          <Feather
-            name="send"
-            size={18}
-            color={newComment.trim() ? colors.white : colors.greyLight}
+      {/* Comment input or disabled banner */}
+      {isCommentsDisabled ? (
+        <View style={styles.disabledBanner}>
+          <Feather name="slash" size={16} color={colors.grey} />
+          <Text style={styles.disabledBannerText}>Commenting is turned off</Text>
+        </View>
+      ) : (
+        <View style={styles.inputContainer}>
+          {user?.profile_picture ? (
+            <Image source={{ uri: user.profile_picture }} style={styles.inputAvatar} />
+          ) : (
+            <View style={styles.inputAvatar}>
+              <Text style={styles.inputAvatarText}>{initials}</Text>
+            </View>
+          )}
+          <TextInput
+            style={styles.input}
+            placeholder="Add a comment..."
+            placeholderTextColor={colors.greyLight}
+            value={newComment}
+            onChangeText={setNewComment}
+            multiline
+            maxLength={300}
           />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={!newComment.trim() || sending}
+          >
+            <Feather
+              name="send"
+              size={18}
+              color={newComment.trim() ? colors.white : colors.greyLight}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
 
     </KeyboardAvoidingView>
   );
@@ -371,6 +379,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.greyCard,
     shadowOpacity: 0,
     elevation: 0,
+  },
+
+  disabledBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.greyBorder,
+    backgroundColor: colors.greyCard,
+  },
+
+  disabledBannerText: {
+    fontSize: 14,
+    color: colors.grey,
+    fontWeight: '400',
   },
   centered: {
     paddingVertical: 48,

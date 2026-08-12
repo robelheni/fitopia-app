@@ -362,6 +362,7 @@ export default function CommunityScreen() {
                       postText: post.text,
                       postName: post.name,
                       postImage: post.image_url || '',
+                      commentsDisabled: post.comments_disabled ? '1' : '0',
                     }
                   })}
                 >
@@ -399,6 +400,8 @@ export default function CommunityScreen() {
                         postId: post.id,
                         postText: post.text,
                         postName: post.name,
+                        postImage: post.image_url || '',
+                        commentsDisabled: post.comments_disabled ? '1' : '0',
                       }
                     })}
                   >

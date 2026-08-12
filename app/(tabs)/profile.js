@@ -4,7 +4,7 @@ import FloatingCoachButton from '../../components/FloatingCoachButton';
 import {
   View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   Clipboard, Modal, TextInput, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Alert
+  Platform, ActivityIndicator, Alert, Share
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, {
@@ -18,7 +18,7 @@ import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import YearHeatmap from '../../components/YearHeatmap';
-import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, reportPost, uploadProfilePicture } from '../../services/api';function getInitials(name) {
+import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, reportPost, uploadProfilePicture, togglePostPrivacy, togglePostComments } from '../../services/api';function getInitials(name) {
   if (!name) return '??';
   const parts = name.split(' ');
   if (parts.length === 1) return name.substring(0, 2).toUpperCase();
@@ -52,6 +52,7 @@ export default function ProfileScreen() {
   const [profilePicture, setProfilePicture] = useState(null);
 
   // Edit profile modal
+  const [postsTab, setPostsTab] = useState('public');
   const [editVisible, setEditVisible] = useState(false);
   const [editName, setEditName] = useState('');
   const [editUsername, setEditUsername] = useState('');
@@ -72,30 +73,79 @@ export default function ProfileScreen() {
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
-  function handleDeletePost(postId) {
-    Alert.alert(
-      'Delete post?',
-      'This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deletePost(postId);
-              setProfile(prev => ({
-                ...prev,
-                posts: prev.posts.filter(p => p.id !== postId),
-                post_count: prev.post_count - 1,
-              }));
-            } catch (err) {
-              Alert.alert('Error', err.message);
-            }
-          },
+  function handlePostOptions(post) {
+    Alert.alert('Post options', null, [
+      {
+        text: 'Share',
+        onPress: async () => {
+          try {
+            await Share.share({ message: `"${post.text}" — shared from Fitopia` });
+          } catch (err) {
+            console.log('Share error:', err.message);
+          }
         },
-      ]
-    );
+      },
+      {
+        text: post.is_private ? 'Make public' : 'Make private',
+        onPress: async () => {
+          try {
+            const result = await togglePostPrivacy(post.id);
+            setProfile(prev => ({
+              ...prev,
+              posts: prev.posts.map(p =>
+                p.id === post.id ? { ...p, is_private: result.is_private } : p
+              ),
+            }));
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+      {
+        text: post.comments_disabled ? 'Turn on commenting' : 'Turn off commenting',
+        onPress: async () => {
+          try {
+            const result = await togglePostComments(post.id);
+            setProfile(prev => ({
+              ...prev,
+              posts: prev.posts.map(p =>
+                p.id === post.id ? { ...p, comments_disabled: result.comments_disabled } : p
+              ),
+            }));
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          }
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => Alert.alert(
+          'Delete post?',
+          'This cannot be undone.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deletePost(post.id);
+                  setProfile(prev => ({
+                    ...prev,
+                    posts: prev.posts.filter(p => p.id !== post.id),
+                    post_count: prev.post_count - 1,
+                  }));
+                } catch (err) {
+                  Alert.alert('Error', err.message);
+                }
+              },
+            },
+          ]
+        ),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
   useFocusEffect(
     useCallback(() => {
@@ -336,56 +386,98 @@ export default function ProfileScreen() {
 
           {/* My posts */}
           <FadeUpItem delay={200}>
-            <Text style={styles.sectionTitle}>My posts</Text>
-            {!profile?.posts || profile.posts.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Feather name="edit-2" size={32} color={colors.greyLight} />
-                <Text style={styles.emptyText}>No posts yet</Text>
-                <Text style={styles.emptySub}>Share your progress with the community</Text>
+            <View style={styles.postTabsHeader}>
+              <Text style={styles.sectionTitle}>My posts</Text>
+              <View style={styles.postTabs}>
+                <TouchableOpacity
+                  style={[styles.postTab, postsTab === 'public' && styles.postTabActive]}
+                  onPress={() => setPostsTab('public')}
+                >
+                  <Feather name="globe" size={13} color={postsTab === 'public' ? colors.blue : colors.greyLight} />
+                  <Text style={[styles.postTabText, postsTab === 'public' && styles.postTabTextActive]}>Public</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.postTab, postsTab === 'private' && styles.postTabActive]}
+                  onPress={() => setPostsTab('private')}
+                >
+                  <Feather name="lock" size={13} color={postsTab === 'private' ? colors.blue : colors.greyLight} />
+                  <Text style={[styles.postTabText, postsTab === 'private' && styles.postTabTextActive]}>Private</Text>
+                </TouchableOpacity>
               </View>
-            ) : (
-              <View style={styles.postsList}>
-                {profile.posts.map(post => (
-                  <View key={post.id} style={styles.postCard}>
-                    <View style={styles.postCardHeader}>
-                      <View style={[
-                        styles.postTag,
-                        post.tag === 'progress' && styles.postTagProgress,
-                        post.tag === 'questions' && styles.postTagQuestion,
-                        post.tag === 'challenges' && styles.postTagChallenge,
-                      ]}>
-                        <Text style={[
-                          styles.postTagText,
-                          post.tag === 'progress' && styles.postTagTextProgress,
-                        ]}>
-                          {post.tag}
-                        </Text>
-                      </View>
-                      <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
+            </View>
 
-                      {/* Delete button — only your own posts appear here, so no ownership check needed */}
-                      <TouchableOpacity
-                        style={styles.postOptionsButton}
-                        onPress={() => handleDeletePost(post.id)}
-                      >
-                        <Feather name="trash-2" size={14} color={colors.greyLight} />
-                      </TouchableOpacity>
-                    </View>
-                    <Text style={styles.postText}>{post.text}</Text>
-                    <View style={styles.postStats}>
-                      <View style={styles.postStat}>
-                        <Feather name="heart" size={13} color={colors.greyLight} />
-                        <Text style={styles.postStatText}>{post.like_count}</Text>
-                      </View>
-                      <View style={styles.postStat}>
-                        <Feather name="message-circle" size={13} color={colors.greyLight} />
-                        <Text style={styles.postStatText}>{post.comment_count}</Text>
-                      </View>
-                    </View>
+            {(() => {
+              const filtered = (profile?.posts || []).filter(p =>
+                postsTab === 'private' ? p.is_private : !p.is_private
+              );
+              if (filtered.length === 0) {
+                return (
+                  <View style={styles.emptyState}>
+                    <Feather
+                      name={postsTab === 'private' ? 'lock' : 'edit-2'}
+                      size={32}
+                      color={colors.greyLight}
+                    />
+                    <Text style={styles.emptyText}>
+                      {postsTab === 'private' ? 'No private posts' : 'No posts yet'}
+                    </Text>
+                    <Text style={styles.emptySub}>
+                      {postsTab === 'private'
+                        ? 'Posts you make private will appear here'
+                        : 'Share your progress with the community'}
+                    </Text>
                   </View>
-                ))}
-              </View>
-            )}
+                );
+              }
+              return (
+                <View style={styles.postsList}>
+                  {filtered.map(post => (
+                    <View key={post.id} style={styles.postCard}>
+                      <View style={styles.postCardHeader}>
+                        <View style={[
+                          styles.postTag,
+                          post.tag === 'progress' && styles.postTagProgress,
+                          post.tag === 'questions' && styles.postTagQuestion,
+                          post.tag === 'challenges' && styles.postTagChallenge,
+                        ]}>
+                          <Text style={[
+                            styles.postTagText,
+                            post.tag === 'progress' && styles.postTagTextProgress,
+                          ]}>
+                            {post.tag}
+                          </Text>
+                        </View>
+                        <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
+                        <TouchableOpacity
+                          style={styles.postOptionsButton}
+                          onPress={() => handlePostOptions(post)}
+                        >
+                          <Feather name="more-horizontal" size={18} color={colors.greyLight} />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.postText}>{post.text}</Text>
+                      {post.image_url && (
+                        <Image
+                          source={{ uri: post.image_url }}
+                          style={styles.postImage}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <View style={styles.postStats}>
+                        <View style={styles.postStat}>
+                          <Feather name="heart" size={13} color={colors.greyLight} />
+                          <Text style={styles.postStatText}>{post.like_count}</Text>
+                        </View>
+                        <View style={styles.postStat}>
+                          <Feather name="message-circle" size={13} color={colors.greyLight} />
+                          <Text style={styles.postStatText}>{post.comment_count}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </FadeUpItem>
 
           {/* Referral code */}
@@ -682,6 +774,24 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5, marginBottom: 12,
   },
 
+  postTabsHeader: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 12,
+  },
+  postTabs: {
+    flexDirection: 'row', gap: 6,
+  },
+  postTab: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 100, borderWidth: 1.5, borderColor: colors.greyBorder,
+  },
+  postTabActive: {
+    borderColor: colors.blue, backgroundColor: colors.blueLight,
+  },
+  postTabText: { fontSize: 12, fontWeight: '500', color: colors.greyLight },
+  postTabTextActive: { color: colors.blue },
+
   postsList: { gap: 10, marginBottom: 24 },
 
   postCard: {
@@ -704,6 +814,7 @@ const styles = StyleSheet.create({
   postTagTextProgress: { color: colors.blue },
   postTime: { fontSize: 11, color: colors.greyLight },
   postText: { fontSize: 14, color: colors.black, lineHeight: 20, fontWeight: '300', marginBottom: 10 },
+  postImage: { width: '100%', aspectRatio: 1, borderRadius: 12, marginBottom: 10, marginTop: -4 },
   postStats: { flexDirection: 'row', gap: 16 },
   postStat: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   postStatText: { fontSize: 12, color: colors.greyLight },

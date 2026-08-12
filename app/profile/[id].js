@@ -229,6 +229,14 @@ export default function UserProfileScreen() {
                       {/* Post text */}
                       <Text style={styles.postText}>{post.text}</Text>
 
+                      {post.image_url && (
+                        <Image
+                          source={{ uri: post.image_url }}
+                          style={styles.postImage}
+                          resizeMode="cover"
+                        />
+                      )}
+
                       {/* Post footer — time, likes, comments */}
                       <View style={styles.postFooter}>
                         <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
@@ -267,6 +275,8 @@ export default function UserProfileScreen() {
                                 postId: post.id,
                                 postText: post.text,
                                 postName: profile.name,
+                                postImage: post.image_url || '',
+                                commentsDisabled: post.comments_disabled ? '1' : '0',
                             }
                             })}
                         >
@@ -439,6 +449,11 @@ const styles = StyleSheet.create({
   postText: {
     fontSize: 15, color: colors.black,
     lineHeight: 22, fontWeight: '300',
+  },
+
+  postImage: {
+    width: '100%', aspectRatio: 1, borderRadius: 12,
+    marginTop: -4, marginBottom: 4,
   },
 
   postFooter: {
