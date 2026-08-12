@@ -159,7 +159,7 @@ export default function ComposeScreen() {
               style={styles.removeImageButton}
               onPress={() => setSelectedImage(null)}
             >
-              <Feather name="x" size={16} color={colors.white} />
+              <Feather name="x" size={16} color={'#FFFFFF'} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -265,7 +265,7 @@ function makeStyles(colors) { return StyleSheet.create({
   postButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   postButtonTextDisabled: {
@@ -318,7 +318,7 @@ function makeStyles(colors) { return StyleSheet.create({
   avatarText: {
     fontSize: 14,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   textInput: {

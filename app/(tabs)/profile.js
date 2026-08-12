@@ -308,7 +308,7 @@ export default function ProfileScreen() {
                   )}
                 </TouchableOpacity>
                 <View style={styles.avatarEditBadge}>
-                  <Feather name="camera" size={12} color={colors.white} />
+                  <Feather name="camera" size={12} color={'#FFFFFF'} />
                 </View>
               </View>
               <Text style={styles.userName}>{user?.name}</Text>
@@ -499,7 +499,7 @@ export default function ProfileScreen() {
                   style={[styles.copyButton, codeCopied && styles.copyButtonSuccess]}
                   onPress={copyReferralCode}
                 >
-                  <Feather name={codeCopied ? 'check' : 'copy'} size={16} color={colors.white} />
+                  <Feather name={codeCopied ? 'check' : 'copy'} size={16} color={'#FFFFFF'} />
                   <Text style={styles.copyButtonText}>{codeCopied ? 'Copied!' : 'Copy'}</Text>
                 </TouchableOpacity>
               </View>
@@ -730,7 +730,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     borderColor: colors.white,
   },
 
-  avatarText: { fontSize: 28, fontWeight: '700', color: colors.white },
+  avatarText: { fontSize: 28, fontWeight: '700', color: '#FFFFFF' },
   userName: { fontSize: 24, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
   userUsername: { fontSize: 14, color: colors.grey, fontWeight: '300' },
 
@@ -886,7 +886,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
   },
 
   copyButtonSuccess: { backgroundColor: '#059669' },
-  copyButtonText: { fontSize: 14, fontWeight: '600', color: colors.white },
+  copyButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
   version: { fontSize: 12, color: colors.greyLight, textAlign: 'center', marginBottom: 20, fontWeight: '300' },
 
   modalContainer: { flex: 1, backgroundColor: colors.white, paddingTop: 12 },

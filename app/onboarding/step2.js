@@ -41,7 +41,7 @@ export default function Step2() {
                     <Feather
                     name="trending-down"
                     size={20}
-                    color={selected === 'lose_weight' ? colors.white : colors.grey}
+                    color={selected === 'lose_weight' ? '#FFFFFF' : colors.grey}
                     />
                 </View>
                 <View>
@@ -64,7 +64,7 @@ export default function Step2() {
                     <Feather
                     name="activity"
                     size={20}
-                    color={selected === 'build_muscle' ? colors.white : colors.grey}
+                    color={selected === 'build_muscle' ? '#FFFFFF' : colors.grey}
                     />
                 </View>
                 <View>
@@ -88,7 +88,7 @@ export default function Step2() {
                     <Feather
                     name="heart"
                     size={20}
-                    color={selected === 'stay_active' ? colors.white : colors.grey}
+                    color={selected === 'stay_active' ? '#FFFFFF' : colors.grey}
                     />
                 </View>
                 <View>
@@ -112,7 +112,7 @@ export default function Step2() {
                     <Feather
                     name="bar-chart-2"
                     size={20}
-                    color={selected === 'improve_fitness' ? colors.white : colors.grey}
+                    color={selected === 'improve_fitness' ? '#FFFFFF' : colors.grey}
                     />
                 </View>
                 <View>

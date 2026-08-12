@@ -46,7 +46,7 @@ export default function Step1() {
                 <Feather
                 name="smile"
                 size={20}
-                color={selected === 'beginner' ? colors.white : colors.grey}
+                color={selected === 'beginner' ? '#FFFFFF' : colors.grey}
                 />
             </View>
             <View>
@@ -70,7 +70,7 @@ export default function Step1() {
                 <Feather
                 name="zap"
                 size={20}
-                color={selected === 'intermediate' ? colors.white : colors.grey}
+                color={selected === 'intermediate' ? '#FFFFFF' : colors.grey}
                 />
             </View>
             <View>
@@ -95,7 +95,7 @@ export default function Step1() {
                 <Feather
                 name="award"
                 size={20}
-                color={selected === 'advanced' ? colors.white : colors.grey}
+                color={selected === 'advanced' ? '#FFFFFF' : colors.grey}
                 />
             </View>
             <View>

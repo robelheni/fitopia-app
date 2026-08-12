@@ -1,18 +1,25 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useEffect, useState } from 'react';
 import { getNutrition, getToken } from '../../services/api';
 
 export default function NutritionDetailsScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const [nutritionProfile, setNutritionProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [newGoalWeight, setNewGoalWeight] = useState('');
   const [newGoal, setNewGoal] = useState('build_muscle');
   const [savingGoal, setSavingGoal] = useState(false);
+
+  const styles = makeStyles(colors, isDark);
 
   useEffect(() => {
     async function fetchNutrition() {
@@ -39,15 +46,15 @@ export default function NutritionDetailsScreen() {
           activityLevel: `${data.user.training_days?.split(',').length || 3} days per week`,
           explanation: data.nutrition.explanation,
           startingWeight: data.user.starting_weight ?? data.user.weight,
-                });
+        });
 
         const goalReached =
-        (data.user.goal === 'build_muscle' && 
-          data.user.weight >= data.user.goal_weight &&
-        data.user.weight > (data.user.starting_weight || 0)) ||
-        (data.user.goal === 'lose_weight' && 
-          data.user.weight <= data.user.goal_weight &&
-        data.user.weight < (data.user.starting_weight || 999));
+          (data.user.goal === 'build_muscle' &&
+            data.user.weight >= data.user.goal_weight &&
+            data.user.weight > (data.user.starting_weight || 0)) ||
+          (data.user.goal === 'lose_weight' &&
+            data.user.weight <= data.user.goal_weight &&
+            data.user.weight < (data.user.starting_weight || 999));
         if (goalReached) setShowCelebration(true);
       } catch (error) {
         console.log('Failed to fetch nutrition:', error.message);
@@ -122,7 +129,6 @@ export default function NutritionDetailsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Profile summary */}
         <FadeUpItem delay={0}>
           <View style={styles.profileCard}>
             <Text style={styles.profileTitle}>Based on your profile</Text>
@@ -154,7 +160,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Goal and surplus */}
         <FadeUpItem delay={100}>
           <View style={styles.goalCard}>
             <View style={styles.goalHeader}>
@@ -186,7 +191,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Macro breakdown */}
         <FadeUpItem delay={150}>
           <Text style={styles.sectionTitle}>Your daily targets</Text>
 
@@ -243,7 +247,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Water intake */}
         <FadeUpItem delay={200}>
           <View style={styles.waterCard}>
             <View style={styles.waterLeft}>
@@ -257,7 +260,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Food preference section */}
         <FadeUpItem delay={225}>
           {(() => {
             const prefs = nutritionProfile.foodPreferences?.split(',') || [];
@@ -329,7 +331,6 @@ export default function NutritionDetailsScreen() {
           })()}
         </FadeUpItem>
 
-        {/* Meal timing */}
         <FadeUpItem delay={250}>
           <Text style={styles.sectionTitle}>Meal timing</Text>
           <View style={styles.timingList}>
@@ -365,7 +366,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Progress */}
         <FadeUpItem delay={300}>
           <Text style={styles.sectionTitle}>Your progress</Text>
           <View style={styles.progressCard}>
@@ -389,7 +389,6 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* Simple tips */}
         <FadeUpItem delay={350}>
           <Text style={styles.sectionTitle}>Simple rules to follow</Text>
           <View style={styles.tipsList}>
@@ -409,12 +408,11 @@ export default function NutritionDetailsScreen() {
           </View>
         </FadeUpItem>
 
-        {/* AI nutritionist button */}
         <FadeUpItem delay={400}>
           <View style={styles.aiCard}>
             <View style={styles.aiCardTop}>
               <View style={styles.aiIconContainer}>
-                <Feather name="zap" size={20} color={colors.white} />
+                <Feather name="zap" size={20} color={'#FFFFFF'} />
               </View>
               <View style={styles.aiCardContent}>
                 <Text style={styles.aiCardTitle}>Ask your AI nutritionist</Text>
@@ -427,7 +425,7 @@ export default function NutritionDetailsScreen() {
               style={styles.aiButton}
               onPress={() => Alert.alert('Coming soon', 'AI nutrition coaching is coming in the next update. Stay tuned.', [{ text: 'OK' }])}
             >
-              <Feather name="message-circle" size={16} color={colors.white} />
+              <Feather name="message-circle" size={16} color={'#FFFFFF'} />
               <Text style={styles.aiButtonText}>Chat with AI</Text>
             </TouchableOpacity>
           </View>
@@ -435,7 +433,6 @@ export default function NutritionDetailsScreen() {
 
       </ScrollView>
 
-      {/* Goal reached celebration modal */}
       <Modal
         visible={showCelebration}
         animationType="fade"
@@ -526,120 +523,124 @@ export default function NutritionDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
-    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
-  },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
-  profileCard: {
-    backgroundColor: colors.blue, borderRadius: 20, padding: 20, marginBottom: 16,
-    shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, gap: 16,
-  },
-  profileTitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
-  profileGrid: { flexDirection: 'row', alignItems: 'center' },
-  profileItem: { flex: 1, alignItems: 'center', gap: 4 },
-  profileValue: { fontSize: 22, fontWeight: '700', color: colors.white, letterSpacing: -0.5 },
-  profileLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
-  profileDivider: { width: 0.5, height: 40, backgroundColor: 'rgba(255,255,255,0.3)' },
-  bmiCard: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, alignSelf: 'flex-start' },
-  bmiText: { fontSize: 13, color: colors.white, fontWeight: '500' },
-  goalCard: {
-    backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 24,
-    borderWidth: 1, borderColor: colors.greyBorder,
-    shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, gap: 12,
-  },
-  goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  goalTitle: { fontSize: 16, fontWeight: '700', color: colors.black, letterSpacing: -0.3 },
-  goalExplanation: { fontSize: 14, color: colors.grey, lineHeight: 20, fontWeight: '300' },
-  surplusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.greyCard, borderRadius: 12, padding: 16 },
-  surplusItem: { alignItems: 'center', gap: 2 },
-  surplusLabel: { fontSize: 11, color: colors.grey, fontWeight: '300' },
-  surplusValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  surplusUnit: { fontSize: 10, color: colors.greyLight },
-  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5, marginBottom: 12 },
-  macroCard: {
-    flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: colors.white,
-    borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.greyBorder,
-    shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
-  },
-  macroContent: { flex: 1, gap: 6 },
-  macroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  macroName: { fontSize: 15, fontWeight: '600', color: colors.black },
-  macroValue: { fontSize: 15, fontWeight: '700', color: colors.blue },
-  macroExplanation: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
-  waterCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#CFFAFE', borderRadius: 16, padding: 16, marginBottom: 24 },
-  waterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  waterTitle: { fontSize: 15, fontWeight: '600', color: '#0891B2' },
-  waterSub: { fontSize: 12, color: '#0891B2', fontWeight: '300', opacity: 0.7 },
-  waterValue: { fontSize: 28, fontWeight: '700', color: '#0891B2', letterSpacing: -1 },
-  foodPrefCard: { borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, gap: 8 },
-  foodPrefTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
-  foodPrefDescription: { fontSize: 13, lineHeight: 20, fontWeight: '300', opacity: 0.8 },
-  foodPrefSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
-  foodPrefList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  foodPrefChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
-  foodPrefChipText: { fontSize: 12, fontWeight: '500' },
-  timingList: {
-    backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.greyBorder,
-    marginBottom: 24, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
-  },
-  timingItem: { flexDirection: 'row', gap: 12, padding: 16, alignItems: 'flex-start' },
-  timingIconContainer: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  timingContent: { flex: 1, gap: 4 },
-  timingTitle: { fontSize: 14, fontWeight: '600', color: colors.black },
-  timingText: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
-  timingDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginHorizontal: 16 },
-  progressCard: {
-    backgroundColor: colors.white, borderRadius: 16, padding: 16, marginBottom: 24,
-    borderWidth: 1, borderColor: colors.greyBorder,
-    shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2, gap: 16,
-  },
-  progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  progressItem: { alignItems: 'center', gap: 4 },
-  progressLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
-  progressValue: { fontSize: 24, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  progressBarContainer: { gap: 8 },
-  progressBarTrack: { height: 8, backgroundColor: colors.greyCard, borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: 8, backgroundColor: colors.blue, borderRadius: 4 },
-  progressBarLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
-  tipsList: { gap: 10, marginBottom: 24 },
-  tipItem: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  tipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.blue, marginTop: 7, flexShrink: 0 },
-  tipText: { fontSize: 14, color: colors.black, lineHeight: 20, flex: 1, fontWeight: '300' },
-  aiCard: {
-    backgroundColor: colors.blue, borderRadius: 20, padding: 20, gap: 16,
-    shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, marginBottom: 20,
-  },
-  aiCardTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  aiIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  aiCardContent: { flex: 1, gap: 4 },
-  aiCardTitle: { fontSize: 16, fontWeight: '700', color: colors.white, letterSpacing: -0.3 },
-  aiCardSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 18, fontWeight: '300' },
-  aiButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.2)', paddingVertical: 14, borderRadius: 100 },
-  aiButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
-  celebrationOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  celebrationCard: { backgroundColor: colors.white, borderRadius: 24, padding: 24, width: '100%', gap: 12, alignItems: 'center' },
-  celebrationEmoji: { fontSize: 56 },
-  celebrationTitle: { fontSize: 26, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  celebrationSub: { fontSize: 14, color: colors.grey, fontWeight: '300', textAlign: 'center', lineHeight: 20 },
-  celebrationLabel: { fontSize: 13, fontWeight: '600', color: colors.black, alignSelf: 'flex-start', marginTop: 4 },
-  goalOptions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', width: '100%' },
-  goalOption: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.greyBorder, alignItems: 'center' },
-  goalOptionSelected: { borderColor: colors.blue, backgroundColor: colors.blueLight },
-  goalOptionText: { fontSize: 12, fontWeight: '500', color: colors.grey, textAlign: 'center' },
-  goalOptionTextSelected: { color: colors.blue },
-  goalWeightInput: { width: '100%', borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12, padding: 14, fontSize: 16, color: colors.black },
-  celebrationButton: {
-    width: '100%', backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100,
-    alignItems: 'center', shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginTop: 4,
-  },
-  celebrationButtonText: { fontSize: 15, fontWeight: '600', color: colors.white },
-  celebrationSkip: { paddingVertical: 8 },
-  celebrationSkipText: { fontSize: 13, color: colors.grey, fontWeight: '300' },
-});
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
+    profileCard: {
+      backgroundColor: colors.blue, borderRadius: 20, padding: 20, marginBottom: 16,
+      shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, gap: 16,
+    },
+    profileTitle: { fontSize: 13, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
+    profileGrid: { flexDirection: 'row', alignItems: 'center' },
+    profileItem: { flex: 1, alignItems: 'center', gap: 4 },
+    profileValue: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
+    profileLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: '300' },
+    profileDivider: { width: 0.5, height: 40, backgroundColor: 'rgba(255,255,255,0.3)' },
+    bmiCard: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100, alignSelf: 'flex-start' },
+    bmiText: { fontSize: 13, color: '#FFFFFF', fontWeight: '500' },
+    goalCard: {
+      backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 24,
+      borderWidth: 1, borderColor: colors.greyBorder,
+      shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, gap: 12,
+    },
+    goalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    goalTitle: { fontSize: 16, fontWeight: '700', color: colors.black, letterSpacing: -0.3 },
+    goalExplanation: { fontSize: 14, color: colors.grey, lineHeight: 20, fontWeight: '300' },
+    surplusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.greyCard, borderRadius: 12, padding: 16 },
+    surplusItem: { alignItems: 'center', gap: 2 },
+    surplusLabel: { fontSize: 11, color: colors.grey, fontWeight: '300' },
+    surplusValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    surplusUnit: { fontSize: 10, color: colors.greyLight },
+    sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5, marginBottom: 12 },
+    macroCard: {
+      flexDirection: 'row', gap: 12, alignItems: 'flex-start', backgroundColor: colors.white,
+      borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.greyBorder,
+      shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    },
+    macroContent: { flex: 1, gap: 6 },
+    macroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    macroName: { fontSize: 15, fontWeight: '600', color: colors.black },
+    macroValue: { fontSize: 15, fontWeight: '700', color: colors.blue },
+    macroExplanation: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
+    waterCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#CFFAFE', borderRadius: 16, padding: 16, marginBottom: 24 },
+    waterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    waterTitle: { fontSize: 15, fontWeight: '600', color: '#0891B2' },
+    waterSub: { fontSize: 12, color: '#0891B2', fontWeight: '300', opacity: 0.7 },
+    waterValue: { fontSize: 28, fontWeight: '700', color: '#0891B2', letterSpacing: -1 },
+    foodPrefCard: { borderRadius: 16, padding: 16, marginBottom: 24, borderWidth: 1, gap: 8 },
+    foodPrefTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3 },
+    foodPrefDescription: { fontSize: 13, lineHeight: 20, fontWeight: '300', opacity: 0.8 },
+    foodPrefSubtitle: { fontSize: 12, fontWeight: '600', marginTop: 4 },
+    foodPrefList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    foodPrefChip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
+    foodPrefChipText: { fontSize: 12, fontWeight: '500' },
+    timingList: {
+      backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.greyBorder,
+      marginBottom: 24, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    },
+    timingItem: { flexDirection: 'row', gap: 12, padding: 16, alignItems: 'flex-start' },
+    timingIconContainer: { width: 34, height: 34, borderRadius: 10, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    timingContent: { flex: 1, gap: 4 },
+    timingTitle: { fontSize: 14, fontWeight: '600', color: colors.black },
+    timingText: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
+    timingDivider: { height: 0.5, backgroundColor: colors.greyBorder, marginHorizontal: 16 },
+    progressCard: {
+      backgroundColor: colors.white, borderRadius: 16, padding: 16, marginBottom: 24,
+      borderWidth: 1, borderColor: colors.greyBorder,
+      shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2, gap: 16,
+    },
+    progressRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    progressItem: { alignItems: 'center', gap: 4 },
+    progressLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+    progressValue: { fontSize: 24, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    progressBarContainer: { gap: 8 },
+    progressBarTrack: { height: 8, backgroundColor: colors.greyCard, borderRadius: 4, overflow: 'hidden' },
+    progressBarFill: { height: 8, backgroundColor: colors.blue, borderRadius: 4 },
+    progressBarLabel: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+    tipsList: { gap: 10, marginBottom: 24 },
+    tipItem: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+    tipDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.blue, marginTop: 7, flexShrink: 0 },
+    tipText: { fontSize: 14, color: colors.black, lineHeight: 20, flex: 1, fontWeight: '300' },
+    aiCard: {
+      backgroundColor: colors.blue, borderRadius: 20, padding: 20, gap: 16,
+      shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 6, marginBottom: 20,
+    },
+    aiCardTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+    aiIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    aiCardContent: { flex: 1, gap: 4 },
+    aiCardTitle: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
+    aiCardSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', lineHeight: 18, fontWeight: '300' },
+    aiButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.2)', paddingVertical: 14, borderRadius: 100 },
+    aiButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    celebrationOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+    celebrationCard: { backgroundColor: colors.white, borderRadius: 24, padding: 24, width: '100%', gap: 12, alignItems: 'center' },
+    celebrationEmoji: { fontSize: 56 },
+    celebrationTitle: { fontSize: 26, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    celebrationSub: { fontSize: 14, color: colors.grey, fontWeight: '300', textAlign: 'center', lineHeight: 20 },
+    celebrationLabel: { fontSize: 13, fontWeight: '600', color: colors.black, alignSelf: 'flex-start', marginTop: 4 },
+    goalOptions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', width: '100%' },
+    goalOption: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.greyBorder, alignItems: 'center' },
+    goalOptionSelected: { borderColor: colors.blue, backgroundColor: colors.blueLight },
+    goalOptionText: { fontSize: 12, fontWeight: '500', color: colors.grey, textAlign: 'center' },
+    goalOptionTextSelected: { color: colors.blue },
+    goalWeightInput: { width: '100%', borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12, padding: 14, fontSize: 16, color: colors.black },
+    celebrationButton: {
+      width: '100%', backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100,
+      alignItems: 'center', shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3, shadowRadius: 8, elevation: 4, marginTop: 4,
+    },
+    celebrationButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    celebrationSkip: { paddingVertical: 8 },
+    celebrationSkipText: { fontSize: 13, color: colors.grey, fontWeight: '300' },
+  });
+}

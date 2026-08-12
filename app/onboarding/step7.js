@@ -235,7 +235,7 @@ export default function Step7() {
               <Feather
                 name="cpu"
                 size={18}
-                color={canCalculate ? colors.white : colors.grey}
+                color={canCalculate ? '#FFFFFF' : colors.grey}
               />
               <Text style={[
                 styles.calculateButtonText,
@@ -262,7 +262,7 @@ export default function Step7() {
                     style={styles.acceptButton}
                     onPress={handleAccept}
                   >
-                    <Feather name="check" size={16} color={colors.white} />
+                    <Feather name="check" size={16} color={'#FFFFFF'} />
                     <Text style={styles.acceptButtonText}>Accept — {suggestedWeight}kg</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   calculateButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   calculateButtonTextDisabled: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   overlayLogoFit: {
     fontSize: 48,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
     letterSpacing: -2,
   },
 
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
   overlayText: {
     fontSize: 18,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
 
@@ -557,7 +557,7 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   ownGoalButton: {
@@ -620,7 +620,7 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   // Continue button
@@ -645,7 +645,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: -0.3,

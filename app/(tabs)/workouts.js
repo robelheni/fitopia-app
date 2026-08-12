@@ -102,7 +102,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 <Feather
                     name="arrow-right"
                     size={14}
-                    color={item.isToday ? colors.blue : colors.white}
+                    color={item.isToday ? colors.blue : '#FFFFFF'}
                 />
                 </TouchableOpacity>
             </View>
@@ -422,7 +422,7 @@ const animatedStyle = useAnimatedStyle(() => ({
                     >
                         <View style={styles.featuredTop}>
                             <View style={styles.featuredIconContainer}>
-                                <Feather name="zap" size={22} color={colors.white} />
+                                <Feather name="zap" size={22} color={'#FFFFFF'} />
                             </View>
                             <View style={styles.featuredBadge}>
                                 <Text style={styles.featuredBadgeText}>Crafted for you</Text>
@@ -636,25 +636,25 @@ function makeStyles(c, dark) {
     title: { fontSize: 28, fontWeight: '700', color: colors.black, letterSpacing: -1 },
     myPlanButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.greyCard, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100 },
     myPlanInitials: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center' },
-    myPlanInitialsText: { fontSize: 10, fontWeight: '700', color: colors.white },
+    myPlanInitialsText: { fontSize: 10, fontWeight: '700', color: '#FFFFFF' },
     myPlanText: { fontSize: 13, fontWeight: '500', color: colors.black },
     filtersContainer: { gap: 8, paddingBottom: 16, paddingRight: 24 },
     filterTab: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 100, backgroundColor: colors.greyCard, borderWidth: 1, borderColor: colors.greyBorder },
     filterTabActive: { backgroundColor: colors.blue, borderColor: colors.blue, shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
     filterText: { fontSize: 14, fontWeight: '500', color: colors.grey },
-    filterTextActive: { color: colors.white },
+    filterTextActive: { color: '#FFFFFF' },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
     sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
     featuredCard: { backgroundColor: colors.blue, borderRadius: 24, padding: 24, marginBottom: 24, shadowColor: colors.blue, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 16, elevation: 8 },
     featuredTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     featuredIconContainer: { width: 44, height: 44, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
     featuredBadge: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
-    featuredBadgeText: { fontSize: 12, color: colors.white, fontWeight: '500' },
-    featuredName: { fontSize: 26, fontWeight: '700', color: colors.white, letterSpacing: -0.5, marginBottom: 12 },
+    featuredBadgeText: { fontSize: 12, color: '#FFFFFF', fontWeight: '500' },
+    featuredName: { fontSize: 26, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5, marginBottom: 12 },
     featuredStats: { flexDirection: 'row', gap: 16, marginBottom: 20 },
     featuredStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     featuredStatText: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '300' },
-    featuredStartButton: { backgroundColor: colors.white, borderRadius: 100, paddingVertical: 14, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+    featuredStartButton: { backgroundColor: '#FFFFFF', borderRadius: 100, paddingVertical: 14, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
     featuredStartText: { fontSize: 15, fontWeight: '600', color: colors.blue },
     workoutCount: { fontSize: 13, color: colors.grey, fontWeight: '300' },
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
@@ -675,7 +675,7 @@ function makeStyles(c, dark) {
     cardStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     cardStatText: { fontSize: 11, color: colors.grey },
     cardStartButton: { backgroundColor: colors.blue, borderRadius: 100, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, shadowColor: colors.blue, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 3 },
-    cardStartText: { fontSize: 12, color: colors.white, fontWeight: '600' },
+    cardStartText: { fontSize: 12, color: '#FFFFFF', fontWeight: '600' },
     
     
     
@@ -784,7 +784,7 @@ function makeStyles(c, dark) {
       },
       
       weeklyPlanWorkoutActive: {
-        color: colors.white,
+        color: '#FFFFFF',
       },
       
       todayBadge: {
@@ -797,7 +797,7 @@ function makeStyles(c, dark) {
       
       todayBadgeText: {
         fontSize: 9,
-        color: colors.white,
+        color: '#FFFFFF',
         fontWeight: '500',
       },
       

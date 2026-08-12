@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { getToken } from '../../services/api';
@@ -24,6 +25,10 @@ const MEAL_ORDER = ['breakfast', 'lunch', 'snack', 'snack2', 'dinner'];
 export const weeklyPlan = [];
 
 export default function WeeklyMealPlanScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const { startDay } = useLocalSearchParams();
 
   const todayIndex = (() => {
@@ -39,6 +44,8 @@ export default function WeeklyMealPlanScreen() {
   const [loading, setLoading] = useState(true);
   const [savedBoosts, setSavedBoosts] = useState({});
   const [savedSwaps, setSavedSwaps] = useState({});
+
+  const styles = makeStyles(colors, isDark);
 
   useEffect(() => {
     fetchWeekly();
@@ -85,7 +92,6 @@ export default function WeeklyMealPlanScreen() {
       setLoading(true);
       const token = await getToken();
 
-      // 30 second timeout — meal generation can be slow
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -108,12 +114,9 @@ export default function WeeklyMealPlanScreen() {
         return;
       }
 
-      
-
       setWeeklyData(data.week);
       setNutritionTargets(data.nutrition_targets);
 
-      // Save today's meals for home screen
       const dayMap = { 0: 'mon', 1: 'tue', 2: 'wed', 3: 'thu', 4: 'fri', 5: 'sat', 6: 'sun' };
       const todayKey = dayMap[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
       await AsyncStorage.setItem('todays_meals', JSON.stringify(data.week[todayKey]));
@@ -198,10 +201,7 @@ export default function WeeklyMealPlanScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BackgroundCircles variant="topLeft" />
 
         {loading ? (
@@ -350,53 +350,57 @@ export default function WeeklyMealPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
-    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
-  },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-  daySelectorInner: { paddingHorizontal: 16, paddingVertical: 12, gap: 8, flexDirection: 'row', alignItems: 'center' },
-  dayTab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
-  dayTabActive: { backgroundColor: colors.blue, shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-  dayTabToday: { borderWidth: 1.5, borderColor: colors.blue, backgroundColor: colors.white },
-  dayTabText: { fontSize: 13, fontWeight: '500', color: colors.grey },
-  dayTabTextActive: { color: colors.white, fontWeight: '600' },
-  dayTabTextToday: { color: colors.blue, fontWeight: '600' },
-  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 120 },
-  loadingContainer: { paddingTop: 80, alignItems: 'center', gap: 12 },
-  loadingText: { fontSize: 14, color: colors.grey, fontWeight: '300' },
-  daySummary: { marginBottom: 20, gap: 10 },
-  dayTitle: { fontSize: 22, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  todayLabel: { color: colors.blue, fontWeight: '400' },
-  daySummaryStats: { flexDirection: 'row', gap: 16 },
-  daySummaryStat: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.blueLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
-  daySummaryStatText: { fontSize: 13, color: colors.blue, fontWeight: '500' },
-  gapMessage: { flexDirection: 'row', gap: 8, backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, alignItems: 'flex-start', borderWidth: 1, borderColor: '#D97706' },
-  gapMessageText: { fontSize: 12, color: '#92400E', lineHeight: 18, fontWeight: '300' },
-  mealsList: { gap: 12, marginBottom: 20 },
-  mealCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.white, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: colors.greyBorder, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2, gap: 12 },
-  mealImagePlaceholder: { width: 72, height: 72, borderRadius: 12, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
-  mealInfo: { flex: 1, gap: 4 },
-  mealTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  mealType: { fontSize: 11, fontWeight: '600', color: colors.grey, textTransform: 'uppercase', letterSpacing: 0.5 },
-  flagEmoji: { fontSize: 12 },
-  swappedBadge: { backgroundColor: colors.blueLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 100 },
-  swappedBadgeText: { fontSize: 10, color: colors.blue, fontWeight: '500' },
-  mealName: { fontSize: 15, fontWeight: '600', color: colors.black, letterSpacing: -0.3 },
-  mealStats: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  mealStat: { fontSize: 12, color: colors.grey, fontWeight: '300' },
-  mealStatDot: { fontSize: 12, color: colors.greyLight },
-  boostBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, alignSelf: 'flex-start' },
-  boostBadgeText: { fontSize: 10, color: '#059669', fontWeight: '500' },
-  mealTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, marginTop: 2 },
-  mealTagText: { fontSize: 10, fontWeight: '500' },
-  swapButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
-  tipCard: { flexDirection: 'row', gap: 12, backgroundColor: colors.blueLight, borderRadius: 16, padding: 16, alignItems: 'flex-start' },
-  tipContent: { flex: 1, gap: 4 },
-  tipTitle: { fontSize: 14, fontWeight: '600', color: colors.blue },
-  tipText: { fontSize: 13, color: colors.blue, lineHeight: 18, fontWeight: '300', opacity: 0.8 },
-});
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
+    backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    daySelectorInner: { paddingHorizontal: 16, paddingVertical: 12, gap: 8, flexDirection: 'row', alignItems: 'center' },
+    dayTab: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
+    dayTabActive: { backgroundColor: colors.blue, shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    dayTabToday: { borderWidth: 1.5, borderColor: colors.blue, backgroundColor: colors.white },
+    dayTabText: { fontSize: 13, fontWeight: '500', color: colors.grey },
+    dayTabTextActive: { color: '#FFFFFF', fontWeight: '600' },
+    dayTabTextToday: { color: colors.blue, fontWeight: '600' },
+    content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 120 },
+    loadingContainer: { paddingTop: 80, alignItems: 'center', gap: 12 },
+    loadingText: { fontSize: 14, color: colors.grey, fontWeight: '300' },
+    daySummary: { marginBottom: 20, gap: 10 },
+    dayTitle: { fontSize: 22, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    todayLabel: { color: colors.blue, fontWeight: '400' },
+    daySummaryStats: { flexDirection: 'row', gap: 16 },
+    daySummaryStat: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.blueLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
+    daySummaryStatText: { fontSize: 13, color: colors.blue, fontWeight: '500' },
+    gapMessage: { flexDirection: 'row', gap: 8, backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, alignItems: 'flex-start', borderWidth: 1, borderColor: '#D97706' },
+    gapMessageText: { fontSize: 12, color: '#92400E', lineHeight: 18, fontWeight: '300' },
+    mealsList: { gap: 12, marginBottom: 20 },
+    mealCard: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.white, borderRadius: 16, padding: 12, borderWidth: 1, borderColor: colors.greyBorder, shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2, gap: 12 },
+    mealImagePlaceholder: { width: 72, height: 72, borderRadius: 12, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+    mealInfo: { flex: 1, gap: 4 },
+    mealTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+    mealType: { fontSize: 11, fontWeight: '600', color: colors.grey, textTransform: 'uppercase', letterSpacing: 0.5 },
+    flagEmoji: { fontSize: 12 },
+    swappedBadge: { backgroundColor: colors.blueLight, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 100 },
+    swappedBadgeText: { fontSize: 10, color: colors.blue, fontWeight: '500' },
+    mealName: { fontSize: 15, fontWeight: '600', color: colors.black, letterSpacing: -0.3 },
+    mealStats: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    mealStat: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+    mealStatDot: { fontSize: 12, color: colors.greyLight },
+    boostBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, alignSelf: 'flex-start' },
+    boostBadgeText: { fontSize: 10, color: '#059669', fontWeight: '500' },
+    mealTag: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100, marginTop: 2 },
+    mealTagText: { fontSize: 10, fontWeight: '500' },
+    swapButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+    tipCard: { flexDirection: 'row', gap: 12, backgroundColor: colors.blueLight, borderRadius: 16, padding: 16, alignItems: 'flex-start' },
+    tipContent: { flex: 1, gap: 4 },
+    tipTitle: { fontSize: 14, fontWeight: '600', color: colors.blue },
+    tipText: { fontSize: 13, color: colors.blue, lineHeight: 18, fontWeight: '300', opacity: 0.8 },
+  });
+}

@@ -45,7 +45,7 @@ export default function CoachScreen() {
         <FadeUpItem delay={100}>
           <View style={styles.hero}>
             <View style={styles.iconCircle}>
-              <Feather name="cpu" size={40} color={colors.white} />
+              <Feather name="cpu" size={40} color={'#FFFFFF'} />
             </View>
 
             <Text style={styles.title}>AI Coach</Text>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 12,
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '600',
     letterSpacing: 0.3,
   },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   notifyButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
   proNote: {
     fontSize: 13,

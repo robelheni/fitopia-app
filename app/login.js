@@ -166,7 +166,7 @@ button: {
 },
 
 buttonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
     },

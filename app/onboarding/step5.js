@@ -42,7 +42,7 @@ export default function Step5() {
                         <MaterialCommunityIcons
                             name="weight-lifter"
                             size={20}
-                            color={selected === 'gym' ? colors.white : colors.grey}
+                            color={selected === 'gym' ? '#FFFFFF' : colors.grey}
                         />
                     </View>
                     <View>
@@ -66,7 +66,7 @@ export default function Step5() {
                         <MaterialCommunityIcons
                             name="dumbbell"
                             size={20}
-                            color={selected === 'dumbbells' ? colors.white : colors.grey}
+                            color={selected === 'dumbbells' ? '#FFFFFF' : colors.grey}
                         />
                     </View>
                     <View>
@@ -90,7 +90,7 @@ export default function Step5() {
                         <Feather
                         name="user"
                         size={20}
-                        color={selected === 'bodyweight' ? colors.white : colors.grey}
+                        color={selected === 'bodyweight' ? '#FFFFFF' : colors.grey}
                         />
                     </View>
                     <View>
@@ -114,7 +114,7 @@ export default function Step5() {
                         <Feather
                         name="shuffle"
                         size={20}
-                        color={selected === 'both' ? colors.white : colors.grey}
+                        color={selected === 'both' ? '#FFFFFF' : colors.grey}
                         />
                     </View>
                     <View>

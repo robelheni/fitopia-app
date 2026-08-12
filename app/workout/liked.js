@@ -4,7 +4,8 @@ import { router } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { getLikedExercises, toggleLikeExercise } from '../../services/api';
 
@@ -22,16 +23,20 @@ const MUSCLE_COLORS = {
   cardio:     { color: '#059669', bg: '#D1FAE5' },
 };
 
-function getMuscleColor(muscle) {
+function getMuscleColor(muscle, colors) {
   return MUSCLE_COLORS[muscle] || { color: colors.blue, bg: colors.blueLight };
 }
 
 export default function LikedExercisesScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // useFocusEffect re-fetches every time you come back to this screen
-  // So if you unlike something on the detail screen and come back, it updates
+  const styles = makeStyles(colors, isDark);
+
   useFocusEffect(
     useCallback(() => {
       async function fetchLiked() {
@@ -52,7 +57,6 @@ export default function LikedExercisesScreen() {
   async function handleUnlike(exerciseId) {
     try {
       await toggleLikeExercise(exerciseId);
-      // Remove it from the list immediately without re-fetching
       setExercises(prev => prev.filter(ex => ex.id !== exerciseId));
     } catch (err) {
       console.log('Unlike failed:', err.message);
@@ -61,8 +65,6 @@ export default function LikedExercisesScreen() {
 
   return (
     <View style={styles.container}>
-
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.black} />
@@ -79,7 +81,6 @@ export default function LikedExercisesScreen() {
           <ActivityIndicator size="large" color={colors.blue} />
         </View>
       ) : exercises.length === 0 ? (
-        // Empty state — shown when no exercises have been liked yet
         <View style={styles.emptyState}>
           <View style={styles.emptyIcon}>
             <Ionicons name="heart-outline" size={40} color={colors.greyLight} />
@@ -96,12 +97,9 @@ export default function LikedExercisesScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {exercises.map((ex, index) => {
-            const muscleColor = getMuscleColor(ex.muscle_group);
+            const muscleColor = getMuscleColor(ex.muscle_group, colors);
             const sets = ex.sets_range?.[0] || 3;
             const reps = ex.is_timed
               ? `${ex.seconds_range?.[0] || 30}s`
@@ -130,26 +128,16 @@ export default function LikedExercisesScreen() {
                     }
                   })}
                 >
-                  {/* Muscle tag */}
                   <View style={[styles.muscleTag, { backgroundColor: muscleColor.bg }]}>
                     <Text style={[styles.muscleTagText, { color: muscleColor.color }]}>
                       {ex.muscle_group}
                     </Text>
                   </View>
-
-                  {/* Exercise info */}
                   <View style={styles.exerciseInfo}>
                     <Text style={styles.exerciseName}>{ex.name}</Text>
-                    <Text style={styles.exerciseMeta}>
-                      {sets} sets · {reps} · {ex.equipment}
-                    </Text>
+                    <Text style={styles.exerciseMeta}>{sets} sets · {reps} · {ex.equipment}</Text>
                   </View>
-
-                  {/* Unlike button */}
-                  <TouchableOpacity
-                    style={styles.unlikeButton}
-                    onPress={() => handleUnlike(ex.id)}
-                  >
+                  <TouchableOpacity style={styles.unlikeButton} onPress={() => handleUnlike(ex.id)}>
                     <Ionicons name="heart" size={20} color="#DC2626" />
                   </TouchableOpacity>
                 </TouchableOpacity>
@@ -162,120 +150,48 @@ export default function LikedExercisesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.greyBorder,
-  },
-
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  headerText: { alignItems: 'center' },
-
-  headerTitle: {
-    fontSize: 17, fontWeight: '600', color: colors.black,
-  },
-
-  headerSub: {
-    fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2,
-  },
-
-  centered: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-  },
-
-  emptyState: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 40, gap: 12,
-  },
-
-  emptyIcon: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 8,
-  },
-
-  emptyTitle: {
-    fontSize: 18, fontWeight: '700',
-    color: colors.black, letterSpacing: -0.3,
-  },
-
-  emptySub: {
-    fontSize: 14, color: colors.grey,
-    fontWeight: '300', textAlign: 'center', lineHeight: 20,
-  },
-
-  browseButton: {
-    marginTop: 8,
-    backgroundColor: colors.blue,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 100,
-  },
-
-  browseButtonText: {
-    fontSize: 15, fontWeight: '600', color: colors.white,
-  },
-
-  list: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 120,
-  },
-
-  exerciseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-
-  muscleTag: {
-    paddingHorizontal: 10, paddingVertical: 5,
-    borderRadius: 8, minWidth: 70, alignItems: 'center',
-  },
-
-  muscleTagText: {
-    fontSize: 11, fontWeight: '600', textTransform: 'capitalize',
-  },
-
-  exerciseInfo: { flex: 1 },
-
-  exerciseName: {
-    fontSize: 15, fontWeight: '600',
-    color: colors.black, letterSpacing: -0.3, marginBottom: 3,
-  },
-
-  exerciseMeta: {
-    fontSize: 12, color: colors.grey, fontWeight: '300',
-  },
-
-  unlikeButton: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center', justifyContent: 'center',
-  },
-});
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
+    backButton: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
+    },
+    headerText: { alignItems: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    headerSub: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
+    emptyIcon: {
+      width: 80, height: 80, borderRadius: 40,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+    },
+    emptyTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.3 },
+    emptySub: { fontSize: 14, color: colors.grey, fontWeight: '300', textAlign: 'center', lineHeight: 20 },
+    browseButton: {
+      marginTop: 8, backgroundColor: colors.blue,
+      paddingHorizontal: 24, paddingVertical: 12, borderRadius: 100,
+    },
+    browseButtonText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+    list: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 120 },
+    exerciseCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      backgroundColor: colors.white, borderRadius: 16, padding: 16, marginBottom: 10,
+      borderWidth: 1, borderColor: colors.greyBorder,
+      shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    },
+    muscleTag: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, minWidth: 70, alignItems: 'center' },
+    muscleTagText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+    exerciseInfo: { flex: 1 },
+    exerciseName: { fontSize: 15, fontWeight: '600', color: colors.black, letterSpacing: -0.3, marginBottom: 3 },
+    exerciseMeta: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+    unlikeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center' },
+  });
+}

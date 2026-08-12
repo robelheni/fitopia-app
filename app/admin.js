@@ -165,7 +165,7 @@ export default function AdminScreen() {
             style={styles.challengeActionButton}
             onPress={() => setCreateChallengeVisible(true)}
         >
-            <Feather name="plus" size={16} color={colors.white} />
+            <Feather name="plus" size={16} color={'#FFFFFF'} />
             <Text style={styles.challengeActionButtonText}>Create</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -272,7 +272,7 @@ export default function AdminScreen() {
                   onPress={() => setChallengeColor(c.value)}
                 >
                   {challengeColor === c.value && (
-                    <Feather name="check" size={18} color={colors.white} />
+                    <Feather name="check" size={18} color={'#FFFFFF'} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -376,14 +376,14 @@ const styles = StyleSheet.create({
   },
   
   challengeActionButtonText: {
-    fontSize: 14, fontWeight: '600', color: colors.white,
+    fontSize: 14, fontWeight: '600', color: '#FFFFFF',
   },
   
   challengeActionButtonTextSecondary: {
     color: colors.blue,
   },
   createChallengeButtonText: {
-    fontSize: 15, fontWeight: '600', color: colors.white,
+    fontSize: 15, fontWeight: '600', color: '#FFFFFF',
   },
 
   searchBar: {
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   },
 
   previewCardName: {
-    fontSize: 15, fontWeight: '700', color: colors.white,
+    fontSize: 15, fontWeight: '700', color: '#FFFFFF',
     marginBottom: 4, letterSpacing: -0.3,
   },
 

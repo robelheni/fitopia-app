@@ -159,7 +159,7 @@ function CompletionScreen({ quote, celebration, totalExercises, workout, userNam
             <Animated.View style={[styles.celebrationCircle1, circle1Style]} />
             <Animated.View style={[styles.celebrationCircle2, circle2Style]} />
             <Animated.View style={[styles.completeIconContainer, iconStyle]}>
-                <Feather name="check" size={40} color={colors.white} />
+                <Feather name="check" size={40} color={'#FFFFFF'} />
             </Animated.View>
             <Animated.Text style={[styles.completeGreeting, greetingStyle]}>{celebration}</Animated.Text>
             <Animated.Text style={[styles.completeName, nameStyle]}>
@@ -394,7 +394,7 @@ export default function ActiveWorkoutScreen() {
                                 disabled={isComplete}
                             >
                                 {isComplete
-                                    ? <Feather name="check" size={22} color={colors.white} />
+                                    ? <Feather name="check" size={22} color={'#FFFFFF'} />
                                     : <Text style={styles.setButtonText}>Set {i + 1}</Text>
                                 }
                             </TouchableOpacity>
@@ -420,7 +420,7 @@ export default function ActiveWorkoutScreen() {
                                 i === currentIndex && styles.overviewDotActive,
                                 i < currentIndex && styles.overviewDotDone,
                             ]}>
-                                {i < currentIndex && <Feather name="check" size={10} color={colors.white} />}
+                                {i < currentIndex && <Feather name="check" size={10} color={'#FFFFFF'} />}
                             </View>
                             <Text style={[
                                 styles.overviewText,
@@ -441,7 +441,7 @@ export default function ActiveWorkoutScreen() {
                     <View style={{ marginTop: 12 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                             <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center' }}>
-                                <Feather name="zap" size={10} color={colors.white} />
+                                <Feather name="zap" size={10} color={'#FFFFFF'} />
                             </View>
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#DC2626' }}>
                                 Cardio Circuit — {workout.cardio_circuit.rounds} rounds
@@ -482,7 +482,7 @@ export default function ActiveWorkoutScreen() {
                                     : 'Finish workout')
                                 : 'Next exercise'}
                         </Text>
-                        <Feather name="arrow-right" size={18} color={colors.white} />
+                        <Feather name="arrow-right" size={18} color={'#FFFFFF'} />
                     </TouchableOpacity>
                 </View>
             )}
@@ -506,7 +506,7 @@ export default function ActiveWorkoutScreen() {
                         <ScrollView contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false}>
                             <View style={styles.modalVideo}>
                                 <View style={styles.modalPlayButton}>
-                                    <Feather name="play" size={28} color={colors.white} />
+                                    <Feather name="play" size={28} color={'#FFFFFF'} />
                                 </View>
                                 <Text style={styles.modalVideoLabel}>Video demonstration</Text>
                                 <Text style={styles.modalVideoSub}>Coming soon</Text>
@@ -592,20 +592,20 @@ function makeStyles(c, dark) {
     overviewMeta: { fontSize: 12, color: colors.greyLight },
     nextButtonContainer: { position: 'absolute', bottom: 40, left: 24, right: 24 },
     nextButton: { backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, shadowColor: colors.blue, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 8 },
-    nextButtonText: { fontSize: 16, fontWeight: '600', color: colors.white },
+    nextButtonText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
     modalContainer: { flex: 1, backgroundColor: colors.white, paddingTop: 12 },
     modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.greyBorder, alignSelf: 'center', marginBottom: 16 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, marginBottom: 20 },
     modalTitle: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
     modalClose: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center' },
     modalContent: { paddingHorizontal: 24, paddingBottom: 40 },
-    modalVideo: { height: 200, backgroundColor: colors.black, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+    modalVideo: { height: 200, backgroundColor: '#0A0A0A', borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
     modalPlayButton: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 10, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-    modalVideoLabel: { fontSize: 13, fontWeight: '500', color: colors.white, marginBottom: 4 },
+    modalVideoLabel: { fontSize: 13, fontWeight: '500', color: '#FFFFFF', marginBottom: 4 },
     modalVideoSub: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
     modalStats: { flexDirection: 'row', backgroundColor: colors.blue, borderRadius: 16, padding: 16, marginBottom: 24 },
     modalStat: { flex: 1, alignItems: 'center' },
-    modalStatNumber: { fontSize: 28, fontWeight: '700', color: colors.white, letterSpacing: -1, marginBottom: 4 },
+    modalStatNumber: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, marginBottom: 4 },
     modalStatLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)' },
     modalStatDivider: { width: 0.5, height: 40, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center' },
     modalSectionTitle: { fontSize: 16, fontWeight: '700', color: colors.black, marginBottom: 12 },
@@ -619,16 +619,16 @@ function makeStyles(c, dark) {
     celebrationCircle2: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -50, left: -80 },
     completeIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
     completeGreeting: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '300', textAlign: 'center' },
-    completeName: { fontSize: 32, fontWeight: '700', color: colors.white, letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
+    completeName: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
     completeStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16, marginBottom: 20, width: '100%' },
     completeStat: { flex: 1, alignItems: 'center', gap: 4 },
-    completeStatValue: { fontSize: 22, fontWeight: '700', color: colors.white, letterSpacing: -0.5 },
+    completeStatValue: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
     completeStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
     completeStatDivider: { width: 0.5, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center' },
     quoteCard: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, marginBottom: 24, width: '100%', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-    quoteText: { fontSize: 14, color: colors.white, lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
+    quoteText: { fontSize: 14, color: '#FFFFFF', lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
     quoteAuthor: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' },
-    completeDoneButton: { backgroundColor: colors.white, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+    completeDoneButton: { backgroundColor: '#FFFFFF', paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
     completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
     seeYouText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
 }); }

@@ -2,12 +2,19 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import { getChallenges } from '../services/api';
 
 export default function AllChallengesScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const styles = makeStyles(colors, isDark);
 
   useFocusEffect(
     useCallback(() => {
@@ -76,48 +83,29 @@ export default function AllChallengesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
-    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
-  },
-
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
-  },
-
-  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-
-  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 80, gap: 12 },
-
-  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 15, color: colors.grey, fontWeight: '300' },
-
-  challengeCard: {
-    borderRadius: 20,
-    padding: 20,
-    gap: 6,
-  },
-
-  challengeName: {
-    fontSize: 18, fontWeight: '700', color: colors.white, letterSpacing: -0.3,
-  },
-
-  challengeDescription: {
-    fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '300', lineHeight: 18,
-  },
-
-  challengeFooter: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: 8,
-  },
-
-  challengePostCount: {
-    fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '500',
-  },
-});
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
+    backButton: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
+    },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 80, gap: 12 },
+    emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+    emptyText: { fontSize: 15, color: colors.grey, fontWeight: '300' },
+    challengeCard: { borderRadius: 20, padding: 20, gap: 6 },
+    challengeName: { fontSize: 18, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.3 },
+    challengeDescription: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '300', lineHeight: 18 },
+    challengeFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+    challengePostCount: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
+  });
+}

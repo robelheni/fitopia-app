@@ -139,7 +139,7 @@ export default function Complete() {
       {/* Center icon with rotation */}
       <Animated.View style={[styles.iconContainer, logoStyle]}>
         <Animated.View style={iconStyle}>
-        <Feather name="award" size={64} color={colors.white} />
+        <Feather name="award" size={64} color={'#FFFFFF'} />
         </Animated.View>
       </Animated.View>
 
@@ -165,17 +165,17 @@ export default function Complete() {
         {/* Stats row */}
         <Animated.View style={[styles.statsRow, subtitleStyle]}>
           <View style={styles.statItem}>
-            <Feather name="activity" size={20} color={colors.white} />
+            <Feather name="activity" size={20} color={'#FFFFFF'} />
             <Text style={styles.statText}>Custom plan</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Feather name="users" size={20} color={colors.white} />
+            <Feather name="users" size={20} color={'#FFFFFF'} />
             <Text style={styles.statText}>Community</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Feather name="zap" size={20} color={colors.white} />
+            <Feather name="zap" size={20} color={'#FFFFFF'} />
             <Text style={styles.statText}>AI Coach</Text>
           </View>
         </Animated.View>
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   logoFit: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
     letterSpacing: -1,
   },
 
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
     letterSpacing: -1,
     textAlign: 'center',
     marginBottom: 16,

@@ -116,7 +116,7 @@ export default function ExerciseDetailScreen() {
             <FadeUpItem delay={0}>
             <View style={styles.videoPlaceholder}>
                 <View style={styles.playButton}>
-                <Feather name="play" size={32} color={colors.white} />
+                <Feather name="play" size={32} color={'#FFFFFF'} />
                 </View>
                 <Text style={styles.videoLabel}>Video demonstration</Text>
                 <Text style={styles.videoSub}>Coming soon</Text>
@@ -158,7 +158,7 @@ export default function ExerciseDetailScreen() {
                     <Feather
                     name={timerRunning ? 'square' : 'play'}
                     size={18}
-                    color={colors.white}
+                    color={'#FFFFFF'}
                     />
                     <Text style={styles.timerButtonText}>
                     {timerRunning ? 'Stop' : 'Start timer'}
@@ -275,7 +275,7 @@ function makeStyles(c, dark) {
     // Video placeholder
     videoPlaceholder: {
         height: 220,
-        backgroundColor: colors.black,
+        backgroundColor: '#0A0A0A',
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
@@ -298,7 +298,7 @@ function makeStyles(c, dark) {
     videoLabel: {
         fontSize: 14,
         fontWeight: '500',
-        color: colors.white,
+        color: '#FFFFFF',
         marginBottom: 4,
     },
 
@@ -360,7 +360,7 @@ function makeStyles(c, dark) {
     setsNumber: {
         fontSize: 36,
         fontWeight: '700',
-        color: colors.white,
+        color: '#FFFFFF',
         letterSpacing: -1,
         marginBottom: 4,
     },
@@ -402,7 +402,7 @@ function makeStyles(c, dark) {
     timerDisplay: {
         fontSize: 72,
         fontWeight: '700',
-        color: colors.white,
+        color: '#FFFFFF',
         letterSpacing: -3,
         marginBottom: 20,
     },
@@ -425,7 +425,7 @@ function makeStyles(c, dark) {
     timerButtonText: {
         fontSize: 15,
         fontWeight: '600',
-        color: colors.white,
+        color: '#FFFFFF',
     },
 
     timerReset: {

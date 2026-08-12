@@ -509,7 +509,7 @@ function calculateSessionDuration(session) {
                     }}
                 >
                 <Text style={styles.startButtonText}>Start workout</Text>
-                <Feather name="arrow-right" size={18} color={colors.white} />
+                <Feather name="arrow-right" size={18} color={'#FFFFFF'} />
             </TouchableOpacity>
             </FadeUpItem>
 
@@ -571,7 +571,7 @@ function makeStyles(c, dark) {
     workoutName: {
         fontSize: 24,
         fontWeight: '700',
-        color: colors.white,
+        color: '#FFFFFF',
         letterSpacing: -0.5,
         marginBottom: 8,
     },
@@ -602,7 +602,7 @@ function makeStyles(c, dark) {
 
     statText: {
         fontSize: 13,
-        color: colors.white,
+        color: '#FFFFFF',
         fontWeight: '500',
     },
 
@@ -720,7 +720,7 @@ function makeStyles(c, dark) {
     startButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: colors.white,
+        color: '#FFFFFF',
     },
     swapButton: {
         width: 32,

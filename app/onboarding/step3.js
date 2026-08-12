@@ -76,7 +76,7 @@ export default function Step3() {
             onPress={() => handleSelectDays('2')}
           >
             <View style={[styles.optionIconContainer, selected === '2' && styles.optionIconContainerSelected]}>
-              <Feather name="moon" size={20} color={selected === '2' ? colors.white : colors.grey} />
+              <Feather name="moon" size={20} color={selected === '2' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
               <Text style={[styles.optionTitle, selected === '2' && styles.optionTitleSelected]}>2 days</Text>
@@ -91,7 +91,7 @@ export default function Step3() {
             onPress={() => handleSelectDays('3')}
           >
             <View style={[styles.optionIconContainer, selected === '3' && styles.optionIconContainerSelected]}>
-              <Feather name="sun" size={20} color={selected === '3' ? colors.white : colors.grey} />
+              <Feather name="sun" size={20} color={selected === '3' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
               <Text style={[styles.optionTitle, selected === '3' && styles.optionTitleSelected]}>3 days</Text>
@@ -106,7 +106,7 @@ export default function Step3() {
             onPress={() => handleSelectDays('4')}
           >
             <View style={[styles.optionIconContainer, selected === '4' && styles.optionIconContainerSelected]}>
-              <Feather name="zap" size={20} color={selected === '4' ? colors.white : colors.grey} />
+              <Feather name="zap" size={20} color={selected === '4' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
               <Text style={[styles.optionTitle, selected === '4' && styles.optionTitleSelected]}>4 days</Text>
@@ -121,7 +121,7 @@ export default function Step3() {
             onPress={() => handleSelectDays('5+')}
           >
             <View style={[styles.optionIconContainer, selected === '5+' && styles.optionIconContainerSelected]}>
-              <MaterialCommunityIcons name="fire" size={20} color={selected === '5+' ? colors.white : colors.grey} />
+              <MaterialCommunityIcons name="fire" size={20} color={selected === '5+' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
               <Text style={[styles.optionTitle, selected === '5+' && styles.optionTitleSelected]}>5+ days</Text>
@@ -166,7 +166,7 @@ export default function Step3() {
                     </Text>
                     {isSelected && (
                       <View style={step3Styles.dayCheck}>
-                        <Feather name="check" size={8} color={colors.white} />
+                        <Feather name="check" size={8} color={'#FFFFFF'} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -257,7 +257,7 @@ const step3Styles = StyleSheet.create({
   },
 
   dayButtonTextSelected: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   dayButtonTextDisabled: {

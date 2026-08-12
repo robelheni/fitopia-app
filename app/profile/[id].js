@@ -391,7 +391,7 @@ function makeStyles(c, dark) {
   },
 
   followButtonTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
 
   statsRow: {

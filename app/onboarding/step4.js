@@ -42,7 +42,7 @@ export default function Step4() {
                         styles.optionIconContainer,
                         selected === '30' && styles.optionIconContainerSelected
                     ]}>
-                        <MaterialCommunityIcons name="timer-outline" size={20} color={selected === '5+' ? colors.white : colors.grey} />
+                        <MaterialCommunityIcons name="timer-outline" size={20} color={selected === '5+' ? '#FFFFFF' : colors.grey} />
                     </View>
                     <View>
                         <Text style={[styles.optionTitle, selected === '30' && styles.optionTitleSelected]}>
@@ -62,7 +62,7 @@ export default function Step4() {
                         styles.optionIconContainer,
                         selected === '45' && styles.optionIconContainerSelected
                     ]}>
-                        <MaterialCommunityIcons name="clock-check-outline" size={20} color={selected === '5+' ? colors.white : colors.grey} />
+                        <MaterialCommunityIcons name="clock-check-outline" size={20} color={selected === '5+' ? '#FFFFFF' : colors.grey} />
                     </View>
                     <View>
                         <Text style={[styles.optionTitle, selected === '45' && styles.optionTitleSelected]}>
@@ -82,7 +82,7 @@ export default function Step4() {
                         styles.optionIconContainer,
                         selected === '60+' && styles.optionIconContainerSelected
                     ]}>
-                        <MaterialCommunityIcons name="clock-time-eight-outline" size={20} color={selected === '5+' ? colors.white : colors.grey} />
+                        <MaterialCommunityIcons name="clock-time-eight-outline" size={20} color={selected === '5+' ? '#FFFFFF' : colors.grey} />
                     </View>
                     <View>
                         <Text style={[styles.optionTitle, selected === '60+' && styles.optionTitleSelected]}>
@@ -102,7 +102,7 @@ export default function Step4() {
                         styles.optionIconContainer,
                         selected === '80' && styles.optionIconContainerSelected
                     ]}>
-                        <MaterialCommunityIcons name="clock-time-eight-outline" size={20} color={selected === '80' ? colors.white : colors.grey} />
+                        <MaterialCommunityIcons name="clock-time-eight-outline" size={20} color={selected === '80' ? '#FFFFFF' : colors.grey} />
                     </View>
                     <View>
                         <Text style={[styles.optionTitle, selected === '80' && styles.optionTitleSelected]}>

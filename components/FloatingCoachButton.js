@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   bannerBadgeText: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
     letterSpacing: 0.2,
   },
   bannerText: {
@@ -364,6 +364,6 @@ const styles = StyleSheet.create({
   notifyText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
 });

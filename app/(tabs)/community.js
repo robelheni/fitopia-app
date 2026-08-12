@@ -204,7 +204,7 @@ export default function CommunityScreen() {
             style={styles.composeButton}
             onPress={() => router.push('/compose')}
             >
-            <Feather name="edit-2" size={16} color={colors.white} />
+            <Feather name="edit-2" size={16} color={'#FFFFFF'} />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.searchButton}
@@ -489,7 +489,7 @@ function makeStyles(c, dark) {
   challengeName: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
     marginBottom: 4,
     letterSpacing: -0.3,
   },
@@ -516,7 +516,7 @@ function makeStyles(c, dark) {
   },
   joinButtonText: {
     fontSize: 11,
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   filtersContainer: {
@@ -547,7 +547,7 @@ function makeStyles(c, dark) {
     color: colors.grey,
   },
   filterTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
   },
   posts: {
     gap: 12,
@@ -581,7 +581,7 @@ function makeStyles(c, dark) {
   avatarText: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
   },
   postMeta: {
     flex: 1,

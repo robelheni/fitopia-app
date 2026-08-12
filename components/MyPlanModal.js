@@ -827,7 +827,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   updateButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -861,7 +861,7 @@ const styles = StyleSheet.create({
   weightSaveText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.white,
+    color: '#FFFFFF',
   },
   pickerContainer: {
     flex: 1,

@@ -1,32 +1,25 @@
 import { useState, useEffect } from 'react';
-import {
-  View, Text, ScrollView, StyleSheet,
-  TouchableOpacity, TextInput, ActivityIndicator
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { getCategoryPlan, getExercises } from '../../services/api';
 
-// Which categories use the curated plan endpoint vs the browse endpoint
 const CURATED_CATEGORIES = [
     'full-body-home', 'upper-body-home', 'lower-body-home',
     'core-home', 'biceps-home', 'triceps-home', 'cardio-home', 'intense-cardio-home',
     'chest-gym', 'back-gym', 'shoulders-gym', 'triceps-gym',
     'biceps-gym', 'legs-gym', 'core-gym', 'cardio-gym', 'intense-cardio-gym',
     'light-full-body',
-  ];
+];
 
-// Fasting categories use the browse endpoint with specific filters
 const FASTING_CONFIG = {
     'core-and-balance':     { muscleGroup: 'core', movementPattern: 'stability,anti_rotation' },
     'low-intensity-cardio': { movementPattern: 'low_impact,low_impact_cardio,steady_state' },
-  };
+};
 
-  
-
-// Screen title and subtitle for each category
 const CATEGORY_META = {
   'full-body-home':       { title: 'Full Body',            subtitle: 'Home workout' },
   'upper-body-home':      { title: 'Upper Body',           subtitle: 'Home workout' },
@@ -48,11 +41,10 @@ const CATEGORY_META = {
   'core-and-balance':     { title: 'Core and Balance',     subtitle: 'Fasting workout' },
   'low-intensity-cardio': { title: 'Low Intensity Cardio', subtitle: 'Fasting workout' },
   'all':                  { title: 'Exercise Library',     subtitle: 'All exercises' },
-  'intense-cardio-home': { title: 'Intense Cardio', subtitle: 'Home workout' },
-  'intense-cardio-gym':  { title: 'Intense Cardio', subtitle: 'Gym workout' },
+  'intense-cardio-home':  { title: 'Intense Cardio',       subtitle: 'Home workout' },
+  'intense-cardio-gym':   { title: 'Intense Cardio',       subtitle: 'Gym workout' },
 };
 
-// Colour per muscle group
 const MUSCLE_COLORS = {
   chest:      { color: '#2563EB', bg: '#EFF6FF' },
   back:       { color: '#7C3AED', bg: '#EDE9FE' },
@@ -67,11 +59,10 @@ const MUSCLE_COLORS = {
   cardio:     { color: '#059669', bg: '#D1FAE5' },
 };
 
-function getMuscleColor(muscle) {
+function getMuscleColor(muscle, colors) {
   return MUSCLE_COLORS[muscle] || { color: colors.blue, bg: colors.blueLight };
 }
 
-// Formats exercise subtitle — "3 sets · 10 reps" or "3 sets · 30s"
 function formatMeta(ex) {
   const sets = ex.sets || ex.sets_range?.[0] || 3;
   const reps = ex.is_timed
@@ -81,6 +72,10 @@ function formatMeta(ex) {
 }
 
 export default function LibraryScreen() {
+  const theme = useTheme();
+  const isDark = theme ? theme.isDark : false;
+  const colors = theme ? theme.colors : lightColors;
+
   const { category } = useLocalSearchParams();
   const meta = CATEGORY_META[category] || { title: 'Exercises', subtitle: '' };
   const isCurated = CURATED_CATEGORIES.includes(category);
@@ -91,25 +86,21 @@ export default function LibraryScreen() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
+  const styles = makeStyles(colors, isDark);
+
   useEffect(() => {
     async function fetchExercises() {
       try {
         setLoading(true);
-
         let data = [];
-
         if (isCurated) {
-          // Home and Gym — use curated plan endpoint
           const result = await getCategoryPlan(category);
           data = result.exercises;
         } else if (isFasting) {
-          // Fasting — browse with specific filters
           data = await getExercises(FASTING_CONFIG[category]);
         } else {
-          // All — browse everything
           data = await getExercises({});
         }
-
         setExercises(data);
         setFiltered(data);
       } catch (err) {
@@ -118,11 +109,9 @@ export default function LibraryScreen() {
         setLoading(false);
       }
     }
-
     fetchExercises();
   }, [category]);
 
-  // Search filter — works across all modes
   useEffect(() => {
     if (!search.trim()) {
       setFiltered(exercises);
@@ -137,8 +126,6 @@ export default function LibraryScreen() {
 
   return (
     <View style={styles.container}>
-
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color={colors.black} />
@@ -150,7 +137,6 @@ export default function LibraryScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Search bar — only show for All and Fasting */}
       {(!isCurated) && (
         <View style={styles.searchBar}>
           <Feather name="search" size={16} color={colors.greyLight} />
@@ -174,17 +160,12 @@ export default function LibraryScreen() {
           <ActivityIndicator size="large" color={colors.blue} />
         </View>
       ) : (
-        <ScrollView
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Exercise count */}
+        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
           {category !== 'all' && (
-  <Text style={styles.countText}>
-    {filtered.length} exercise{filtered.length !== 1 ? 's' : ''}
-  </Text>
-)}
-
+            <Text style={styles.countText}>
+              {filtered.length} exercise{filtered.length !== 1 ? 's' : ''}
+            </Text>
+          )}
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
               <Feather name="search" size={40} color={colors.greyLight} />
@@ -192,7 +173,7 @@ export default function LibraryScreen() {
             </View>
           ) : (
             filtered.map((ex, index) => {
-              const muscleColor = getMuscleColor(ex.muscle_group);
+              const muscleColor = getMuscleColor(ex.muscle_group, colors);
               return (
                 <FadeUpItem key={ex.id} delay={index * 30}>
                   <TouchableOpacity
@@ -221,12 +202,10 @@ export default function LibraryScreen() {
                         {ex.muscle_group}
                       </Text>
                     </View>
-
                     <View style={styles.exerciseInfo}>
                       <Text style={styles.exerciseName}>{ex.name}</Text>
                       <Text style={styles.exerciseMeta}>{formatMeta(ex)} · {ex.equipment}</Text>
                     </View>
-
                     <Feather name="chevron-right" size={16} color={colors.greyLight} />
                   </TouchableOpacity>
                 </FadeUpItem>
@@ -239,114 +218,46 @@ export default function LibraryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.greyBorder,
-  },
-
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  headerText: { alignItems: 'center' },
-
-  headerTitle: {
-    fontSize: 17, fontWeight: '600', color: colors.black,
-  },
-
-  headerSub: {
-    fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2,
-  },
-
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 24,
-    marginVertical: 16,
-    backgroundColor: colors.greyCard,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-  },
-
-  searchInput: {
-    flex: 1, fontSize: 15, color: colors.black,
-  },
-
-  centered: {
-    flex: 1, alignItems: 'center', justifyContent: 'center',
-  },
-
-  list: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 120,
-  },
-
-  countText: {
-    fontSize: 13, color: colors.grey,
-    fontWeight: '300', marginBottom: 12,
-  },
-
-  exerciseCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-
-  muscleTag: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-
-  muscleTagText: {
-    fontSize: 11, fontWeight: '600', textTransform: 'capitalize',
-  },
-
-  exerciseInfo: { flex: 1 },
-
-  exerciseName: {
-    fontSize: 15, fontWeight: '600',
-    color: colors.black, letterSpacing: -0.3, marginBottom: 3,
-  },
-
-  exerciseMeta: {
-    fontSize: 12, color: colors.grey, fontWeight: '300',
-  },
-
-  emptyState: {
-    alignItems: 'center', paddingVertical: 60, gap: 12,
-  },
-
-  emptyText: {
-    fontSize: 15, color: colors.grey, fontWeight: '300',
-  },
-});
+function makeStyles(c, dark) {
+  const colors = c || lightColors;
+  const isDark = dark || false;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
+    backButton: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
+    },
+    headerText: { alignItems: 'center' },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    headerSub: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
+    searchBar: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      marginHorizontal: 24, marginVertical: 16,
+      backgroundColor: colors.greyCard, borderRadius: 12,
+      paddingHorizontal: 14, paddingVertical: 12,
+      borderWidth: 1, borderColor: colors.greyBorder,
+    },
+    searchInput: { flex: 1, fontSize: 15, color: colors.black },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    list: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 120 },
+    countText: { fontSize: 13, color: colors.grey, fontWeight: '300', marginBottom: 12 },
+    exerciseCard: {
+      flexDirection: 'row', alignItems: 'center', gap: 12,
+      backgroundColor: colors.white, borderRadius: 16, padding: 16, marginBottom: 10,
+      borderWidth: 1, borderColor: colors.greyBorder,
+      shadowColor: colors.black, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 8, elevation: 2,
+    },
+    muscleTag: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, minWidth: 70, alignItems: 'center' },
+    muscleTagText: { fontSize: 11, fontWeight: '600', textTransform: 'capitalize' },
+    exerciseInfo: { flex: 1 },
+    exerciseName: { fontSize: 15, fontWeight: '600', color: colors.black, letterSpacing: -0.3, marginBottom: 3 },
+    exerciseMeta: { fontSize: 12, color: colors.grey, fontWeight: '300' },
+    emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+    emptyText: { fontSize: 15, color: colors.grey, fontWeight: '300' },
+  });
+}

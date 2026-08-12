@@ -278,7 +278,7 @@ export default function HomeScreen() {
                   <>
                     <View style={styles.completedTopRow}>
                       <View style={styles.completedIconCircle}>
-                        <Feather name="check" size={20} color={colors.white} />
+                        <Feather name="check" size={20} color={'#FFFFFF'} />
                       </View>
                       <View style={styles.completedTextBlock}>
                         <Text style={styles.completedTitle}>Workout complete</Text>
@@ -314,7 +314,7 @@ export default function HomeScreen() {
                     </View>
                     <View style={styles.startButton}>
                       <Text style={styles.startButtonText}>Start workout</Text>
-                      <Feather name="arrow-right" size={14} color={colors.white} />
+                      <Feather name="arrow-right" size={14} color={'#FFFFFF'} />
                     </View>
                   </View>
                 )}
@@ -472,7 +472,7 @@ function makeStyles(c, dark) {
     shadowColor: colors.blue, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
   },
   streakLeft: { alignItems: 'center', paddingRight: 20 },
-  streakNumber: { fontSize: 48, fontWeight: '700', color: colors.white, letterSpacing: -2, lineHeight: 52 },
+  streakNumber: { fontSize: 48, fontWeight: '700', color: '#FFFFFF', letterSpacing: -2, lineHeight: 52 },
   streakLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '400' },
   streakDivider: { width: 0.5, height: 60, backgroundColor: 'rgba(255,255,255,0.3)', marginRight: 20 },
   streakRight: { flex: 1 },
@@ -481,11 +481,11 @@ function makeStyles(c, dark) {
   streakDayContainer: { alignItems: 'center', gap: 4 },
   streakDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)' },
   streakDotCompleted: { backgroundColor: '#22C55E' },
-  streakDotActive: { backgroundColor: colors.white },
+  streakDotActive: { backgroundColor: '#FFFFFF' },
   streakDotPending: { backgroundColor: '#EAB308' },
   streakDotRest: { backgroundColor: 'rgba(255,255,255,0.2)' },
   streakDotMissed: { backgroundColor: '#EF4444' },
-  streakDotToday: { borderWidth: 2.5, borderColor: colors.white },
+  streakDotToday: { borderWidth: 2.5, borderColor: '#FFFFFF' },
   streakDayLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: '500' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
@@ -512,7 +512,7 @@ function makeStyles(c, dark) {
     borderRadius: 100, flexDirection: 'row', alignItems: 'center', gap: 6,
     shadowColor: colors.blue, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4,
   },
-  startButtonText: { fontSize: 13, color: colors.white, fontWeight: '600' },
+  startButtonText: { fontSize: 13, color: '#FFFFFF', fontWeight: '600' },
 
   // ── Completed card internals ──────────────────────────────
   completedTopRow: {

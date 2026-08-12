@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../../constants/colors';
+import { lightColors } from '../../constants/colors';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -210,7 +210,7 @@ export default function CardioScreen() {
             <View style={[styles.screen, { backgroundColor: '#DC2626' }]}>
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.exitBtn} onPress={() => router.back()}>
-                        <Feather name="x" size={20} color={colors.white} />
+                        <Feather name="x" size={20} color={'#FFFFFF'} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Cardio Circuit</Text>
                     <View style={{ width: 40 }} />
@@ -218,7 +218,7 @@ export default function CardioScreen() {
 
                 <ScrollView contentContainerStyle={styles.introContent}>
                     <View style={styles.zapCircle}>
-                        <Feather name="zap" size={36} color={colors.white} />
+                        <Feather name="zap" size={36} color={'#FFFFFF'} />
                     </View>
 
                     <Text style={styles.introTitle}>Strength done! 💪</Text>
@@ -252,7 +252,7 @@ export default function CardioScreen() {
             <View style={[styles.screen, { backgroundColor: bgColor }]}>
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.exitBtn} onPress={() => router.back()}>
-                        <Feather name="x" size={20} color={colors.white} />
+                        <Feather name="x" size={20} color={'#FFFFFF'} />
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>Cardio Circuit</Text>
                     <Text style={styles.headerRound}>Round {currentRound}/{circuit.rounds}</Text>
@@ -293,7 +293,7 @@ export default function CardioScreen() {
         <View style={[styles.screen, { backgroundColor: bgColor }]}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.exitBtn} onPress={() => router.back()}>
-                    <Feather name="x" size={20} color={colors.white} />
+                    <Feather name="x" size={20} color={'#FFFFFF'} />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Cardio Circuit</Text>
                 <Text style={styles.headerRound}>Round {currentRound}/{circuit.rounds}</Text>
@@ -327,7 +327,7 @@ export default function CardioScreen() {
                     {Array.from({ length: circuit.rounds }).map((_, i) => (
                         <View key={i} style={[
                             styles.roundDot,
-                            { backgroundColor: i < currentRound ? colors.white : 'rgba(255,255,255,0.3)' }
+                            { backgroundColor: i < currentRound ? '#FFFFFF' : 'rgba(255,255,255,0.3)' }
                         ]} />
                     ))}
                 </View>
@@ -340,32 +340,32 @@ const styles = StyleSheet.create({
     screen: { flex: 1 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16 },
     exitBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
-    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.white },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: '#FFFFFF' },
     headerRound: { fontSize: 14, color: 'rgba(255,255,255,0.7)', fontWeight: '500' },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
     introContent: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
     zapCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 24 },
-    introTitle: { fontSize: 32, fontWeight: '700', color: colors.white, textAlign: 'center', letterSpacing: -0.5, marginBottom: 12 },
+    introTitle: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', textAlign: 'center', letterSpacing: -0.5, marginBottom: 12 },
     introSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.8)', textAlign: 'center', fontWeight: '300', marginBottom: 8 },
     introMeta: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginBottom: 32, fontWeight: '300' },
     introExerciseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(255,255,255,0.15)', padding: 14, borderRadius: 12 },
-    introExerciseNum: { color: colors.white, fontWeight: '700', width: 24, fontSize: 15 },
-    introExerciseName: { color: colors.white, flex: 1, fontWeight: '500', fontSize: 15 },
+    introExerciseNum: { color: '#FFFFFF', fontWeight: '700', width: 24, fontSize: 15 },
+    introExerciseName: { color: '#FFFFFF', flex: 1, fontWeight: '500', fontSize: 15 },
     introExerciseDuration: { color: 'rgba(255,255,255,0.6)', fontSize: 13 },
-    startBtn: { backgroundColor: colors.white, paddingHorizontal: 48, paddingVertical: 16, borderRadius: 100, flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center' },
+    startBtn: { backgroundColor: '#FFFFFF', paddingHorizontal: 48, paddingVertical: 16, borderRadius: 100, flexDirection: 'row', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center' },
     startBtnText: { fontSize: 16, fontWeight: '700', color: '#DC2626' },
     upNextLabel: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
-    upNextExercise: { fontSize: 22, fontWeight: '600', color: colors.white, textAlign: 'center', marginBottom: 32 },
-    countdownNumber: { fontSize: 120, fontWeight: '700', color: colors.white, letterSpacing: -4, lineHeight: 130 },
+    upNextExercise: { fontSize: 22, fontWeight: '600', color: '#FFFFFF', textAlign: 'center', marginBottom: 32 },
+    countdownNumber: { fontSize: 120, fontWeight: '700', color: '#FFFFFF', letterSpacing: -4, lineHeight: 130 },
     roundLabel: { fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 16, marginBottom: 32 },
-    roundCompleteTitle: { fontSize: 28, fontWeight: '700', color: colors.white, textAlign: 'center', marginBottom: 8 },
+    roundCompleteTitle: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', textAlign: 'center', marginBottom: 8 },
     roundCompleteSubtitle: { fontSize: 16, color: 'rgba(255,255,255,0.7)', textAlign: 'center', fontWeight: '300' },
     phaseLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: 3, marginBottom: 16 },
-    exerciseName: { fontSize: 28, fontWeight: '700', color: colors.white, textAlign: 'center', letterSpacing: -0.5, marginBottom: 8 },
+    exerciseName: { fontSize: 28, fontWeight: '700', color: '#FFFFFF', textAlign: 'center', letterSpacing: -0.5, marginBottom: 8 },
     exercisePosition: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 48 },
-    timerNumber: { fontSize: 96, fontWeight: '700', color: colors.white, letterSpacing: -4, marginBottom: 48 },
+    timerNumber: { fontSize: 96, fontWeight: '700', color: '#FFFFFF', letterSpacing: -4, marginBottom: 48 },
     skipBtn: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 40, paddingVertical: 14, borderRadius: 100 },
-    skipBtnText: { fontSize: 15, fontWeight: '600', color: colors.white },
+    skipBtnText: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
     roundDots: { flexDirection: 'row', gap: 8, marginTop: 40 },
     roundDot: { width: 8, height: 8, borderRadius: 4 },
 });

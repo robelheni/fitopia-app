@@ -61,7 +61,7 @@ export default function WorkoutCompletionScreen({ quote, celebration, totalExerc
             <Animated.View style={[styles.celebrationCircle1, circle1Style]} />
             <Animated.View style={[styles.celebrationCircle2, circle2Style]} />
             <Animated.View style={[styles.completeIconContainer, iconStyle]}>
-                <Feather name="check" size={40} color={colors.white} />
+                <Feather name="check" size={40} color={'#FFFFFF'} />
             </Animated.View>
             <Animated.Text style={[styles.completeGreeting, greetingStyle]}>{celebration}</Animated.Text>
             <Animated.Text style={[styles.completeName, nameStyle]}>
@@ -104,14 +104,14 @@ const styles = StyleSheet.create({
     celebrationCircle2: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -50, left: -80 },
     completeIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
     completeGreeting: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '300', textAlign: 'center' },
-    completeName: { fontSize: 32, fontWeight: '700', color: colors.white, letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
+    completeName: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
     completeStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16, marginBottom: 20, width: '100%' },
     completeStat: { flex: 1, alignItems: 'center', gap: 4 },
-    completeStatValue: { fontSize: 22, fontWeight: '700', color: colors.white, letterSpacing: -0.5 },
+    completeStatValue: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
     completeStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
     completeStatDivider: { width: 0.5, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center' },
     quoteCard: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, marginBottom: 24, width: '100%', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-    quoteText: { fontSize: 14, color: colors.white, lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
+    quoteText: { fontSize: 14, color: '#FFFFFF', lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
     quoteAuthor: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' },
     completeDoneButton: { backgroundColor: colors.white, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
     completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },

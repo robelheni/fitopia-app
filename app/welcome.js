@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
     letterSpacing: -0.3,

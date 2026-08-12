@@ -196,7 +196,7 @@ function makeStyles(c, dark) {
   content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 80 },
 
   banner: { borderRadius: 20, padding: 20, marginBottom: 16, gap: 8 },
-  bannerName: { fontSize: 22, fontWeight: '700', color: colors.white, letterSpacing: -0.5 },
+  bannerName: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
   bannerDescription: { fontSize: 14, color: 'rgba(255,255,255,0.85)', lineHeight: 20, fontWeight: '300' },
   bannerStat: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   bannerStatText: { fontSize: 12, color: 'rgba(255,255,255,0.8)', fontWeight: '500' },
