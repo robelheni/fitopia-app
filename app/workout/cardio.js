@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { lightColors } from '../../constants/colors';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,

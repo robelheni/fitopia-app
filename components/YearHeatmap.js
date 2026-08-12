@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 import { lightColors } from '../constants/colors';
 import { getYearStats } from '../services/api';
 
@@ -44,7 +45,8 @@ function getDayKey(date) {
 }
 
 export default function YearHeatmap({ accountCreatedAt, colors: colorsProp }) {
-  const colors = colorsProp || lightColors;
+  const theme = useTheme();
+  const colors = colorsProp || (theme ? theme.colors : lightColors);
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [completedMap, setCompletedMap] = useState({}); // dateString -> workout name

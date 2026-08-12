@@ -2,10 +2,15 @@ import { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import { getAdminChallenges, reorderChallenge, deleteChallenge } from '../services/api';
 
 export default function AdminChallengesScreen() {
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+  const styles = makeStyles(colors);
+
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,8 +35,6 @@ export default function AdminChallengesScreen() {
   async function handleReorder(challengeId, direction) {
     try {
       await reorderChallenge(challengeId, direction);
-      // Re-fetch to get the updated order rather than guessing the swap locally —
-      // simpler and guarantees the list always matches the real database state
       fetchChallenges();
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -123,56 +126,58 @@ export default function AdminChallengesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function makeStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
-    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
-  },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: 24, paddingTop: 60, paddingBottom: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
 
-  backButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
-  },
+    backButton: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
+    },
 
-  headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    headerTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
 
-  content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 80, gap: 10 },
+    content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 80, gap: 10 },
 
-  emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
-  emptyText: { fontSize: 15, color: colors.grey, fontWeight: '300' },
+    emptyState: { alignItems: 'center', paddingVertical: 60, gap: 12 },
+    emptyText: { fontSize: 15, color: colors.grey, fontWeight: '300' },
 
-  challengeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-  },
+    challengeRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      backgroundColor: colors.white,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.greyBorder,
+    },
 
-  colorDot: { width: 14, height: 14, borderRadius: 7, flexShrink: 0 },
+    colorDot: { width: 14, height: 14, borderRadius: 7, flexShrink: 0 },
 
-  challengeInfo: { flex: 1 },
-  challengeName: { fontSize: 14, fontWeight: '600', color: colors.black },
-  challengePostCount: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
+    challengeInfo: { flex: 1 },
+    challengeName: { fontSize: 14, fontWeight: '600', color: colors.black },
+    challengePostCount: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
 
-  reorderButtons: { gap: 2 },
+    reorderButtons: { gap: 2 },
 
-  reorderButton: {
-    width: 28, height: 22, borderRadius: 6,
-    backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
-  },
+    reorderButton: {
+      width: 28, height: 22, borderRadius: 6,
+      backgroundColor: colors.greyCard, alignItems: 'center', justifyContent: 'center',
+    },
 
-  reorderButtonDisabled: { opacity: 0.4 },
+    reorderButtonDisabled: { opacity: 0.4 },
 
-  deleteButton: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center',
-  },
-});
+    deleteButton: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center',
+    },
+  });
+}

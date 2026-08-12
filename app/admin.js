@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import { getAdminOverview, getAdminUsers, toggleUserPro, logout, createChallenge } from '../services/api';
 
 const CHALLENGE_COLORS = [
@@ -21,9 +22,13 @@ const CHALLENGE_COLORS = [
     { name: 'Rose', value: '#E11D48' },
     { name: 'Lime', value: '#65A30D' },
     { name: 'Slate', value: '#475569' },
-  ];
+];
 
 export default function AdminScreen() {
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+  const styles = makeStyles(colors);
+
   const [overview, setOverview] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +119,6 @@ export default function AdminScreen() {
   return (
     <View style={styles.container}>
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Admin Dashboard</Text>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -124,7 +128,6 @@ export default function AdminScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Overview stats */}
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
@@ -153,7 +156,6 @@ export default function AdminScreen() {
           </View>
         </View>
 
-        {/* Revenue placeholder */}
         <View style={styles.revenuePlaceholder}>
           <Feather name="dollar-sign" size={20} color={colors.greyLight} />
           <Text style={styles.revenuePlaceholderText}>Revenue tracking coming once payments are live</Text>
@@ -161,21 +163,21 @@ export default function AdminScreen() {
 
         <Text style={styles.sectionTitle}>Challenges</Text>
         <View style={styles.challengeActionsRow}>
-        <TouchableOpacity
-            style={styles.challengeActionButton}
-            onPress={() => setCreateChallengeVisible(true)}
-        >
-            <Feather name="plus" size={16} color={'#FFFFFF'} />
-            <Text style={styles.challengeActionButtonText}>Create</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-            style={[styles.challengeActionButton, styles.challengeActionButtonSecondary]}
-            onPress={() => router.push('/admin-challenges')}
-        >
-            <Feather name="list" size={16} color={colors.blue} />
-            <Text style={[styles.challengeActionButtonText, styles.challengeActionButtonTextSecondary]}>Manage</Text>
-        </TouchableOpacity>
-</View>
+          <TouchableOpacity
+              style={styles.challengeActionButton}
+              onPress={() => setCreateChallengeVisible(true)}
+          >
+              <Feather name="plus" size={16} color={'#FFFFFF'} />
+              <Text style={styles.challengeActionButtonText}>Create</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              style={[styles.challengeActionButton, styles.challengeActionButtonSecondary]}
+              onPress={() => router.push('/admin-challenges')}
+          >
+              <Feather name="list" size={16} color={colors.blue} />
+              <Text style={[styles.challengeActionButtonText, styles.challengeActionButtonTextSecondary]}>Manage</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.searchBar}>
           <Feather name="search" size={16} color={colors.greyLight} />
@@ -291,206 +293,205 @@ export default function AdminScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.white },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+function makeStyles(colors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.white },
+    centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
 
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 16,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.greyBorder,
-  },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 24,
+      paddingTop: 60,
+      paddingBottom: 16,
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors.greyBorder,
+    },
 
-  headerTitle: { fontSize: 22, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    headerTitle: { fontSize: 22, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
 
-  logoutButton: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: '#FEE2E2',
-    alignItems: 'center', justifyContent: 'center',
-  },
+    logoutButton: {
+      width: 40, height: 40, borderRadius: 20,
+      backgroundColor: '#FEE2E2',
+      alignItems: 'center', justifyContent: 'center',
+    },
 
-  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 80 },
+    content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 80 },
 
-  sectionTitle: {
-    fontSize: 16, fontWeight: '700', color: colors.black,
-    letterSpacing: -0.3, marginBottom: 12, marginTop: 8,
-  },
+    sectionTitle: {
+      fontSize: 16, fontWeight: '700', color: colors.black,
+      letterSpacing: -0.3, marginBottom: 12, marginTop: 8,
+    },
 
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 20,
-  },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 10,
+      marginBottom: 20,
+    },
 
-  statCard: {
-    width: '31%',
-    backgroundColor: colors.greyCard,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    gap: 4,
-  },
+    statCard: {
+      width: '31%',
+      backgroundColor: colors.greyCard,
+      borderRadius: 14,
+      padding: 14,
+      alignItems: 'center',
+      gap: 4,
+    },
 
-  statValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  statLabel: { fontSize: 10, color: colors.grey, fontWeight: '300', textAlign: 'center' },
+    statValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
+    statLabel: { fontSize: 10, color: colors.grey, fontWeight: '300', textAlign: 'center' },
 
-  revenuePlaceholder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.greyCard,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-  },
+    revenuePlaceholder: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.greyCard,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 16,
+    },
 
-  revenuePlaceholderText: {
-    fontSize: 13, color: colors.greyLight, fontWeight: '300', flex: 1,
-  },
+    revenuePlaceholderText: {
+      fontSize: 13, color: colors.greyLight, fontWeight: '300', flex: 1,
+    },
 
-  challengeActionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
-  },
-  
-  challengeActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.blue,
-    paddingVertical: 14,
-    borderRadius: 100,
-  },
-  
-  challengeActionButtonSecondary: {
-    backgroundColor: colors.blueLight,
-  },
-  
-  challengeActionButtonText: {
-    fontSize: 14, fontWeight: '600', color: '#FFFFFF',
-  },
-  
-  challengeActionButtonTextSecondary: {
-    color: colors.blue,
-  },
-  createChallengeButtonText: {
-    fontSize: 15, fontWeight: '600', color: '#FFFFFF',
-  },
+    challengeActionsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 24,
+    },
 
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.greyCard,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
+    challengeActionButton: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: colors.blue,
+      paddingVertical: 14,
+      borderRadius: 100,
+    },
 
-  searchInput: { flex: 1, fontSize: 14, color: colors.black },
+    challengeActionButtonSecondary: {
+      backgroundColor: colors.blueLight,
+    },
 
-  usersList: { gap: 10 },
+    challengeActionButtonText: {
+      fontSize: 14, fontWeight: '600', color: '#FFFFFF',
+    },
 
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-  },
+    challengeActionButtonTextSecondary: {
+      color: colors.blue,
+    },
 
-  userInfo: { flex: 1 },
-  userName: { fontSize: 14, fontWeight: '600', color: colors.black },
-  userEmail: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
-  userUsername: { fontSize: 12, color: colors.greyLight, fontWeight: '300' },
+    searchBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      backgroundColor: colors.greyCard,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      marginBottom: 16,
+    },
 
-  userActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    searchInput: { flex: 1, fontSize: 14, color: colors.black },
 
-  adminBadge: {
-    backgroundColor: colors.blueLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 100,
-  },
+    usersList: { gap: 10 },
 
-  adminBadgeText: { fontSize: 10, fontWeight: '600', color: colors.blue },
+    userCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.white,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.greyBorder,
+    },
 
-  proToggle: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    backgroundColor: colors.greyCard,
-  },
+    userInfo: { flex: 1 },
+    userName: { fontSize: 14, fontWeight: '600', color: colors.black },
+    userEmail: { fontSize: 12, color: colors.grey, fontWeight: '300', marginTop: 2 },
+    userUsername: { fontSize: 12, color: colors.greyLight, fontWeight: '300' },
 
-  proToggleActive: { backgroundColor: '#D1FAE5' },
+    userActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
 
-  proToggleText: { fontSize: 12, fontWeight: '600', color: colors.grey },
-  proToggleTextActive: { color: '#059669' },
+    adminBadge: {
+      backgroundColor: colors.blueLight,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 100,
+    },
 
-  modalContainer: { flex: 1, backgroundColor: colors.white, paddingTop: 12 },
-  modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.greyBorder, alignSelf: 'center', marginBottom: 8 },
+    adminBadgeText: { fontSize: 10, fontWeight: '600', color: colors.blue },
 
-  modalHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 24, paddingVertical: 16,
-    borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
-  },
+    proToggle: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 100,
+      backgroundColor: colors.greyCard,
+    },
 
-  modalCancel: { fontSize: 16, color: colors.grey },
-  modalTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-  modalSave: { fontSize: 16, fontWeight: '600', color: colors.blue },
-  modalContent: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60 },
+    proToggleActive: { backgroundColor: '#D1FAE5' },
 
-  fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.grey, marginBottom: 8, marginTop: 16 },
+    proToggleText: { fontSize: 12, fontWeight: '600', color: colors.grey },
+    proToggleTextActive: { color: '#059669' },
 
-  fieldInput: {
-    borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12,
-    paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.black,
-  },
+    modalContainer: { flex: 1, backgroundColor: colors.white, paddingTop: 12 },
+    modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.greyBorder, alignSelf: 'center', marginBottom: 8 },
 
-  descriptionInput: { minHeight: 90, textAlignVertical: 'top' },
+    modalHeader: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      paddingHorizontal: 24, paddingVertical: 16,
+      borderBottomWidth: 0.5, borderBottomColor: colors.greyBorder,
+    },
 
-  colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
+    modalCancel: { fontSize: 16, color: colors.grey },
+    modalTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
+    modalSave: { fontSize: 16, fontWeight: '600', color: colors.blue },
+    modalContent: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60 },
 
-  colorSwatch: {
-    width: 48, height: 48, borderRadius: 24,
-    alignItems: 'center', justifyContent: 'center',
-  },
+    fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.grey, marginBottom: 8, marginTop: 16 },
 
-  colorSwatchSelected: {
-    borderWidth: 3,
-    borderColor: colors.black,
-  },
+    fieldInput: {
+      borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12,
+      paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.black,
+    },
 
-  previewCard: {
-    borderRadius: 20,
-    padding: 16,
-    width: 160,
-  },
+    descriptionInput: { minHeight: 90, textAlignVertical: 'top' },
 
-  previewCardName: {
-    fontSize: 15, fontWeight: '700', color: '#FFFFFF',
-    marginBottom: 4, letterSpacing: -0.3,
-  },
+    colorGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
 
-  previewCardMembers: {
-    fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '300',
-  },
-});
+    colorSwatch: {
+      width: 48, height: 48, borderRadius: 24,
+      alignItems: 'center', justifyContent: 'center',
+    },
+
+    colorSwatchSelected: {
+      borderWidth: 3,
+      borderColor: colors.black,
+    },
+
+    previewCard: {
+      borderRadius: 20,
+      padding: 16,
+      width: 160,
+    },
+
+    previewCardName: {
+      fontSize: 15, fontWeight: '700', color: '#FFFFFF',
+      marginBottom: 4, letterSpacing: -0.3,
+    },
+
+    previewCardMembers: {
+      fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '300',
+    },
+  });
+}

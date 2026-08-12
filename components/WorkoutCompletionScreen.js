@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
@@ -11,12 +12,11 @@ import Animated, {
     withDelay,
 } from 'react-native-reanimated';
 
-// Shared completion screen used after both a normal workout (active.js)
-// and a cardio circuit (cardio.js) finish. Extracted into its own file
-// so both flows show the exact same polished celebration screen instead
-// of each screen needing to duplicate this logic or navigate to a
-// separate broken route.
 export default function WorkoutCompletionScreen({ quote, celebration, totalExercises, workoutName, userName }) {
+    const theme = useTheme();
+    const colors = theme ? theme.colors : lightColors;
+    const styles = makeStyles(colors);
+
     const iconScale = useSharedValue(0);
     const greetingOpacity = useSharedValue(0);
     const greetingY = useSharedValue(30);
@@ -98,22 +98,25 @@ export default function WorkoutCompletionScreen({ quote, celebration, totalExerc
     );
 }
 
-const styles = StyleSheet.create({
-    completeContainer: { flex: 1, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, overflow: 'hidden' },
-    celebrationCircle1: { position: 'absolute', width: 400, height: 400, borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.06)', top: -100, right: -100 },
-    celebrationCircle2: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -50, left: -80 },
-    completeIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
-    completeGreeting: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '300', textAlign: 'center' },
-    completeName: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
-    completeStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16, marginBottom: 20, width: '100%' },
-    completeStat: { flex: 1, alignItems: 'center', gap: 4 },
-    completeStatValue: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
-    completeStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
-    completeStatDivider: { width: 0.5, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center' },
-    quoteCard: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, marginBottom: 24, width: '100%', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
-    quoteText: { fontSize: 14, color: '#FFFFFF', lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
-    quoteAuthor: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' },
-    completeDoneButton: { backgroundColor: colors.white, paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-    completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
-    seeYouText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
-});
+function makeStyles(colors) {
+    return StyleSheet.create({
+        completeContainer: { flex: 1, backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, overflow: 'hidden' },
+        celebrationCircle1: { position: 'absolute', width: 400, height: 400, borderRadius: 200, backgroundColor: 'rgba(255,255,255,0.06)', top: -100, right: -100 },
+        celebrationCircle2: { position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: 'rgba(255,255,255,0.04)', bottom: -50, left: -80 },
+        completeIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)' },
+        completeGreeting: { fontSize: 18, color: 'rgba(255,255,255,0.8)', fontWeight: '300', textAlign: 'center' },
+        completeName: { fontSize: 32, fontWeight: '700', color: '#FFFFFF', letterSpacing: -1, textAlign: 'center', marginBottom: 24 },
+        completeStats: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 16, padding: 16, marginBottom: 20, width: '100%' },
+        completeStat: { flex: 1, alignItems: 'center', gap: 4 },
+        completeStatValue: { fontSize: 22, fontWeight: '700', color: '#FFFFFF', letterSpacing: -0.5 },
+        completeStatLabel: { fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: '300' },
+        completeStatDivider: { width: 0.5, height: 30, backgroundColor: 'rgba(255,255,255,0.3)', alignSelf: 'center' },
+        quoteCard: { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, marginBottom: 24, width: '100%', gap: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+        quoteText: { fontSize: 14, color: '#FFFFFF', lineHeight: 22, fontWeight: '300', fontStyle: 'italic' },
+        quoteAuthor: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' },
+        // '#FFFFFF' hardcoded — this button must always be white on the blue completion bg
+        completeDoneButton: { backgroundColor: '#FFFFFF', paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
+        completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
+        seeYouText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
+    });
+}

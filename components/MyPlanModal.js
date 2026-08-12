@@ -1,5 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { colors } from '../constants/colors';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, TextInput } from 'react-native';
 import { useEffect, useState } from 'react';
 import { getToken } from '../services/api';
@@ -9,6 +10,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const BASE_URL = 'https://web-production-9079c.up.railway.app';
 
 export default function MyPlanModal({ visible, onClose }) {
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+  const styles = makeStyles(colors);
+
   const [editingWeight, setEditingWeight] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [currentWeight, setCurrentWeight] = useState('75');
@@ -25,9 +30,7 @@ export default function MyPlanModal({ visible, onClose }) {
   const [showEquipmentPicker, setShowEquipmentPicker] = useState(false);
   const [showTrainingDaysPicker, setShowTrainingDaysPicker] = useState(false);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
-  
 
-  // Load current preferences and weight from backend
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -71,18 +74,18 @@ export default function MyPlanModal({ visible, onClose }) {
         stay_active: 'Stay active',
     };
     return labels[goal] || 'Not set';
-}
+  }
 
-function getFitnessLevelLabel() {
+  function getFitnessLevelLabel() {
     const labels = {
         beginner: 'Beginner',
         intermediate: 'Intermediate',
         advanced: 'Advanced',
     };
     return labels[fitnessLevel] || 'Not set';
-}
+  }
 
-function getEquipmentLabel() {
+  function getEquipmentLabel() {
     const labels = {
         gym: 'Gym',
         dumbbells: 'Dumbbells at home',
@@ -90,18 +93,18 @@ function getEquipmentLabel() {
         both: 'Gym and Home',
     };
     return labels[equipment] || 'Not set';
-}
+  }
 
-function getTrainingDaysLabel() {
+  function getTrainingDaysLabel() {
     if (trainingDays.length === 0) return 'Not set';
     const dayNames = {
         mon: 'Mon', tue: 'Tue', wed: 'Wed',
         thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
     };
     return trainingDays.map(d => dayNames[d] || d).join(', ');
-}
+  }
 
-function getDurationLabel() {
+  function getDurationLabel() {
     const labels = {
         '30': '30 minutes',
         '45': '45 minutes',
@@ -109,16 +112,16 @@ function getDurationLabel() {
         '60+': '60+ minutes',
     };
     return labels[workoutDuration] || workoutDuration || 'Not set';
-}
+  }
 
-async function saveToBackend(fields) {
-  const token = await getToken();
-  await fetch(`${BASE_URL}/auth/onboarding?token=${token}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fields),
-  });
-}
+  async function saveToBackend(fields) {
+    const token = await getToken();
+    await fetch(`${BASE_URL}/auth/onboarding?token=${token}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+    });
+  }
 
   return (
     <Modal
@@ -211,7 +214,6 @@ async function saveToBackend(fields) {
 
               <View style={styles.planDivider} />
 
-              {/* Weight — editable */}
               <View style={styles.planItem}>
                 <View style={styles.planIconContainer}>
                   <Feather name="trending-up" size={16} color={colors.blue} />
@@ -259,7 +261,7 @@ async function saveToBackend(fields) {
             </View>
           </View>
 
-         {/* Equipment */}
+          {/* Equipment */}
           <View style={styles.section}>
               <Text style={styles.sectionTitle}>Equipment and location</Text>
               <View style={styles.planCard}>
@@ -289,6 +291,7 @@ async function saveToBackend(fields) {
                   </View>
               </View>
           </View>
+
           {/* Food and fasting */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Food and fasting</Text>
@@ -309,7 +312,6 @@ async function saveToBackend(fields) {
             </View>
           </View>
 
-          {/* Update my plan button — saves weight + preferences + navigates home */}
           <TouchableOpacity
             style={styles.updateButton}
             onPress={async () => {
@@ -342,7 +344,7 @@ async function saveToBackend(fields) {
         </ScrollView>
       </View>
 
-      {/* Food preference picker — separate modal */}
+      {/* Food preference picker */}
       <Modal
         visible={showFoodPicker}
         animationType="slide"
@@ -399,7 +401,6 @@ async function saveToBackend(fields) {
               );
             })}
 
-            {/* Confirm food choices — just closes picker, actual save happens on Update my plan */}
             <TouchableOpacity
               style={[styles.updateButton, { marginTop: 24 }]}
               onPress={() => setShowFoodPicker(false)}
@@ -470,7 +471,6 @@ async function saveToBackend(fields) {
               </ScrollView>
           </View>
       </Modal>
-
 
       {/* Fitness level picker */}
       <Modal
@@ -713,217 +713,218 @@ async function saveToBackend(fields) {
           </View>
       </Modal>
 
-
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.white,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.greyBorder,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    marginBottom: 24,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.5,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.greyCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scroll: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.grey,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-  },
-  planCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.greyBorder,
-    shadowColor: colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  planItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  planIconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: colors.blueLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  planItemContent: {
-    flex: 1,
-  },
-  planItemLabel: {
-    fontSize: 12,
-    color: colors.grey,
-    fontWeight: '300',
-    marginBottom: 2,
-  },
-  planItemValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.black,
-  },
-  planDivider: {
-    height: 0.5,
-    backgroundColor: colors.greyBorder,
-    marginHorizontal: 16,
-  },
-  updateButton: {
-    backgroundColor: colors.blue,
-    paddingVertical: 16,
-    borderRadius: 100,
-    alignItems: 'center',
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  updateButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  weightEditRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
-  },
-  weightInput: {
-    borderWidth: 1.5,
-    borderColor: colors.blue,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 15,
-    color: colors.black,
-    width: 60,
-  },
-  weightUnit: {
-    fontSize: 14,
-    color: colors.grey,
-    fontWeight: '300',
-  },
-  weightSaveButton: {
-    backgroundColor: colors.blue,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-  },
-  weightSaveText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  pickerContainer: {
-    flex: 1,
-    backgroundColor: colors.white,
-    paddingTop: 12,
-  },
-  pickerContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-  },
-  pickerSubtitle: {
-    fontSize: 14,
-    color: colors.grey,
-    fontWeight: '300',
-    marginBottom: 20,
-    lineHeight: 20,
-  },
-  prefOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: colors.greyBorder,
-    marginBottom: 10,
-  },
-  prefOptionSelected: {
-    borderColor: colors.blue,
-    backgroundColor: colors.blueLight,
-  },
-  prefEmoji: {
-    fontSize: 24,
-  },
-  prefContent: {
-    flex: 1,
-    gap: 2,
-  },
-  prefLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.black,
-  },
-  prefLabelSelected: {
-    color: colors.blue,
-  },
-  prefDesc: {
-    fontSize: 12,
-    color: colors.grey,
-    fontWeight: '300',
-  },
-  prefCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.greyBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  prefCheckSelected: {
-    backgroundColor: colors.blue,
-    borderColor: colors.blue,
-  },
-});
+function makeStyles(colors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.white,
+      paddingTop: 12,
+    },
+    handle: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.greyBorder,
+      alignSelf: 'center',
+      marginBottom: 16,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      marginBottom: 24,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.black,
+      letterSpacing: -0.5,
+    },
+    closeButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.greyCard,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scroll: {
+      flex: 1,
+    },
+    content: {
+      paddingHorizontal: 24,
+      paddingBottom: 40,
+    },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: colors.grey,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 10,
+    },
+    planCard: {
+      backgroundColor: colors.white,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.greyBorder,
+      shadowColor: colors.black,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    planItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      gap: 12,
+    },
+    planIconContainer: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.blueLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    planItemContent: {
+      flex: 1,
+    },
+    planItemLabel: {
+      fontSize: 12,
+      color: colors.grey,
+      fontWeight: '300',
+      marginBottom: 2,
+    },
+    planItemValue: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.black,
+    },
+    planDivider: {
+      height: 0.5,
+      backgroundColor: colors.greyBorder,
+      marginHorizontal: 16,
+    },
+    updateButton: {
+      backgroundColor: colors.blue,
+      paddingVertical: 16,
+      borderRadius: 100,
+      alignItems: 'center',
+      shadowColor: colors.blue,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
+      elevation: 8,
+    },
+    updateButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    weightEditRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginTop: 4,
+    },
+    weightInput: {
+      borderWidth: 1.5,
+      borderColor: colors.blue,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      fontSize: 15,
+      color: colors.black,
+      width: 60,
+    },
+    weightUnit: {
+      fontSize: 14,
+      color: colors.grey,
+      fontWeight: '300',
+    },
+    weightSaveButton: {
+      backgroundColor: colors.blue,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 100,
+    },
+    weightSaveText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: '#FFFFFF',
+    },
+    pickerContainer: {
+      flex: 1,
+      backgroundColor: colors.white,
+      paddingTop: 12,
+    },
+    pickerContent: {
+      paddingHorizontal: 24,
+      paddingBottom: 40,
+    },
+    pickerSubtitle: {
+      fontSize: 14,
+      color: colors.grey,
+      fontWeight: '300',
+      marginBottom: 20,
+      lineHeight: 20,
+    },
+    prefOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      padding: 16,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: colors.greyBorder,
+      marginBottom: 10,
+    },
+    prefOptionSelected: {
+      borderColor: colors.blue,
+      backgroundColor: colors.blueLight,
+    },
+    prefEmoji: {
+      fontSize: 24,
+    },
+    prefContent: {
+      flex: 1,
+      gap: 2,
+    },
+    prefLabel: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: colors.black,
+    },
+    prefLabelSelected: {
+      color: colors.blue,
+    },
+    prefDesc: {
+      fontSize: 12,
+      color: colors.grey,
+      fontWeight: '300',
+    },
+    prefCheck: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.greyBorder,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    prefCheckSelected: {
+      backgroundColor: colors.blue,
+      borderColor: colors.blue,
+    },
+  });
+}
