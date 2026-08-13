@@ -110,35 +110,47 @@ export default function NotificationsScreen() {
     const config = TYPE_CONFIG[item.type] ?? TYPE_CONFIG.update;
     const isUnread = !item.is_read;
     const hasProfile = !!item.actor_id;
-    const hasContent = item.type === 'like' || item.type === 'comment' || item.type === 'announcement';
+    const isAnnouncement = item.type === 'announcement';
 
     return (
       <View style={[styles.row, isUnread && styles.rowUnread]}>
 
-        {/* LEFT — avatar taps to profile */}
-        <TouchableOpacity
-          style={styles.avatarWrap}
-          activeOpacity={hasProfile ? 0.5 : 1}
-          onPress={() => hasProfile && goToProfile(item)}
-          disabled={!hasProfile}
-        >
-          {item.actor_avatar ? (
-            <Image source={{ uri: item.actor_avatar }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatarPlaceholder, { backgroundColor: config.color + '22' }]}>
-              {item.actor_name ? (
-                <Text style={[styles.avatarInitial, { color: config.color }]}>
-                  {item.actor_name.charAt(0).toUpperCase()}
-                </Text>
-              ) : (
-                <Feather name={config.icon} size={20} color={config.color} />
-              )}
+        {/* LEFT — avatar zone */}
+        {isAnnouncement ? (
+          // Fitopia official badge — no profile tap
+          <View style={styles.avatarWrap}>
+            <View style={styles.fitopiaAvatar}>
+              <Text style={styles.fitopiaAvatarText}>F</Text>
             </View>
-          )}
-          <View style={[styles.typeBadge, { backgroundColor: config.color }]}>
-            <Feather name={config.icon} size={9} color="#fff" />
+            <View style={[styles.typeBadge, { backgroundColor: config.color }]}>
+              <Feather name={config.icon} size={9} color="#fff" />
+            </View>
           </View>
-        </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.avatarWrap}
+            activeOpacity={hasProfile ? 0.5 : 1}
+            onPress={() => hasProfile && goToProfile(item)}
+            disabled={!hasProfile}
+          >
+            {item.actor_avatar ? (
+              <Image source={{ uri: item.actor_avatar }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: config.color + '22' }]}>
+                {item.actor_name ? (
+                  <Text style={[styles.avatarInitial, { color: config.color }]}>
+                    {item.actor_name.charAt(0).toUpperCase()}
+                  </Text>
+                ) : (
+                  <Feather name={config.icon} size={20} color={config.color} />
+                )}
+              </View>
+            )}
+            <View style={[styles.typeBadge, { backgroundColor: config.color }]}>
+              <Feather name={config.icon} size={9} color="#fff" />
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* RIGHT — text taps to post / announcement */}
         <Pressable
@@ -151,6 +163,13 @@ export default function NotificationsScreen() {
           <Text style={styles.rowTitle} numberOfLines={2}>{item.title}</Text>
           {!!item.body && (
             <Text style={styles.rowBody} numberOfLines={2}>{item.body}</Text>
+          )}
+          {isAnnouncement && (
+            <View style={styles.officialBadge}>
+              <Text style={styles.officialFlag}>🇪🇹</Text>
+              <Text style={styles.officialText}>Fitopia · Ethiopia</Text>
+              <Feather name="check-circle" size={11} color="#059669" />
+            </View>
           )}
           <Text style={styles.rowTime}>{timeAgo(item.created_at)}</Text>
         </Pressable>
@@ -264,6 +283,19 @@ function makeStyles(colors, isDark) {
     rowTitle: { fontSize: 14, fontWeight: '600', color: colors.black, lineHeight: 20 },
     rowBody: { fontSize: 13, color: colors.grey, lineHeight: 18 },
     rowTime: { fontSize: 12, color: colors.grey, marginTop: 2 },
+
+    // Fitopia official avatar (announcements)
+    fitopiaAvatar: {
+      width: 48, height: 48, borderRadius: 24,
+      backgroundColor: '#F59E0B',
+      alignItems: 'center', justifyContent: 'center',
+    },
+    fitopiaAvatarText: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
+
+    // "Fitopia · Ethiopia ✓" badge line
+    officialBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+    officialFlag: { fontSize: 12 },
+    officialText: { fontSize: 11, fontWeight: '600', color: '#059669' },
 
     unreadDot: {
       width: 8,
