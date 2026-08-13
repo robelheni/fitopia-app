@@ -27,7 +27,8 @@
       "Bash(railway up *)",
       "Bash(/usr/local/bin/railway status *)",
       "Bash(git *)",
-      "Bash(xargs perl -pi -e 's/\\(?<![a-zA-Z]\\)color: colors\\\\.blue\\(?!Light|Dark|Text\\)/color: colors.blueText/g')"
+      "Bash(xargs perl -pi -e 's/\\(?<![a-zA-Z]\\)color: colors\\\\.blue\\(?!Light|Dark|Text\\)/color: colors.blueText/g')",
+      "Bash(node *)"
     ]
   }
 }
