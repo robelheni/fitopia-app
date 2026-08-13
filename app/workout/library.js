@@ -60,7 +60,7 @@ const MUSCLE_COLORS = {
 };
 
 function getMuscleColor(muscle, colors) {
-  return MUSCLE_COLORS[muscle] || { color: colors.blue, bg: colors.blueLight };
+  return MUSCLE_COLORS[muscle] || { color: colors.blueText, bg: colors.blueLight };
 }
 
 function formatMeta(ex) {

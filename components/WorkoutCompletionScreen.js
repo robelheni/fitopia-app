@@ -116,7 +116,7 @@ function makeStyles(colors) {
         quoteAuthor: { fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: '500', textAlign: 'right' },
         // '#FFFFFF' hardcoded — this button must always be white on the blue completion bg
         completeDoneButton: { backgroundColor: '#FFFFFF', paddingVertical: 16, paddingHorizontal: 48, borderRadius: 100, width: '100%', alignItems: 'center', marginBottom: 12, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 4 },
-        completeDoneText: { fontSize: 16, fontWeight: '600', color: colors.blue },
+        completeDoneText: { fontSize: 16, fontWeight: '600', color: '#2563EB' },
         seeYouText: { fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: '300' },
     });
 }

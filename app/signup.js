@@ -1,24 +1,31 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { router } from 'expo-router';
-import {colors} from '../constants/colors';
-import {useState, useRef } from 'react';
+import { useState, useRef } from 'react';
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import BackgroundCircles from '../components/BackgroundCircles';
 import { FadeUpItem } from '../components/ScreenWrapper';
 import { Feather } from '@expo/vector-icons';
-import {signupUser} from '../services/api';
-import { saveOnboarding } from '../services/api';
+import { signupUser, saveOnboarding } from '../services/api';
 import { useOnboarding } from '../context/OnboardingContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useLanguage } from '../context/LanguageContext';
+import { getTabTranslation } from '../constants/tabTranslations';
 
 export default function SignupScreen() {
+    const theme = useTheme();
+    const colors = theme ? theme.colors : lightColors;
+    const styles = makeStyles(colors);
+
+    const { language } = useLanguage();
+    const t = getTabTranslation(language);
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [referral, setReferral] = useState('');
     const [username, setUsername] = useState('');
     const usernameRef = useRef('');
-    
+
     const [errors, setErrors] = useState({
         name: '',
         email: '',
@@ -32,7 +39,6 @@ export default function SignupScreen() {
 
     async function handleSignup() {
         const currentUsername = usernameRef.current || username;
-        console.log('Username at submit:', currentUsername);
 
         const newErrors = {
             name: !name ? 'Name is required' : '',
@@ -61,20 +67,14 @@ export default function SignupScreen() {
         try {
             setLoading(true);
             setServerError('');
-        
-            console.log('Username at submit:', username);
+
             await signupUser(name, email, password, username, referral);
-        
-            // Small wait
+
             await new Promise(resolve => setTimeout(resolve, 100));
-        
-            // Step 2 — read answers from AsyncStorage
+
             const savedAnswers = await AsyncStorage.getItem('onboarding_answers');
             const answers = savedAnswers ? JSON.parse(savedAnswers) : {};
-        
-            console.log('Answers from storage:', answers);
-        
-            // Step 3 — save to backend
+
             await saveOnboarding({
                 fitness_level: answers.fitnessLevel,
                 goal: answers.goal,
@@ -90,17 +90,15 @@ export default function SignupScreen() {
                 height: answers.personalInfo?.height ? parseFloat(answers.personalInfo.height) : null,
                 weight: answers.personalInfo?.weight ? parseFloat(answers.personalInfo.weight) : null,
                 goal_weight: answers.personalInfo?.goalWeight ? parseFloat(answers.personalInfo.goalWeight) : null,
-              });
+            });
 
-            // Step 4 — clean up and navigate
             await AsyncStorage.removeItem('onboarding_answers');
             router.navigate('/onboarding/complete');
-        
-          } catch (error) {
+        } catch (error) {
             setServerError(error.message);
-          } finally {
+        } finally {
             setLoading(false);
-          }
+        }
     }
 
     return (
@@ -118,28 +116,26 @@ export default function SignupScreen() {
                     <BackgroundCircles variant="default" />
 
                     <FadeUpItem delay={0}>
-                    <View style={styles.logoHeader}>
-                        <TouchableOpacity onPress={() => router.replace('/onboarding-intro')}>
-                        <View style={styles.logoContainer}>
-                            <Text style={styles.logoFit}>Fit</Text>
-                            <Text style={styles.logoOpia}>opia</Text>
+                        <View style={styles.logoHeader}>
+                            <TouchableOpacity onPress={() => router.replace('/onboarding-intro')}>
+                                <View style={styles.logoContainer}>
+                                    <Text style={styles.logoFit}>Fit</Text>
+                                    <Text style={styles.logoOpia}>opia</Text>
+                                </View>
+                            </TouchableOpacity>
                         </View>
-                        </TouchableOpacity>
-                    </View>
                     </FadeUpItem>
 
                     <FadeUpItem delay={100}>
-                    <Text style={styles.title}>Almost there.</Text>
-                    <Text style={styles.subtitle}>
-                        Create your account to save your plan and get started.
-                    </Text>
+                        <Text style={styles.title}>{t.almostThere}</Text>
+                        <Text style={styles.subtitle}>{t.createAccountSubtitle}</Text>
                     </FadeUpItem>
 
                     <View style={styles.inputs}>
                         <FadeUpItem delay={100}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Full name"
+                                placeholder={t.fullName}
                                 placeholderTextColor={colors.greyLight}
                                 autoCapitalize="words"
                                 value={name}
@@ -153,7 +149,7 @@ export default function SignupScreen() {
                                 <Text style={styles.usernameAt}>@</Text>
                                 <TextInput
                                     style={styles.usernameField}
-                                    placeholder="username"
+                                    placeholder={t.username}
                                     placeholderTextColor={colors.greyLight}
                                     autoCapitalize="none"
                                     autoCorrect={false}
@@ -162,13 +158,12 @@ export default function SignupScreen() {
                                 />
                             </View>
                         </FadeUpItem>
-{errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
                         {errors.username ? <Text style={styles.errorText}>{errors.username}</Text> : null}
 
                         <FadeUpItem delay={200}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Email address"
+                                placeholder={t.emailAddress}
                                 placeholderTextColor={colors.greyLight}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -181,7 +176,7 @@ export default function SignupScreen() {
                         <FadeUpItem delay={300}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Password"
+                                placeholder={t.password}
                                 placeholderTextColor={colors.greyLight}
                                 secureTextEntry={true}
                                 value={password}
@@ -191,26 +186,26 @@ export default function SignupScreen() {
 
                         <FadeUpItem delay={400}>
                             <View style={styles.requirements}>
-                                <Text style={styles.requirementText}>Password must have:</Text>
+                                <Text style={styles.requirementText}>{t.passwordMustHave}</Text>
                                 <Text style={[
                                     styles.requirementItem,
                                     password.length >= 8 ? styles.requirementMet : styles.requirementNotMet
-                                ]}>• At least 8 characters</Text>
+                                ]}>{t.atLeastEight}</Text>
                                 <Text style={[
                                     styles.requirementItem,
                                     /\d/.test(password) ? styles.requirementMet : styles.requirementNotMet
-                                ]}>• At least one number</Text>
+                                ]}>{t.oneNumber}</Text>
                                 <Text style={[
                                     styles.requirementItem,
                                     /[A-Z]/.test(password) ? styles.requirementMet : styles.requirementNotMet
-                                ]}>• At least one capital letter</Text>
+                                ]}>{t.oneCapital}</Text>
                             </View>
                         </FadeUpItem>
 
                         <FadeUpItem delay={500}>
                             <TextInput
                                 style={styles.input}
-                                placeholder="Referral code (optional)"
+                                placeholder={t.referralOptional}
                                 placeholderTextColor={colors.greyLight}
                                 autoCapitalize="none"
                                 value={referral}
@@ -220,192 +215,183 @@ export default function SignupScreen() {
                     </View>
 
                     <FadeUpItem delay={600}>
-                    {serverError ? (
-                        <Text style={styles.errorText}>{serverError}</Text>
-                    ) : null}
+                        {serverError ? <Text style={styles.errorText}>{serverError}</Text> : null}
 
                         <TouchableOpacity
                             style={[styles.button, loading && { opacity: 0.7 }]}
                             onPress={handleSignup}
                             disabled={loading}
-                            >
+                        >
                             <Text style={styles.buttonText}>
-                            {loading ? 'Creating account...' : 'Create account'}
+                                {loading ? t.creatingAccount : t.createAccount}
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => router.push('/login')}>
                             <Text style={styles.loginLink}>
-                                Already have an account?
-                                <Text style={styles.loginLinkBlue}> Log in</Text>
+                                {t.haveAccount}
+                                <Text style={styles.loginLinkBlue}> {t.login}</Text>
                             </Text>
                         </TouchableOpacity>
                     </FadeUpItem>
-
                 </ScrollView>
             </KeyboardAvoidingView>
         </TouchableWithoutFeedback>
     );
 }
 
-const styles = StyleSheet.create({
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
-        backgroundColor: colors.white,
-    },
+function makeStyles(colors) {
+    return StyleSheet.create({
+        scrollContent: {
+            paddingHorizontal: 24,
+            paddingTop: 60,
+            paddingBottom: 40,
+            backgroundColor: colors.white,
+        },
 
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 32,
-        gap: 16,
-    },
+        title: {
+            fontSize: 24,
+            fontWeight: '600',
+            color: colors.black,
+            letterSpacing: -1,
+            marginBottom: 8,
+        },
 
-    title: {
-        fontSize: 24,
-        fontWeight: '600',
-        color: colors.black,
-        letterSpacing: -1,
-        marginBottom: 8,
-    },
+        subtitle: {
+            fontSize: 15,
+            color: colors.grey,
+            fontWeight: '300',
+            lineHeight: 22,
+            marginBottom: 32,
+        },
 
-    subtitle: {
-        fontSize: 15,
-        color: colors.grey,
-        fontWeight: '300',
-        lineHeight: 22,
-        marginBottom: 32,
-    },
+        logoContainer: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
 
-    logoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
+        logoFit: {
+            fontSize: 24,
+            fontWeight: '700',
+            color: colors.black,
+            letterSpacing: -1,
+        },
 
-    logoFit: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: colors.black,
-        letterSpacing: -1,
-    },
+        logoOpia: {
+            fontSize: 24,
+            fontWeight: '700',
+            color: colors.blueText,
+            letterSpacing: -1,
+        },
 
-    logoOpia: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: colors.blue,
-        letterSpacing: -1,
-    },
+        inputs: {
+            gap: 12,
+            marginBottom: 24,
+        },
 
-    inputs: {
-        gap: 12,
-        marginBottom: 24,
-    },
+        input: {
+            borderWidth: 1.5,
+            borderColor: colors.greyBorder,
+            borderRadius: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            fontSize: 15,
+            color: colors.black,
+            backgroundColor: colors.white,
+        },
 
-    input: {
-        borderWidth: 1.5,
-        borderColor: colors.greyBorder,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 15,
-        color: colors.black,
-        backgroundColor: colors.white,
-    },
+        button: {
+            backgroundColor: colors.blue,
+            paddingVertical: 16,
+            borderRadius: 100,
+            alignItems: 'center',
+            marginBottom: 16,
+            shadowColor: colors.blue,
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35,
+            shadowRadius: 12,
+            elevation: 8,
+        },
 
-    button: {
-        backgroundColor: colors.blue,
-        paddingVertical: 16,
-        borderRadius: 100,
-        alignItems: 'center',
-        marginBottom: 16,
-        shadowColor: colors.blue,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 8,
-    },
+        buttonText: {
+            color: '#FFFFFF',
+            fontSize: 16,
+            fontWeight: '500',
+        },
 
-    buttonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '500',
-    },
+        loginLink: {
+            textAlign: 'center',
+            fontSize: 14,
+            color: colors.grey,
+        },
 
-    loginLink: {
-        textAlign: 'center',
-        fontSize: 14,
-        color: colors.grey,
-    },
+        loginLinkBlue: {
+            color: colors.blueText,
+            fontWeight: '500',
+        },
 
-    loginLinkBlue: {
-        color: colors.blue,
-        fontWeight: '500',
-    },
+        errorText: {
+            color: 'red',
+            fontSize: 12,
+            marginTop: -6,
+            marginLeft: 4,
+        },
 
-    errorText: {
-        color: 'red',
-        fontSize: 12,
-        marginTop: -6,
-        marginLeft: 4,
-    },
+        requirements: {
+            marginTop: 4,
+            padding: 12,
+            backgroundColor: colors.greyCard,
+            borderRadius: 8,
+        },
 
-    requirements: {
-        marginTop: 4,
-        padding: 12,
-        backgroundColor: colors.greyCard,
-        borderRadius: 8,
-    },
+        requirementText: {
+            fontSize: 12,
+            color: colors.grey,
+            fontWeight: '500',
+            marginBottom: 4,
+        },
 
-    requirementText: {
-        fontSize: 12,
-        color: colors.grey,
-        fontWeight: '500',
-        marginBottom: 4,
-    },
+        requirementItem: {
+            fontSize: 12,
+            color: colors.grey,
+            lineHeight: 20,
+        },
 
-    requirementItem: {
-        fontSize: 12,
-        color: colors.grey,
-        lineHeight: 20,
-    },
+        requirementMet: {
+            color: 'green',
+        },
 
-    requirementMet: {
-        color: 'green',
-    },
+        requirementNotMet: {
+            color: 'red',
+        },
 
-    requirementNotMet: {
-        color: 'red',
-    },
+        logoHeader: {
+            alignItems: 'flex-end',
+            marginBottom: 16,
+        },
 
-    logoHeader: {
-        alignItems: 'flex-end',
-        marginBottom: 16,
-    },
+        usernameInput: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1.5,
+            borderColor: colors.greyBorder,
+            borderRadius: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            backgroundColor: colors.white,
+        },
 
-    usernameInput: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: colors.greyBorder,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        backgroundColor: colors.white,
-    },
-    
-    usernameAt: {
-        fontSize: 15,
-        color: colors.blue,
-        fontWeight: '600',
-        marginRight: 4,
-    },
-    
-    usernameField: {
-        flex: 1,
-        fontSize: 15,
-        color: colors.black,
-    },
-});
+        usernameAt: {
+            fontSize: 15,
+            color: colors.blueText,
+            fontWeight: '600',
+            marginRight: 4,
+        },
+
+        usernameField: {
+            flex: 1,
+            fontSize: 15,
+            color: colors.black,
+        },
+    });
+}

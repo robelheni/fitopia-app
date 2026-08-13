@@ -334,14 +334,14 @@ function makeStyles(c, dark) {
     availabilityTextUnavailable: { color: colors.greyLight },
     tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     tag: { backgroundColor: colors.blueLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 100 },
-    tagText: { fontSize: 11, color: colors.blue, fontWeight: '500' },
+    tagText: { fontSize: 11, color: colors.blueText, fontWeight: '500' },
     becomeTrainerCard: {
       flexDirection: 'row', alignItems: 'center', gap: 12,
       backgroundColor: colors.blueLight, borderRadius: 16, padding: 16,
     },
     becomeTrainerContent: { flex: 1, gap: 2 },
-    becomeTrainerTitle: { fontSize: 14, fontWeight: '600', color: colors.blue },
-    becomeTrainerSub: { fontSize: 12, color: colors.blue, fontWeight: '300', opacity: 0.8 },
+    becomeTrainerTitle: { fontSize: 14, fontWeight: '600', color: colors.blueText },
+    becomeTrainerSub: { fontSize: 12, color: colors.blueText, fontWeight: '300', opacity: 0.8 },
     applyButton: { backgroundColor: colors.blue, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 100 },
     applyButtonText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
   });

@@ -1,10 +1,10 @@
 import { useFocusEffect, router } from 'expo-router';
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import FloatingCoachButton from '../../components/FloatingCoachButton';
 import {
   View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   Clipboard, Modal, TextInput, KeyboardAvoidingView,
-  Platform, ActivityIndicator, Alert, Share, Switch
+  Platform, ActivityIndicator, Alert, Share, Switch, RefreshControl
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Animated, {
@@ -12,8 +12,10 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
+
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { lightColors } from '../../constants/colors';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
@@ -26,23 +28,50 @@ import { getCurrentUser, getUserProfile, updateProfile, logout, deletePost, repo
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-function timeAgo(isoString) {
+function timeAgo(isoString, isAmharic) {
   const now = new Date();
   const date = new Date(isoString);
   const seconds = Math.floor((now - date) / 1000);
+  if (isAmharic) {
+    if (seconds < 60) return 'አሁን';
+    if (seconds < 3600) return `ከ${Math.floor(seconds / 60)} ደቂቃ በፊት`;
+    if (seconds < 86400) return `ከ${Math.floor(seconds / 3600)} ሰዓት በፊት`;
+    return `ከ${Math.floor(seconds / 86400)} ቀን በፊት`;
+  }
   if (seconds < 60) return 'Just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
+function getPostTagLabel(tag, isAmharic) {
+  if (!isAmharic) return tag;
+  return ({ progress: 'እድገት', questions: 'ጥያቄዎች', challenges: 'ፈተናዎች' })[tag] || tag;
+}
+
 
 export default function ProfileScreen() {
   const { isDark, toggleTheme, colors } = useTheme();
-  const [contentKey, setContentKey] = useState(0);
+  const { language } = useLanguage();
+  const isAmharic = language === 'Amharic';
+  const t = isAmharic ? {
+    profile: 'መገለጫ', addBio: '+ ስለራስዎ ይጨምሩ', memberSince: 'አባል ከ', editProfile: 'መገለጫ ይቀይሩ', pro: 'ፕሮ', free: 'ነፃ',
+    posts: 'ፖስቶች', followers: 'ተከታዮች', following: 'የሚከተሏቸው', activity: 'እንቅስቃሴ',
+    proMember: 'ፕሮ አባል', upgradeToPro: 'ወደ ፕሮ ያሳድጉ', proAccess: 'ሁሉንም ባህሪያት ሙሉ በሙሉ ያገኛሉ',
+    freeAccess: 'AI አሰልጣኝ፣ ሙሉ የልምምድ ቤተ መጻሕፍት እና ሌሎችንም ያግኙ', upgrade: 'አሳድግ', myPosts: 'የእኔ ፖስቶች',
+    public: 'ለሁሉም', private: 'የግል', noPrivatePosts: 'የግል ፖስቶች የሉም', noPosts: 'እስካሁን ፖስቶች የሉም',
+    privatePostsHint: 'የግል የሚያደርጓቸው ፖስቶች እዚህ ይታያሉ', publicPostsHint: 'እድገትዎን ከማህበረሰቡ ጋር ያጋሩ',
+    referFriend: 'ጓደኛ ይጋብዙ', referralText: 'Fitopiaን ከጓደኞችዎ እና ቤተሰብዎ ጋር ያጋሩ። ወደ ማህበረሰቡ የሚያመጡት እያንዳንዱ ሰው ያጠነክረዋል።',
+    copy: 'ቅዳ', copied: 'ተቀድቷል!', cancel: 'ሰርዝ', editProfileTitle: 'መገለጫ ይቀይሩ', save: 'አስቀምጥ', saving: 'በማስቀመጥ ላይ...',
+    name: 'ስም', fullName: 'ሙሉ ስምዎ', username: 'የተጠቃሚ ስም', bio: 'ስለራስዎ ለማህበረሰቡ ይንገሩ...', settings: 'ቅንብሮች', done: 'ተጠናቋል',
+    account: 'መለያ', subscription: 'ምዝገባ', notifications: 'ማሳወቂያዎች', darkMode: 'ጨለማ ሁነታ', language: 'ቋንቋ', logout: 'ውጣ',
+    postOptions: 'የልጥፍ አማራጮች', share: 'አጋራ', makePublic: 'ለሁሉም አድርግ', makePrivate: 'የግል አድርግ',
+    turnOnComments: 'አስተያየቶችን አንቃ', turnOffComments: 'አስተያየቶችን አጥፋ', delete: 'ሰርዝ', deletePost: 'ልጥፍ ይሰረዝ?', cannotUndo: 'ይህ ሊቀለበስ አይችልም።', error: 'ስህተት', permissionNeeded: 'ፈቃድ ያስፈልጋል', photoPermission: 'እባክዎ የፎቶ ቤተ መጻሕፍትዎን ለመድረስ ፈቃድ ይስጡ።', uploadFailed: 'መስቀል አልተሳካም',
+  } : {
+    profile: 'Profile', addBio: '+ Add a bio', memberSince: 'Member since', editProfile: 'Edit profile', pro: 'Pro', free: 'Free', posts: 'Posts', followers: 'Followers', following: 'Following', activity: 'Activity',
+    proMember: 'Pro Member', upgradeToPro: 'Upgrade to Pro', proAccess: 'You have full access to all features', freeAccess: 'Unlock AI coaching, full workout library and more', upgrade: 'Upgrade', myPosts: 'My posts', public: 'Public', private: 'Private', noPrivatePosts: 'No private posts', noPosts: 'No posts yet', privatePostsHint: 'Posts you make private will appear here', publicPostsHint: 'Share your progress with the community', referFriend: 'Refer a friend', referralText: 'Share Fitopia with your friends and family. Every person you bring to the community makes it stronger.', copy: 'Copy', copied: 'Copied!', cancel: 'Cancel', editProfileTitle: 'Edit Profile', save: 'Save', saving: 'Saving...', name: 'Name', fullName: 'Your full name', username: 'Username', bio: 'Bio', settings: 'Settings', done: 'Done', account: 'Account', subscription: 'Subscription', notifications: 'Notifications', darkMode: 'Dark mode', language: 'Language', logout: 'Log out', postOptions: 'Post options', share: 'Share', makePublic: 'Make public', makePrivate: 'Make private', turnOnComments: 'Turn on commenting', turnOffComments: 'Turn off commenting', delete: 'Delete', deletePost: 'Delete post?', cannotUndo: 'This cannot be undone.', error: 'Error', permissionNeeded: 'Permission needed', photoPermission: 'Please allow access to your photo library.', uploadFailed: 'Upload failed',
+  };
   const [codeCopied, setCodeCopied] = useState(false);
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(8);
   const { setCollapsed } = useTabBar();
   const lastScrollY = useRef(0);
   const headerOpacity = useSharedValue(1);
@@ -51,6 +80,7 @@ export default function ProfileScreen() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
 
   // Edit profile modal
@@ -71,14 +101,10 @@ export default function ProfileScreen() {
     transform: [{ translateY: headerTranslateY.value }],
   }));
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
   function handlePostOptions(post) {
-    Alert.alert('Post options', null, [
+    Alert.alert(t.postOptions, null, [
       {
-        text: 'Share',
+        text: t.share,
         onPress: async () => {
           try {
             await Share.share({ message: `"${post.text}" — shared from Fitopia` });
@@ -88,7 +114,7 @@ export default function ProfileScreen() {
         },
       },
       {
-        text: post.is_private ? 'Make public' : 'Make private',
+        text: post.is_private ? t.makePublic : t.makePrivate,
         onPress: async () => {
           try {
             const result = await togglePostPrivacy(post.id);
@@ -99,12 +125,12 @@ export default function ProfileScreen() {
               ),
             }));
           } catch (err) {
-            Alert.alert('Error', err.message);
+            Alert.alert(t.error, err.message);
           }
         },
       },
       {
-        text: post.comments_disabled ? 'Turn on commenting' : 'Turn off commenting',
+        text: post.comments_disabled ? t.turnOnComments : t.turnOffComments,
         onPress: async () => {
           try {
             const result = await togglePostComments(post.id);
@@ -115,20 +141,20 @@ export default function ProfileScreen() {
               ),
             }));
           } catch (err) {
-            Alert.alert('Error', err.message);
+            Alert.alert(t.error, err.message);
           }
         },
       },
       {
-        text: 'Delete',
+        text: t.delete,
         style: 'destructive',
         onPress: () => Alert.alert(
-          'Delete post?',
-          'This cannot be undone.',
+          t.deletePost,
+          t.cannotUndo,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t.cancel, style: 'cancel' },
             {
-              text: 'Delete',
+              text: t.delete,
               style: 'destructive',
               onPress: async () => {
                 try {
@@ -139,50 +165,50 @@ export default function ProfileScreen() {
                     post_count: prev.post_count - 1,
                   }));
                 } catch (err) {
-                  Alert.alert('Error', err.message);
+                  Alert.alert(t.error, err.message);
                 }
               },
             },
           ]
         ),
       },
-      { text: 'Cancel', style: 'cancel' },
+      { text: t.cancel, style: 'cancel' },
     ]);
   }
+  async function fetchProfile() {
+    try {
+      if (!profile) setLoading(true);
+      const userData = await getCurrentUser();
+      setUser(userData);
+      if (userData.profile_picture) setProfilePicture(userData.profile_picture);
+      const profileData = await getUserProfile(userData.id);
+      setProfile(profileData);
+    } catch (err) {
+      console.log('Profile fetch error:', err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchProfile(); }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (returningFromLanguage.current) {
         returningFromLanguage.current = false;
         setSettingsVisible(true);
-        return;
       }
-
-      setContentKey(prev => prev + 1);
-      opacity.value = 0;
-      translateY.value = 8;
-      requestAnimationFrame(() => {
-        opacity.value = withTiming(1, { duration: 300 });
-        translateY.value = withTiming(0, { duration: 300 });
-      });
-
-      async function fetchProfile() {
-        try {
-          setLoading(true);
-          const userData = await getCurrentUser();
-          setUser(userData);
-          if (userData.profile_picture) setProfilePicture(userData.profile_picture);
-          const profileData = await getUserProfile(userData.id);
-          setProfile(profileData);
-        } catch (err) {
-          console.log('Profile fetch error:', err.message);
-        } finally {
-          setLoading(false);
-        }
-      }
-
-      fetchProfile();
     }, [])
   );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      await fetchProfile();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function handleScrollBegin(event) {
     const currentY = event.nativeEvent.contentOffset.y;
@@ -215,7 +241,7 @@ export default function ProfileScreen() {
   async function handleAvatarPress() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert('Permission needed', 'Please allow access to your photo library.');
+      Alert.alert(t.permissionNeeded, t.photoPermission);
       return;
     }
 
@@ -231,7 +257,7 @@ export default function ProfileScreen() {
         const data = await uploadProfilePicture(result.assets[0].uri);
         setProfilePicture(data.profile_picture);
       } catch (err) {
-        Alert.alert('Upload failed', err.message);
+        Alert.alert(t.uploadFailed, err.message);
       }
     }
   }
@@ -270,12 +296,12 @@ export default function ProfileScreen() {
   }
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <View style={styles.container}>
       <BackgroundCircles variant="centered" />
 
       {/* Fixed header */}
       <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>{t.profile}</Text>
         <TouchableOpacity
           style={styles.gearButton}
           onPress={() => setSettingsVisible(true)}
@@ -291,8 +317,11 @@ export default function ProfileScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} colors={[colors.blue]} />
+        }
       >
-        <View key={contentKey}>
+        <View>
 
           {/* Profile card */}
           <FadeUpItem delay={0}>
@@ -319,17 +348,17 @@ export default function ProfileScreen() {
                 <Text style={styles.userBio}>{user.bio}</Text>
               ) : (
                 <TouchableOpacity onPress={openEditModal}>
-                  <Text style={styles.addBio}>+ Add a bio</Text>
+                  <Text style={styles.addBio}>{t.addBio}</Text>
                 </TouchableOpacity>
               )}
               <Text style={styles.joinedDate}>
-                Member since {new Date(user?.created_at).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}
+                {t.memberSince} {new Date(user?.created_at).toLocaleDateString(isAmharic ? 'am-ET' : 'en-GB', { month: 'long', year: 'numeric' })}
               </Text>
 
               {/* Edit profile button under bio */}
               <TouchableOpacity style={styles.editProfileButton} onPress={openEditModal}>
                 <Feather name="edit-2" size={13} color={colors.blue} />
-                <Text style={styles.editProfileButtonText}>Edit profile</Text>
+                <Text style={styles.editProfileButtonText}>{t.editProfile}</Text>
               </TouchableOpacity>
             </View>
           </FadeUpItem>
@@ -339,17 +368,17 @@ export default function ProfileScreen() {
             <View style={styles.statsRow}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{profile?.post_count || 0}</Text>
-                <Text style={styles.statLabel}>Posts</Text>
+                <Text style={styles.statLabel}>{t.posts}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{profile?.follower_count || 0}</Text>
-                <Text style={styles.statLabel}>Followers</Text>
+                <Text style={styles.statLabel}>{t.followers}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{profile?.following_count || 0}</Text>
-                <Text style={styles.statLabel}>Following</Text>
+                <Text style={styles.statLabel}>{t.following}</Text>
               </View>
             </View>
           </FadeUpItem>
@@ -357,7 +386,7 @@ export default function ProfileScreen() {
           {/* Workout activity heatmap */}
           <FadeUpItem delay={120}>
             
-            <Text style={styles.sectionTitle}>Activity</Text>
+            <Text style={styles.sectionTitle}>{t.activity}</Text>
             <YearHeatmap accountCreatedAt={user?.created_at} colors={colors} />
           </FadeUpItem>
 
@@ -367,22 +396,22 @@ export default function ProfileScreen() {
               <View style={styles.subscriptionLeft}>
                 <View style={styles.planBadge}>
                   <Text style={styles.planBadgeText}>
-                    {user?.is_pro ? 'Pro' : 'Free'}
+                    {user?.is_pro ? t.pro : t.free}
                   </Text>
                 </View>
                 <Text style={styles.subscriptionTitle}>
-                  {user?.is_pro ? 'Pro Member' : 'Upgrade to Pro'}
+                  {user?.is_pro ? t.proMember : t.upgradeToPro}
                 </Text>
                 <Text style={styles.subscriptionSub}>
                   {user?.is_pro
-                    ? 'You have full access to all features'
-                    : 'Unlock AI coaching, full workout library and more'
+                    ? t.proAccess
+                    : t.freeAccess
                   }
                 </Text>
               </View>
               {!user?.is_pro && (
                 <TouchableOpacity style={styles.upgradeButton}>
-                  <Text style={styles.upgradeButtonText}>Upgrade</Text>
+                  <Text style={styles.upgradeButtonText}>{t.upgrade}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -391,21 +420,21 @@ export default function ProfileScreen() {
           {/* My posts */}
           <FadeUpItem delay={200}>
             <View style={styles.postTabsHeader}>
-              <Text style={styles.sectionTitle}>My posts</Text>
+              <Text style={styles.sectionTitle}>{t.myPosts}</Text>
               <View style={styles.postTabs}>
                 <TouchableOpacity
                   style={[styles.postTab, postsTab === 'public' && styles.postTabActive]}
                   onPress={() => setPostsTab('public')}
                 >
                   <Feather name="globe" size={13} color={postsTab === 'public' ? colors.blue : colors.greyLight} />
-                  <Text style={[styles.postTabText, postsTab === 'public' && styles.postTabTextActive]}>Public</Text>
+                  <Text style={[styles.postTabText, postsTab === 'public' && styles.postTabTextActive]}>{t.public}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.postTab, postsTab === 'private' && styles.postTabActive]}
                   onPress={() => setPostsTab('private')}
                 >
                   <Feather name="lock" size={13} color={postsTab === 'private' ? colors.blue : colors.greyLight} />
-                  <Text style={[styles.postTabText, postsTab === 'private' && styles.postTabTextActive]}>Private</Text>
+                  <Text style={[styles.postTabText, postsTab === 'private' && styles.postTabTextActive]}>{t.private}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -423,12 +452,12 @@ export default function ProfileScreen() {
                       color={colors.greyLight}
                     />
                     <Text style={styles.emptyText}>
-                      {postsTab === 'private' ? 'No private posts' : 'No posts yet'}
+                      {postsTab === 'private' ? t.noPrivatePosts : t.noPosts}
                     </Text>
                     <Text style={styles.emptySub}>
                       {postsTab === 'private'
-                        ? 'Posts you make private will appear here'
-                        : 'Share your progress with the community'}
+                        ? t.privatePostsHint
+                        : t.publicPostsHint}
                     </Text>
                   </View>
                 );
@@ -448,10 +477,10 @@ export default function ProfileScreen() {
                             styles.postTagText,
                             post.tag === 'progress' && styles.postTagTextProgress,
                           ]}>
-                            {post.tag}
+                            {getPostTagLabel(post.tag, isAmharic)}
                           </Text>
                         </View>
-                        <Text style={styles.postTime}>{timeAgo(post.created_at)}</Text>
+                        <Text style={styles.postTime}>{timeAgo(post.created_at, isAmharic)}</Text>
                         <TouchableOpacity
                           style={styles.postOptionsButton}
                           onPress={() => handlePostOptions(post)}
@@ -486,10 +515,10 @@ export default function ProfileScreen() {
 
           {/* Referral code */}
           <FadeUpItem delay={300}>
-            <Text style={styles.sectionTitle}>Refer a friend</Text>
+            <Text style={styles.sectionTitle}>{t.referFriend}</Text>
             <View style={styles.referralCard}>
               <Text style={styles.referralText}>
-                Share Fitopia with your friends and family. Every person you bring to the community makes it stronger.
+                {t.referralText}
               </Text>
               <View style={styles.referralCodeRow}>
                 <View style={styles.referralCode}>
@@ -500,7 +529,7 @@ export default function ProfileScreen() {
                   onPress={copyReferralCode}
                 >
                   <Feather name={codeCopied ? 'check' : 'copy'} size={16} color={'#FFFFFF'} />
-                  <Text style={styles.copyButtonText}>{codeCopied ? 'Copied!' : 'Copy'}</Text>
+                  <Text style={styles.copyButtonText}>{codeCopied ? t.copied : t.copy}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -527,12 +556,12 @@ export default function ProfileScreen() {
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
             <TouchableOpacity onPress={() => setEditVisible(false)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <Text style={styles.modalCancel}>{t.cancel}</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
+            <Text style={styles.modalTitle}>{t.editProfileTitle}</Text>
             <TouchableOpacity onPress={handleSave} disabled={saving}>
               <Text style={[styles.modalSave, saving && { opacity: 0.5 }]}>
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? t.saving : t.save}
               </Text>
             </TouchableOpacity>
           </View>
@@ -545,36 +574,36 @@ export default function ProfileScreen() {
               </View>
             ) : null}
 
-            <Text style={styles.fieldLabel}>Name</Text>
+            <Text style={styles.fieldLabel}>{t.name}</Text>
             <TextInput
               style={styles.fieldInput}
               value={editName}
               onChangeText={setEditName}
-              placeholder="Your full name"
+              placeholder={t.fullName}
               placeholderTextColor={colors.greyLight}
               autoCapitalize="words"
             />
 
-            <Text style={styles.fieldLabel}>Username</Text>
+            <Text style={styles.fieldLabel}>{t.username}</Text>
             <View style={styles.usernameRow}>
               <Text style={styles.usernameAt}>@</Text>
               <TextInput
                 style={styles.usernameInput}
                 value={editUsername}
                 onChangeText={t => setEditUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                placeholder="username"
+                placeholder={t.username}
                 placeholderTextColor={colors.greyLight}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
             </View>
 
-            <Text style={styles.fieldLabel}>Bio</Text>
+            <Text style={styles.fieldLabel}>{t.bio}</Text>
             <TextInput
               style={[styles.fieldInput, styles.bioInput]}
               value={editBio}
               onChangeText={setEditBio}
-              placeholder="Tell the community about yourself..."
+              placeholder={t.bio}
               placeholderTextColor={colors.greyLight}
               multiline
               maxLength={200}
@@ -595,21 +624,21 @@ export default function ProfileScreen() {
           <View style={styles.modalHandle} />
           <View style={styles.modalHeader}>
             <View style={{ width: 60 }} />
-            <Text style={styles.modalTitle}>Settings</Text>
+            <Text style={styles.modalTitle}>{t.settings}</Text>
             <TouchableOpacity onPress={() => setSettingsVisible(false)}>
-              <Text style={styles.modalCancel}>Done</Text>
+              <Text style={styles.modalCancel}>{t.done}</Text>
             </TouchableOpacity>
           </View>
 
           <ScrollView contentContainerStyle={styles.modalContent}>
 
-            <Text style={styles.fieldLabel}>Account</Text>
+            <Text style={styles.fieldLabel}>{t.account}</Text>
             <View style={styles.settingsCard}>
               <TouchableOpacity style={styles.settingsItem}>
                 <View style={styles.settingsIconContainer}>
                   <Feather name="credit-card" size={16} color={colors.blue} />
                 </View>
-                <Text style={styles.settingsItemText}>Subscription</Text>
+                <Text style={styles.settingsItemText}>{t.subscription}</Text>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
               </TouchableOpacity>
 
@@ -619,7 +648,7 @@ export default function ProfileScreen() {
                 <View style={styles.settingsIconContainer}>
                   <Feather name="bell" size={16} color={colors.blue} />
                 </View>
-                <Text style={styles.settingsItemText}>Notifications</Text>
+                <Text style={styles.settingsItemText}>{t.notifications}</Text>
                 <Feather name="chevron-right" size={16} color={colors.greyLight} />
               </TouchableOpacity>
 
@@ -629,7 +658,7 @@ export default function ProfileScreen() {
                 <View style={styles.settingsIconContainer}>
                   <Feather name={isDark ? 'moon' : 'sun'} size={16} color={colors.blue} />
                 </View>
-                <Text style={styles.settingsItemText}>Dark mode</Text>
+                <Text style={styles.settingsItemText}>{t.darkMode}</Text>
                 <Switch
                   value={isDark}
                   onValueChange={toggleTheme}
@@ -651,9 +680,9 @@ export default function ProfileScreen() {
                 <View style={styles.settingsIconContainer}>
                   <Feather name="globe" size={16} color={colors.blue} />
                 </View>
-                <Text style={styles.settingsItemText}>Language</Text>
+                <Text style={styles.settingsItemText}>{t.language}</Text>
                 <View style={styles.settingsRight}>
-                  <Text style={styles.settingsValue}>English</Text>
+                  <Text style={styles.settingsValue}>{language}</Text>
                   <Feather name="chevron-right" size={16} color={colors.greyLight} />
                 </View>
               </TouchableOpacity>
@@ -670,7 +699,7 @@ export default function ProfileScreen() {
                 <View style={[styles.settingsIconContainer, { backgroundColor: '#FEE2E2' }]}>
                   <Feather name="log-out" size={16} color="#DC2626" />
                 </View>
-                <Text style={[styles.settingsItemText, { color: '#DC2626' }]}>Log out</Text>
+                <Text style={[styles.settingsItemText, { color: '#DC2626' }]}>{t.logout}</Text>
               </TouchableOpacity>
             </View>
 
@@ -679,15 +708,15 @@ export default function ProfileScreen() {
       </Modal>
 
       <FloatingCoachButton />
-    </Animated.View>
+    </View>
   );
 }
 
 function makeStyles(c, dark) { const colors = c || lightColors; const isDark = dark || false; return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 110, paddingBottom: 120 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
+  scroll: { flex: 1, marginTop: 110 },
+  content: { paddingHorizontal: 24, paddingTop: 0, paddingBottom: 120 },
 
   fixedHeader: {
     position: 'absolute', top: 0, left: 0, right: 0,
@@ -739,7 +768,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     textAlign: 'center', lineHeight: 20, paddingHorizontal: 24,
   },
 
-  addBio: { fontSize: 14, color: colors.blue, fontWeight: '500' },
+  addBio: { fontSize: 14, color: colors.blueText, fontWeight: '500' },
   joinedDate: { fontSize: 12, color: colors.greyLight, fontWeight: '300' },
 
   editProfileButton: {
@@ -748,7 +777,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     borderRadius: 100, borderWidth: 1.5, borderColor: colors.blue, marginTop: 4,
   },
 
-  editProfileButtonText: { fontSize: 13, fontWeight: '600', color: colors.blue },
+  editProfileButtonText: { fontSize: 13, fontWeight: '600', color: colors.blueText },
 
   statsRow: {
     flexDirection: 'row',
@@ -786,7 +815,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     paddingVertical: 10, borderRadius: 100, marginLeft: 12,
   },
 
-  upgradeButtonText: { fontSize: 13, fontWeight: '600', color: colors.blue },
+  upgradeButtonText: { fontSize: 13, fontWeight: '600', color: colors.blueText },
 
   sectionTitle: {
     fontSize: 18, fontWeight: '700', color: colors.black,
@@ -809,7 +838,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     borderColor: colors.blue, backgroundColor: colors.blueLight,
   },
   postTabText: { fontSize: 12, fontWeight: '500', color: colors.greyLight },
-  postTabTextActive: { color: colors.blue },
+  postTabTextActive: { color: colors.blueText },
 
   postsList: { gap: 10, marginBottom: 24 },
 
@@ -830,7 +859,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
   postTagQuestion: { backgroundColor: isDark ? '#3B0764' : '#EDE9FE' },
   postTagChallenge: { backgroundColor: isDark ? '#052E16' : '#D1FAE5' },
   postTagText: { fontSize: 10, color: isDark ? colors.black : colors.grey, fontWeight: '500' },
-  postTagTextProgress: { color: colors.blue },
+  postTagTextProgress: { color: colors.blueText },
   postTime: { fontSize: 11, color: colors.greyLight },
   postText: { fontSize: 14, color: colors.black, lineHeight: 20, fontWeight: '300', marginBottom: 10 },
   postImage: { width: '100%', aspectRatio: 1, borderRadius: 12, marginBottom: 10, marginTop: -4 },
@@ -900,7 +929,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
 
   modalCancel: { fontSize: 16, color: colors.grey },
   modalTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-  modalSave: { fontSize: 16, fontWeight: '600', color: colors.blue },
+  modalSave: { fontSize: 16, fontWeight: '600', color: colors.blueText },
   modalContent: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60 },
 
   errorBanner: {
@@ -926,7 +955,7 @@ function makeStyles(c, dark) { const colors = c || lightColors; const isDark = d
     borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14,
   },
 
-  usernameAt: { fontSize: 15, color: colors.blue, fontWeight: '600', marginRight: 4 },
+  usernameAt: { fontSize: 15, color: colors.blueText, fontWeight: '600', marginRight: 4 },
   usernameInput: { flex: 1, fontSize: 15, color: colors.black },
   postOptionsButton: {
     marginLeft: 8,

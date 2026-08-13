@@ -9,7 +9,7 @@ import { createPost, getCurrentUser, uploadPostImage } from '../services/api';
 function getTags(colors, isDark) {
   return [
     { key: 'general', label: 'General', color: colors.grey, bg: colors.greyCard },
-    { key: 'progress', label: 'Progress', color: colors.blue, bg: colors.blueLight },
+    { key: 'progress', label: 'Progress', color: colors.blueText, bg: colors.blueLight },
     { key: 'questions', label: 'Question', color: isDark ? '#A78BFA' : '#7C3AED', bg: isDark ? '#2D1B69' : '#EDE9FE' },
     { key: 'challenges', label: 'Challenge', color: isDark ? '#34D399' : '#059669', bg: isDark ? '#064E3B' : '#D1FAE5' },
   ];
@@ -291,7 +291,7 @@ function makeStyles(colors) { return StyleSheet.create({
 
   challengeBannerText: {
     fontSize: 13,
-    color: colors.blue,
+    color: colors.blueText,
     fontWeight: '400',
   },
 

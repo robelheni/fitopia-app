@@ -1,14 +1,17 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
+import { makeOnboardingStyles } from '../../components/onboardingStyles';
 import ProgressBar from '../../components/ProgressBar';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useState } from 'react';
-import { onboardingStyles as styles } from '../../components/onboardingStyles';
 import { Feather } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import ScreenWrapper, { FadeUpItem } from '../../components/ScreenWrapper';
+import { useLanguage } from '../../context/LanguageContext';
+import { getTabTranslation } from '../../constants/tabTranslations';
 
 const allDays = [
   { key: 'mon', label: 'Mon' },
@@ -20,16 +23,16 @@ const allDays = [
   { key: 'sun', label: 'Sun' },
 ];
 
-const maxDays = {
-  '2': 2,
-  '3': 3,
-  '4': 4,
-  '5+': 5,
-};
-
-
+const maxDays = { '2': 2, '3': 3, '4': 4, '5+': 5 };
 
 export default function Step3() {
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+  const styles = makeOnboardingStyles(colors);
+  const step3Styles = makeStep3Styles(colors);
+
+  const { language } = useLanguage();
+  const t = getTabTranslation(language);
   const [selected, setSelected] = useState(null);
   const [selectedDays, setSelectedDays] = useState([]);
   const { updateAnswer } = useOnboarding();
@@ -54,9 +57,9 @@ export default function Step3() {
 
   function handleContinue() {
     if (!isComplete) return;
-  updateAnswer('daysPerWeek', selected);
-  updateAnswer('trainingDays', selectedDays);
-  router.navigate('/onboarding/step4');
+    updateAnswer('daysPerWeek', selected);
+    updateAnswer('trainingDays', selectedDays);
+    router.navigate('/onboarding/step4');
   }
 
   return (
@@ -65,11 +68,10 @@ export default function Step3() {
 
       <ProgressBar currentStep={3} totalSteps={8} />
 
-      <Text style={styles.question}>How many days a week can you work out?</Text>
-      <Text style={styles.subtitle}>Be realistic — consistency beats intensity.</Text>
+      <Text style={styles.question}>{t.daysQuestion}</Text>
+      <Text style={styles.subtitle}>{t.daysSub}</Text>
 
       <View style={styles.options}>
-
         <FadeUpItem delay={150}>
           <TouchableOpacity
             style={[styles.option, selected === '2' && styles.optionSelected]}
@@ -79,8 +81,8 @@ export default function Step3() {
               <Feather name="moon" size={20} color={selected === '2' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
-              <Text style={[styles.optionTitle, selected === '2' && styles.optionTitleSelected]}>2 days</Text>
-              <Text style={styles.optionSub}>Light schedule</Text>
+              <Text style={[styles.optionTitle, selected === '2' && styles.optionTitleSelected]}>{t.twoDays}</Text>
+              <Text style={styles.optionSub}>{t.lightSchedule}</Text>
             </View>
           </TouchableOpacity>
         </FadeUpItem>
@@ -94,8 +96,8 @@ export default function Step3() {
               <Feather name="sun" size={20} color={selected === '3' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
-              <Text style={[styles.optionTitle, selected === '3' && styles.optionTitleSelected]}>3 days</Text>
-              <Text style={styles.optionSub}>Good balance</Text>
+              <Text style={[styles.optionTitle, selected === '3' && styles.optionTitleSelected]}>{t.threeDays}</Text>
+              <Text style={styles.optionSub}>{t.goodBalance}</Text>
             </View>
           </TouchableOpacity>
         </FadeUpItem>
@@ -109,8 +111,8 @@ export default function Step3() {
               <Feather name="zap" size={20} color={selected === '4' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
-              <Text style={[styles.optionTitle, selected === '4' && styles.optionTitleSelected]}>4 days</Text>
-              <Text style={styles.optionSub}>Serious commitment</Text>
+              <Text style={[styles.optionTitle, selected === '4' && styles.optionTitleSelected]}>{t.fourDays}</Text>
+              <Text style={styles.optionSub}>{t.seriousCommitment}</Text>
             </View>
           </TouchableOpacity>
         </FadeUpItem>
@@ -124,23 +126,19 @@ export default function Step3() {
               <MaterialCommunityIcons name="fire" size={20} color={selected === '5+' ? '#FFFFFF' : colors.grey} />
             </View>
             <View>
-              <Text style={[styles.optionTitle, selected === '5+' && styles.optionTitleSelected]}>5+ days</Text>
-              <Text style={styles.optionSub}>Full dedication</Text>
+              <Text style={[styles.optionTitle, selected === '5+' && styles.optionTitleSelected]}>{t.fiveDays}</Text>
+              <Text style={styles.optionSub}>{t.fullDedication}</Text>
             </View>
           </TouchableOpacity>
         </FadeUpItem>
-
       </View>
 
-      {/* Day selector — only shows after they pick how many days */}
       {selected && (
         <FadeUpItem delay={0}>
           <View style={step3Styles.daySection}>
-            <Text style={step3Styles.dayTitle}>
-              Which {max} {max === 1 ? 'day' : 'days'}?
-            </Text>
+            <Text style={step3Styles.dayTitle}>{t.whichDays}</Text>
             <Text style={step3Styles.daySub}>
-              Select exactly {max} {max === 1 ? 'day' : 'days'} — {selectedDays.length}/{max} selected
+              {t.selectDays} {max} — {selectedDays.length}/{max} {t.selected}
             </Text>
             <View style={step3Styles.dayGrid}>
               {allDays.map(day => {
@@ -162,7 +160,7 @@ export default function Step3() {
                       isSelected && step3Styles.dayButtonTextSelected,
                       isDisabled && step3Styles.dayButtonTextDisabled,
                     ]}>
-                      {day.label}
+                      {t[day.key]}
                     </Text>
                     {isSelected && (
                       <View style={step3Styles.dayCheck}>
@@ -182,97 +180,97 @@ export default function Step3() {
           style={[styles.button, !isComplete && styles.buttonDisabled]}
           onPress={handleContinue}
         >
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text style={styles.buttonText}>{t.continue}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
+          <Text style={styles.backText}>{t.back}</Text>
         </TouchableOpacity>
       </FadeUpItem>
-
     </ScreenWrapper>
   );
 }
 
-// Local styles — doesn't touch onboardingStyles
-const step3Styles = StyleSheet.create({
-  daySection: {
-    marginTop: 0,
-    paddingBottom:45,
-    marginBottom: 8,
-  },
+function makeStep3Styles(colors) {
+  return StyleSheet.create({
+    daySection: {
+      marginTop: 0,
+      paddingBottom: 45,
+      marginBottom: 8,
+    },
 
-  dayTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.black,
-    letterSpacing: -0.3,
-    marginBottom: 4,
-  },
+    dayTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.black,
+      letterSpacing: -0.3,
+      marginBottom: 4,
+    },
 
-  daySub: {
-    fontSize: 13,
-    color: colors.grey,
-    fontWeight: '300',
-    marginBottom: 12,
-  },
+    daySub: {
+      fontSize: 13,
+      color: colors.grey,
+      fontWeight: '300',
+      marginBottom: 12,
+    },
 
-  dayGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
+    dayGrid: {
+      flexDirection: 'row',
+      gap: 8,
+    },
 
-  dayButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.greyBorder,
-    backgroundColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
+    dayButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: colors.greyBorder,
+      backgroundColor: colors.white,
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
 
-  dayButtonSelected: {
-    backgroundColor: colors.blue,
-    borderColor: colors.blue,
-    shadowColor: colors.blue,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
+    dayButtonSelected: {
+      backgroundColor: colors.blue,
+      borderColor: colors.blue,
+      shadowColor: colors.blue,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
 
-  dayButtonDisabled: {
-    backgroundColor: colors.greyCard,
-    borderColor: colors.greyBorder,
-    opacity: 0.4,
-  },
+    dayButtonDisabled: {
+      backgroundColor: colors.greyCard,
+      borderColor: colors.greyBorder,
+      opacity: 0.4,
+    },
 
-  dayButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.black,
-  },
+    dayButtonText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.black,
+    },
 
-  dayButtonTextSelected: {
-    color: '#FFFFFF',
-  },
+    dayButtonTextSelected: {
+      color: '#FFFFFF',
+    },
 
-  dayButtonTextDisabled: {
-    color: colors.greyLight,
-  },
+    dayButtonTextDisabled: {
+      color: colors.greyLight,
+    },
 
-  dayCheck: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    dayCheck: {
+      position: 'absolute',
+      top: 4,
+      right: 4,
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: 'rgba(255,255,255,0.3)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+  });
+}

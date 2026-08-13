@@ -380,7 +380,7 @@ function calculateSessionDuration(session) {
                                 {/* Show swapped badge if this exercise was swapped */}
                                 {savedSwaps[exercise.id] && (
                                     <View style={[styles.tag, { backgroundColor: colors.blueLight }]}>
-                                        <Text style={[styles.tagText, { color: colors.blue }]}>Swapped</Text>
+                                        <Text style={[styles.tagText, { color: colors.blueText }]}>Swapped</Text>
                                     </View>
                                 )}
                             </View>
@@ -654,7 +654,7 @@ function makeStyles(c, dark) {
     exerciseNumberText: {
         fontSize: 13,
         fontWeight: '700',
-        color: colors.blue,
+        color: colors.blueText,
     },
 
     exerciseInfo: {

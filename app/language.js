@@ -2,12 +2,14 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { lightColors } from '../constants/colors';
 
 export default function LanguageScreen() {
   const { context } = useLocalSearchParams();
   const isSettings = context === 'settings';
   const theme = useTheme();
+  const { language, setLanguage } = useLanguage();
   const colors = theme ? theme.colors : lightColors;
   const styles = makeStyles(colors);
 
@@ -31,25 +33,36 @@ export default function LanguageScreen() {
         <TouchableOpacity
           style={styles.optionRow}
           activeOpacity={0.7}
-          onPress={() => {
+          onPress={async () => {
+            await setLanguage('English');
             if (isSettings) router.back();
             else router.replace('/welcome');
           }}
         >
           <Text style={styles.optionLabel}>English</Text>
-          <Feather name="check" size={18} color={colors.blue} />
+          {language === 'English' && (
+            <Feather name="check" size={18} color={colors.blue} />
+          )}
         </TouchableOpacity>
 
         <View style={styles.divider} />
 
-        <View style={[styles.optionRow, styles.optionRowDisabled]}>
+        <TouchableOpacity
+          style={styles.optionRow}
+          activeOpacity={0.7}
+          onPress={async () => {
+            await setLanguage('Amharic');
+            if (isSettings) router.back();
+            else router.replace('/welcome');
+          }}
+        >
           <View style={styles.optionLabelRow}>
-            <Text style={styles.optionLabelDisabled}>አማርኛ (Amharic)</Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>Coming soon</Text>
-            </View>
+            <Text style={styles.optionLabel}>አማርኛ (Amharic)</Text>
           </View>
-        </View>
+          {language === 'Amharic' && (
+            <Feather name="check" size={18} color={colors.blue} />
+          )}
+        </TouchableOpacity>
 
       </View>
     </View>
@@ -113,10 +126,6 @@ function makeStyles(colors) {
       paddingVertical: 18,
     },
 
-    optionRowDisabled: {
-      opacity: 0.5,
-    },
-
     optionLabel: {
       fontSize: 15,
       fontWeight: '500',
@@ -127,25 +136,6 @@ function makeStyles(colors) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 10,
-    },
-
-    optionLabelDisabled: {
-      fontSize: 15,
-      fontWeight: '500',
-      color: colors.black,
-    },
-
-    comingSoonBadge: {
-      backgroundColor: colors.greyCard,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 100,
-    },
-
-    comingSoonText: {
-      fontSize: 11,
-      color: colors.greyLight,
-      fontWeight: '500',
     },
 
     divider: {

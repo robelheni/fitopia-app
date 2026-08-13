@@ -363,6 +363,18 @@ export async function getCommunityPosts() {
   return data;
 }
 
+export async function getPost(postId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(`${BASE_URL}/community/posts/${postId}?token=${token}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get post');
+  return data;
+}
+
 //creates a new post
 export async function createPost(text, tag, challengeId = null, imageUrl = null) {
   const token = await getToken();
@@ -801,5 +813,237 @@ export async function deleteChallenge(challengeId) {
 
   const data = await response.json();
   if (!response.ok) throw new Error(data.detail || 'Failed to delete challenge');
+  return data;
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+export async function getNotifications() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/notifications?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get notifications');
+  return data;
+}
+
+export async function getUnreadNotificationCount() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/notifications/unread-count?token=${token}`,
+    { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get unread count');
+  return data;
+}
+
+export async function markNotificationRead(notificationId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/notifications/${notificationId}/read?token=${token}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to mark notification read');
+  return data;
+}
+
+export async function markAllNotificationsRead() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/notifications/read-all?token=${token}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to mark all read');
+  return data;
+}
+
+// ─── Trainers (public) ───────────────────────────────────────────────────────
+
+export async function getTrainers() {
+  const response = await fetch(`${BASE_URL}/community/trainers`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get trainers');
+  return data;
+}
+
+export async function getTrainer(trainerId) {
+  const response = await fetch(`${BASE_URL}/community/trainers/${trainerId}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get trainer');
+  return data;
+}
+
+export async function submitTrainerApplication(applicationData) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/community/trainer-applications?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(applicationData),
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to submit application');
+  return data;
+}
+
+// ─── Admin — Trainers ────────────────────────────────────────────────────────
+
+export async function getAdminTrainers() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(`${BASE_URL}/admin/trainers?token=${token}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get trainers');
+  return data;
+}
+
+export async function createAdminTrainer(trainerData) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/trainers?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(trainerData),
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to create trainer');
+  return data;
+}
+
+export async function deleteAdminTrainer(trainerId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/trainers/${trainerId}?token=${token}`,
+    { method: 'DELETE' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to delete trainer');
+  return data;
+}
+
+// ─── Admin — Trainer Applications ───────────────────────────────────────────
+
+export async function getTrainerApplications() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(`${BASE_URL}/admin/trainer-applications?token=${token}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get applications');
+  return data;
+}
+
+export async function approveTrainerApplication(applicationId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/trainer-applications/${applicationId}/approve?token=${token}`,
+    { method: 'PUT' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to approve');
+  return data;
+}
+
+export async function rejectTrainerApplication(applicationId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/trainer-applications/${applicationId}/reject?token=${token}`,
+    { method: 'PUT' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to reject');
+  return data;
+}
+
+// ─── Admin — Reported Posts ──────────────────────────────────────────────────
+
+export async function getReportedPosts() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(`${BASE_URL}/admin/reported-posts?token=${token}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get reports');
+  return data;
+}
+
+export async function adminDeletePost(postId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/posts/${postId}?token=${token}`,
+    { method: 'DELETE' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to delete post');
+  return data;
+}
+
+// ─── Admin — User Management ─────────────────────────────────────────────────
+
+export async function toggleUserAdmin(userId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/users/${userId}/toggle-admin?token=${token}`,
+    { method: 'PUT' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to toggle admin');
+  return data;
+}
+
+export async function toggleUserBan(userId) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/users/${userId}/toggle-ban?token=${token}`,
+    { method: 'PUT' }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to toggle ban');
+  return data;
+}
+
+// ─── Admin — Announcements ───────────────────────────────────────────────────
+
+export async function createAnnouncement(title, message) {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(
+    `${BASE_URL}/admin/announcements?token=${token}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, message }),
+    }
+  );
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to create announcement');
+  return data;
+}
+
+export async function getAnnouncements() {
+  const token = await getToken();
+  if (!token) throw new Error('Not logged in');
+  const response = await fetch(`${BASE_URL}/admin/announcements?token=${token}`);
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.detail || 'Failed to get announcements');
   return data;
 }

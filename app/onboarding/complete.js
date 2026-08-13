@@ -1,7 +1,5 @@
-import { useEffect} from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-// Add to your imports
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,18 +7,23 @@ import Animated, {
   withSpring,
   withDelay,
   withSequence,
-  runOnJS,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
 import { Feather } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native';
-
+import { useLanguage } from '../../context/LanguageContext';
+import { getTabTranslation } from '../../constants/tabTranslations';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Complete() {
-  // Animation values
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+
+  const { language } = useLanguage();
+  const t = getTabTranslation(language);
+
   const backgroundScale = useSharedValue(0);
   const logoOpacity = useSharedValue(0);
   const logoScale = useSharedValue(0.3);
@@ -37,13 +40,8 @@ export default function Complete() {
   const iconRotate = useSharedValue(0);
 
   useEffect(() => {
-    // Background circle expands
-    backgroundScale.value = withSpring(1, {
-      damping: 12,
-      stiffness: 80,
-    });
+    backgroundScale.value = withSpring(1, { damping: 12, stiffness: 80 });
 
-    // Rings pulse outward
     ring1Scale.value = withDelay(300, withSpring(1, { damping: 10, stiffness: 60 }));
     ring1Opacity.value = withDelay(300, withSequence(
       withTiming(0.3, { duration: 400 }),
@@ -56,156 +54,91 @@ export default function Complete() {
       withTiming(0, { duration: 700 })
     ));
 
-    // Logo appears with bounce
     logoOpacity.value = withDelay(200, withTiming(1, { duration: 400 }));
-    logoScale.value = withDelay(200, withSpring(1, {
-      damping: 8,
-      stiffness: 120,
-    }));
+    logoScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 120 }));
 
-    // Icon rotates in
-    iconRotate.value = withDelay(400, withSpring(1, {
-      damping: 10,
-      stiffness: 100,
-    }));
+    iconRotate.value = withDelay(400, withSpring(1, { damping: 10, stiffness: 100 }));
 
-    // Title slides up
     titleOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
     titleY.value = withDelay(600, withSpring(0, { damping: 12, stiffness: 100 }));
 
-    // Subtitle slides up
     subtitleOpacity.value = withDelay(800, withTiming(1, { duration: 500 }));
     subtitleY.value = withDelay(800, withSpring(0, { damping: 12, stiffness: 100 }));
 
-    // Button appears
     buttonOpacity.value = withDelay(1000, withTiming(1, { duration: 500 }));
     buttonY.value = withDelay(1000, withSpring(0, { damping: 12, stiffness: 100 }));
   }, []);
 
-  // Animated styles
-  const bgStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: backgroundScale.value }],
-  }));
-
-  const ring1Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring1Scale.value }],
-    opacity: ring1Opacity.value,
-  }));
-
-  const ring2Style = useAnimatedStyle(() => ({
-    transform: [{ scale: ring2Scale.value }],
-    opacity: ring2Opacity.value,
-  }));
-
-  const logoStyle = useAnimatedStyle(() => ({
-    opacity: logoOpacity.value,
-    transform: [{ scale: logoScale.value }],
-  }));
-
+  const bgStyle = useAnimatedStyle(() => ({ transform: [{ scale: backgroundScale.value }] }));
+  const ring1Style = useAnimatedStyle(() => ({ transform: [{ scale: ring1Scale.value }], opacity: ring1Opacity.value }));
+  const ring2Style = useAnimatedStyle(() => ({ transform: [{ scale: ring2Scale.value }], opacity: ring2Opacity.value }));
+  const logoStyle = useAnimatedStyle(() => ({ opacity: logoOpacity.value, transform: [{ scale: logoScale.value }] }));
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${iconRotate.value * 360}deg` },
-      { scale: iconRotate.value },
-    ],
+    transform: [{ rotate: `${iconRotate.value * 360}deg` }, { scale: iconRotate.value }],
   }));
-
-  const titleStyle = useAnimatedStyle(() => ({
-    opacity: titleOpacity.value,
-    transform: [{ translateY: titleY.value }],
-  }));
-
-  const subtitleStyle = useAnimatedStyle(() => ({
-    opacity: subtitleOpacity.value,
-    transform: [{ translateY: subtitleY.value }],
-  }));
-
-  const buttonStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonY.value }],
-  }));
-
-
+  const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value, transform: [{ translateY: titleY.value }] }));
+  const subtitleStyle = useAnimatedStyle(() => ({ opacity: subtitleOpacity.value, transform: [{ translateY: subtitleY.value }] }));
+  const buttonStyle = useAnimatedStyle(() => ({ opacity: buttonOpacity.value, transform: [{ translateY: buttonY.value }] }));
 
   return (
     <View style={styles.container}>
-
-      {/* Animated background circle */}
       <Animated.View style={[styles.backgroundCircle, bgStyle]} />
-
-      {/* Pulsing rings */}
       <Animated.View style={[styles.ring, styles.ring1, ring1Style]} />
       <Animated.View style={[styles.ring, styles.ring2, ring2Style]} />
 
-      {/* Center icon with rotation */}
       <Animated.View style={[styles.iconContainer, logoStyle]}>
         <Animated.View style={iconStyle}>
-        <Feather name="award" size={64} color={'#FFFFFF'} />
+          <Feather name="award" size={64} color={'#FFFFFF'} />
         </Animated.View>
       </Animated.View>
 
-      {/* Content */}
       <View style={styles.content}>
-
-        {/* Logo */}
         <Animated.View style={[styles.logoRow, logoStyle]}>
           <Text style={styles.logoFit}>Fit</Text>
           <Text style={styles.logoOpia}>opia</Text>
         </Animated.View>
 
-        {/* Title */}
-        <Animated.Text style={[styles.title, titleStyle]}>
-          Your plan is ready.
-        </Animated.Text>
+        <Animated.Text style={[styles.title, titleStyle]}>{t.planReady}</Animated.Text>
+        <Animated.Text style={[styles.subtitle, subtitleStyle]}>{t.planReadySub}</Animated.Text>
 
-        {/* Subtitle */}
-        <Animated.Text style={[styles.subtitle, subtitleStyle]}>
-          Welcome to Fitopia. Everything has been personalised for you. Let's get to work.
-        </Animated.Text>
-
-        {/* Stats row */}
         <Animated.View style={[styles.statsRow, subtitleStyle]}>
           <View style={styles.statItem}>
             <Feather name="activity" size={20} color={'#FFFFFF'} />
-            <Text style={styles.statText}>Custom plan</Text>
+            <Text style={styles.statText}>{t.customPlan}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Feather name="users" size={20} color={'#FFFFFF'} />
-            <Text style={styles.statText}>Community</Text>
+            <Text style={styles.statText}>{t.community}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Feather name="zap" size={20} color={'#FFFFFF'} />
-            <Text style={styles.statText}>AI Coach</Text>
+            <Text style={styles.statText}>{t.aiCoach}</Text>
           </View>
         </Animated.View>
 
-        {/* Button */}
         <Animated.View style={[styles.buttonContainer, buttonStyle]}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => router.replace('/(tabs)')}
-          >
-            <Text style={styles.buttonText}>See my plan</Text>
+          <TouchableOpacity style={styles.button} onPress={() => router.replace('/(tabs)')}>
+            <Text style={styles.buttonText}>{t.seePlan}</Text>
             <Feather name="arrow-right" size={18} color={colors.blue} />
           </TouchableOpacity>
         </Animated.View>
-
       </View>
-
     </View>
   );
 }
 
+// This screen always has a blue background by design — it's the celebration screen.
+// Colors here are intentionally hardcoded relative to the blue bg, not theme-dependent.
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.blue,
+    backgroundColor: '#2563EB',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // Large circle that expands on load
   backgroundCircle: {
     position: 'absolute',
     width: width * 1.5,
@@ -214,7 +147,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
 
-  // Pulsing rings
   ring: {
     position: 'absolute',
     borderRadius: 999,
@@ -222,17 +154,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)',
   },
 
-  ring1: {
-    width: 280,
-    height: 280,
-  },
+  ring1: { width: 280, height: 280 },
+  ring2: { width: 380, height: 380 },
 
-  ring2: {
-    width: 380,
-    height: 380,
-  },
-
-  // Award icon container
   iconContainer: {
     position: 'absolute',
     top: height * 0.15,
@@ -284,7 +208,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
 
-  // Three stats in a row
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -315,12 +238,11 @@ const styles = StyleSheet.create({
 
   buttonContainer: {
     alignItems: 'center',
-
   },
 
-  // White button on blue background
+  // White button on blue background — always white regardless of theme
   button: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     paddingVertical: 22,
     paddingHorizontal: 48,
     borderRadius: 100,
@@ -328,7 +250,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    shadowColor: colors.black,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 16,
@@ -338,6 +260,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.blue,
+    color: '#2563EB',
   },
 });

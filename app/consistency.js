@@ -21,7 +21,7 @@ function getConsistencyMessage(percentage, colors, isDark) {
     return {
       title: "You're building something real",
       message: "You're showing up far more than you're not — that's the foundation. A few more consistent weeks and this becomes second nature.",
-      color: colors.blue,
+      color: colors.blueText,
       bg: colors.blueLight,
     };
   }

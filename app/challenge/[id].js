@@ -206,7 +206,7 @@ function makeStyles(c, dark) {
     borderWidth: 1.5, borderColor: colors.blue, borderRadius: 100,
     paddingVertical: 12, marginBottom: 20,
   },
-  postButtonText: { fontSize: 14, fontWeight: '600', color: colors.blue },
+  postButtonText: { fontSize: 14, fontWeight: '600', color: colors.blueText },
 
   emptyState: { alignItems: 'center', paddingVertical: 50, gap: 10 },
   emptyText: { fontSize: 15, fontWeight: '600', color: colors.grey },

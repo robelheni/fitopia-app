@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated, StatusBar } from 'react-native';
 import { router } from 'expo-router';
-
+import { useTheme } from '../context/ThemeContext';
+import { lightColors } from '../constants/colors';
 import { getCurrentUser } from '../services/api';
 
 export default function SplashScreen() {
+  const theme = useTheme();
+  const colors = theme ? theme.colors : lightColors;
+
   const fadeAnim  = useRef(new Animated.Value(0)).current;
   const fitSlide  = useRef(new Animated.Value(-100)).current;
   const opiaSlide = useRef(new Animated.Value(100)).current;
@@ -55,16 +59,13 @@ export default function SplashScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { backgroundColor: colors.white }]}>
+      <StatusBar barStyle={theme?.isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.logoRow}>
         <Animated.Text
           style={[
             styles.logoFit,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateX: fitSlide }],
-            },
+            { color: colors.black, opacity: fadeAnim, transform: [{ translateX: fitSlide }] },
           ]}
         >
           Fit
@@ -72,10 +73,7 @@ export default function SplashScreen() {
         <Animated.Text
           style={[
             styles.logoOpia,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateX: opiaSlide }],
-            },
+            { color: colors.blueText, opacity: fadeAnim, transform: [{ translateX: opiaSlide }] },
           ]}
         >
           opia
@@ -88,7 +86,6 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -98,13 +95,11 @@ const styles = StyleSheet.create({
   logoFit: {
     fontSize: 64,
     fontWeight: '700',
-    color: '#0a0a0a',
     letterSpacing: -2,
   },
   logoOpia: {
     fontSize: 64,
     fontWeight: '700',
-    color: '#2563EB',
     letterSpacing: -2,
   },
 });

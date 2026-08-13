@@ -34,6 +34,9 @@ export const lightColors = {
     
         // Gold - used for streaks and achievements only
         gold: '#D4A843',
+
+        // Blue text/links — same as blue in light mode, white in dark mode
+        blueText: '#2563EB',
     };
 
 
@@ -69,6 +72,9 @@ export const lightColors = {
 
         // Gold stays the same — achievement colour should not change
         gold: '#D4A843',
+
+        // Blue text becomes white in dark mode for readability
+        blueText: '#FFFFFF',
     };
 
 // This replaces the old:

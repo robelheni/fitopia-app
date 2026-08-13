@@ -41,7 +41,7 @@ export default function UserProfileScreen() {
   const colors = theme ? theme.colors : lightColors;
 
   const TAG_COLORS = {
-    progress:   { color: colors.blue, bg: colors.blueLight },
+    progress:   { color: colors.blueText, bg: colors.blueLight },
     questions:  { color: isDark ? '#C4B5FD' : '#7C3AED', bg: isDark ? '#3B0764' : '#EDE9FE' },
     challenges: { color: isDark ? '#6EE7B7' : '#059669', bg: isDark ? '#052E16' : '#D1FAE5' },
     general:    { color: colors.grey, bg: colors.greyCard },
@@ -111,7 +111,7 @@ export default function UserProfileScreen() {
   // Same logic as community.js post cards
   function getAvatarColor(gender) {
     if (gender === 'female') return { bg: '#EDE9FE', color: '#7C3AED' };
-    if (gender === 'male') return { bg: colors.blueLight, color: colors.blue };
+    if (gender === 'male') return { bg: colors.blueLight, color: colors.blueText };
     return { bg: colors.greyCard, color: colors.grey };
   }
 
@@ -215,13 +215,17 @@ export default function UserProfileScreen() {
           <FadeUpItem delay={200}>
             <Text style={styles.sectionTitle}>Posts</Text>
 
-            {profile.posts.length === 0 ? (
+            {(() => {
+              const visiblePosts = profile.is_own_profile
+                ? profile.posts
+                : profile.posts.filter(p => !p.is_private);
+              return visiblePosts.length === 0 ? (
               <View style={styles.emptyPosts}>
                 <Feather name="edit-2" size={32} color={colors.greyLight} />
                 <Text style={styles.emptyText}>No posts yet</Text>
               </View>
             ) : (
-              profile.posts.map((post, index) => {
+              visiblePosts.map((post, index) => {
                 const tag = TAG_COLORS[post.tag] || TAG_COLORS.general;
                 return (
                   <FadeUpItem key={post.id} delay={200 + index * 60}>
@@ -298,7 +302,8 @@ export default function UserProfileScreen() {
                     </FadeUpItem>
                     );
                 })
-                )}
+                );
+            })()}
             </FadeUpItem>
 
             </ScrollView>
@@ -387,7 +392,7 @@ function makeStyles(c, dark) {
   },
 
   followButtonText: {
-    fontSize: 14, fontWeight: '600', color: colors.blue,
+    fontSize: 14, fontWeight: '600', color: colors.blueText,
   },
 
   followButtonTextActive: {

@@ -1,12 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, TextInput, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { lightColors } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
-import { getComments, createComment, getCurrentUser} from '../services/api';
+import { getComments, createComment, getCurrentUser, getPost } from '../services/api';
 
 
+
+function timeAgo(isoString) {
+  if (!isoString) return 'Just now';
+  const date = isoString.endsWith('Z') || isoString.includes('+')
+    ? new Date(isoString)
+    : new Date(isoString + 'Z');
+  const seconds = Math.floor((Date.now() - date) / 1000);
+  if (seconds < 60) return 'Just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+  return `${Math.floor(seconds / 86400)}d ago`;
+}
 
 export default function CommentsScreen() {
   const theme = useTheme();
@@ -14,13 +26,22 @@ export default function CommentsScreen() {
   const colors = theme ? theme.colors : lightColors;
 
   const { postId, postText, postName, postImage, commentsDisabled } = useLocalSearchParams();
-  const isCommentsDisabled = commentsDisabled === '1';
+
+  // When opened from a notification, postText/postImage aren't passed — fetch the post instead.
+  const [post, setPost] = useState(
+    postText || postImage
+      ? { text: postText, name: postName, image_url: postImage, comments_disabled: commentsDisabled === '1' }
+      : null
+  );
+  const isCommentsDisabled = post?.comments_disabled ?? commentsDisabled === '1';
+
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-
   const [user, setUser] = useState(null);
+  const scrollRef = useRef(null);
+  const inputY = useRef(0);
 
   useEffect(() => {
     async function fetchUser() {
@@ -34,21 +55,23 @@ export default function CommentsScreen() {
     ? user.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
     : '??';
 
-
-  //fetch the raeal comments
   useEffect(() => {
-    async function fetchComments(){
-      try{
+    async function load() {
+      try {
         setLoading(true);
-        const data = await getComments(postId);
-        setComments(data);
+        const [commentsData, postData] = await Promise.all([
+          getComments(postId),
+          post ? Promise.resolve(null) : getPost(postId),
+        ]);
+        setComments(commentsData);
+        if (postData) setPost(postData);
       } catch (err) {
         console.log('Failed to load comments:', err.message);
       } finally {
         setLoading(false);
       }
     }
-    fetchComments();
+    load();
   }, [postId]);
 
   async function handleSubmit() {
@@ -87,6 +110,7 @@ export default function CommentsScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -94,16 +118,64 @@ export default function CommentsScreen() {
 
         {/* Original post */}
         <View style={styles.originalPost}>
-          <Text style={styles.originalPostName}>{postName}</Text>
-          <Text style={styles.originalPostText}>{postText}</Text>
-          {postImage ? (
+          <Text style={styles.originalPostName}>{post?.name ?? postName}</Text>
+          {!!(post?.text ?? postText) && (
+            <Text style={styles.originalPostText}>{post?.text ?? postText}</Text>
+          )}
+          {!!(post?.image_url ?? postImage) && (
             <Image
-              source={{ uri: postImage }}
+              source={{ uri: post?.image_url ?? postImage }}
               style={styles.originalPostImage}
               resizeMode="cover"
             />
-          ) : null}
+          )}
         </View>
+
+        {/* Comment input — sits right under the post */}
+        {isCommentsDisabled ? (
+          <View style={styles.disabledBanner}>
+            <Feather name="slash" size={16} color={colors.grey} />
+            <Text style={styles.disabledBannerText}>Commenting is turned off</Text>
+          </View>
+        ) : (
+          <View
+            style={styles.inputContainer}
+            onLayout={(e) => { inputY.current = e.nativeEvent.layout.y; }}
+          >
+            {user?.profile_picture ? (
+              <Image source={{ uri: user.profile_picture }} style={styles.inputAvatar} />
+            ) : (
+              <View style={styles.inputAvatar}>
+                <Text style={styles.inputAvatarText}>{initials}</Text>
+              </View>
+            )}
+            <TextInput
+              style={styles.input}
+              placeholder="Add a comment..."
+              placeholderTextColor={colors.greyLight}
+              value={newComment}
+              onChangeText={setNewComment}
+              multiline
+              maxLength={300}
+              onFocus={() => {
+                setTimeout(() => {
+                  scrollRef.current?.scrollTo({ y: inputY.current, animated: true });
+                }, 320);
+              }}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
+              onPress={handleSubmit}
+              disabled={!newComment.trim() || sending}
+            >
+              <Feather
+                name="send"
+                size={18}
+                color={newComment.trim() ? colors.white : colors.greyLight}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         <View style={styles.divider} />
 
@@ -134,7 +206,7 @@ export default function CommentsScreen() {
                 <View style={styles.commentContent}>
                   <View style={styles.commentHeader}>
                     <Text style={styles.commentName}>{comment.name}</Text>
-                    <Text style={styles.commentTime}>{comment.time || 'Just now'}</Text>
+                    <Text style={styles.commentTime}>{timeAgo(comment.created_at)}</Text>
                   </View>
                   <Text style={styles.commentText}>{comment.text}</Text>
                 </View>
@@ -144,44 +216,6 @@ export default function CommentsScreen() {
         )}
 
       </ScrollView>
-
-      {/* Comment input or disabled banner */}
-      {isCommentsDisabled ? (
-        <View style={styles.disabledBanner}>
-          <Feather name="slash" size={16} color={colors.grey} />
-          <Text style={styles.disabledBannerText}>Commenting is turned off</Text>
-        </View>
-      ) : (
-        <View style={styles.inputContainer}>
-          {user?.profile_picture ? (
-            <Image source={{ uri: user.profile_picture }} style={styles.inputAvatar} />
-          ) : (
-            <View style={styles.inputAvatar}>
-              <Text style={styles.inputAvatarText}>{initials}</Text>
-            </View>
-          )}
-          <TextInput
-            style={styles.input}
-            placeholder="Add a comment..."
-            placeholderTextColor={colors.greyLight}
-            value={newComment}
-            onChangeText={setNewComment}
-            multiline
-            maxLength={300}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !newComment.trim() && styles.sendButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={!newComment.trim() || sending}
-          >
-            <Feather
-              name="send"
-              size={18}
-              color={newComment.trim() ? colors.white : colors.greyLight}
-            />
-          </TouchableOpacity>
-        </View>
-      )}
 
     </KeyboardAvoidingView>
   );
@@ -341,11 +375,8 @@ function makeStyles(c, dark) {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.greyBorder,
-    backgroundColor: colors.white,
+    marginTop: 12,
   },
 
   inputAvatar: {
@@ -397,9 +428,9 @@ function makeStyles(c, dark) {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 16,
-    borderTopWidth: 0.5,
-    borderTopColor: colors.greyBorder,
+    paddingVertical: 12,
+    marginTop: 12,
+    borderRadius: 12,
     backgroundColor: colors.greyCard,
   },
 

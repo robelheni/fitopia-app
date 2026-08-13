@@ -178,7 +178,7 @@ export default function NutritionDetailsScreen() {
               <Feather name="plus" size={20} color={colors.blue} />
               <View style={styles.surplusItem}>
                 <Text style={styles.surplusLabel}>Surplus</Text>
-                <Text style={[styles.surplusValue, { color: colors.blue }]}>+{nutritionProfile.surplus}</Text>
+                <Text style={[styles.surplusValue, { color: colors.blueText }]}>+{nutritionProfile.surplus}</Text>
                 <Text style={styles.surplusUnit}>kcal</Text>
               </View>
               <Feather name="equals" size={20} color={colors.black} />
@@ -377,7 +377,7 @@ export default function NutritionDetailsScreen() {
               <Feather name="arrow-right" size={20} color={colors.greyLight} />
               <View style={styles.progressItem}>
                 <Text style={styles.progressLabel}>Goal weight</Text>
-                <Text style={[styles.progressValue, { color: colors.blue }]}>{nutritionProfile.goalWeight}kg</Text>
+                <Text style={[styles.progressValue, { color: colors.blueText }]}>{nutritionProfile.goalWeight}kg</Text>
               </View>
             </View>
             <View style={styles.progressBarContainer}>
@@ -570,7 +570,7 @@ function makeStyles(c, dark) {
     macroContent: { flex: 1, gap: 6 },
     macroTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     macroName: { fontSize: 15, fontWeight: '600', color: colors.black },
-    macroValue: { fontSize: 15, fontWeight: '700', color: colors.blue },
+    macroValue: { fontSize: 15, fontWeight: '700', color: colors.blueText },
     macroExplanation: { fontSize: 13, color: colors.grey, lineHeight: 18, fontWeight: '300' },
     waterCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#CFFAFE', borderRadius: 16, padding: 16, marginBottom: 24 },
     waterLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -632,7 +632,7 @@ function makeStyles(c, dark) {
     goalOption: { flex: 1, paddingVertical: 10, paddingHorizontal: 8, borderRadius: 12, borderWidth: 1.5, borderColor: colors.greyBorder, alignItems: 'center' },
     goalOptionSelected: { borderColor: colors.blue, backgroundColor: colors.blueLight },
     goalOptionText: { fontSize: 12, fontWeight: '500', color: colors.grey, textAlign: 'center' },
-    goalOptionTextSelected: { color: colors.blue },
+    goalOptionTextSelected: { color: colors.blueText },
     goalWeightInput: { width: '100%', borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12, padding: 14, fontSize: 16, color: colors.black },
     celebrationButton: {
       width: '100%', backgroundColor: colors.blue, paddingVertical: 16, borderRadius: 100,

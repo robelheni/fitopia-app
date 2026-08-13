@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import FloatingCoachButton from '../../components/FloatingCoachButton';
@@ -10,7 +10,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { lightColors } from '../../constants/colors';
+import { getTabTranslation } from '../../constants/tabTranslations';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
 import { useCallback, useRef } from 'react';
@@ -20,9 +22,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getNutrition, getWeeklyMeals, getStreak, getWorkoutPlan, getCommunityPosts, getCurrentUser } from '../../services/api';
 
 export default function HomeScreen() {
-  const [contentKey, setContentKey] = useState(0);
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(8);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshRef = useRef(null);
   const { setCollapsed } = useTabBar();
   const [trainingDays, setTrainingDays] = useState([]);
   const lastScrollY = useRef(0);
@@ -34,6 +35,8 @@ export default function HomeScreen() {
   const [accountCreatedAt, setAccountCreatedAt] = useState(null);
 
   const theme = useTheme();
+  const { language } = useLanguage();
+  const t = getTabTranslation(language);
   const isDark = theme ? theme.isDark : false;
   const colors = theme ? theme.colors : lightColors;
 
@@ -49,14 +52,6 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setContentKey(prev => prev + 1);
-      opacity.value = 0;
-      translateY.value = 8;
-      requestAnimationFrame(() => {
-        opacity.value = withTiming(1, { duration: 300 });
-        translateY.value = withTiming(0, { duration: 300 });
-      });
-
       async function fetchPlan() {
         try {
           const nutritionData = await getNutrition();
@@ -76,12 +71,15 @@ export default function HomeScreen() {
           }
 
           setUserName(nutritionData.user.name);
-          const days = nutritionData.user.training_days?.split(',') || ['mon', 'wed', 'fri'];
+          const rawDays = nutritionData.user.training_days;
+          const days = Array.isArray(rawDays)
+            ? rawDays.map(d => String(d).trim().toLowerCase())
+            : (rawDays ? rawDays.split(',').map(d => d.trim().toLowerCase()) : ['mon', 'wed', 'fri']);
           setTrainingDays(days);
 
           const streakData = await getStreak();
           setStreak(streakData.streak);
-          setCompletedDays(streakData.completed_days);
+          setCompletedDays(streakData.completed_days || []);
 
           setNutritionTargets({
             calories: nutritionData.nutrition.calories,
@@ -108,9 +106,19 @@ export default function HomeScreen() {
         }
       }
 
+      refreshRef.current = fetchPlan;
       fetchPlan();
     }, [])
   );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      if (refreshRef.current) await refreshRef.current();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   function getMealTime(mealType) {
     switch (mealType) {
@@ -122,16 +130,12 @@ export default function HomeScreen() {
     }
   }
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
 
   function getGreeting() {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return t.goodMorning;
+    if (hour < 17) return t.goodAfternoon;
+    return t.goodEvening;
   }
 
   const headerOpacity = useSharedValue(1);
@@ -157,7 +161,7 @@ export default function HomeScreen() {
   }
 
   const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const DAY_NAMES = [t.monday, t.tuesday, t.wednesday, t.thursday, t.friday, t.saturday, t.sunday];
   const todayIndex = new Date().getDay();
   const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
   const todayKey = DAY_KEYS[reorderedIndex];
@@ -174,19 +178,19 @@ export default function HomeScreen() {
         return DAY_NAMES[nextIndex];
       }
     }
-    return 'soon';
+    return t.soon;
   })();
 
   const styles = makeStyles(colors, isDark);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <View style={styles.container}>
       <BackgroundCircles variant="default" />
 
       <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
         <View>
           <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.name}>{userName ? `Welcome back, ${userName.split(' ')[0]}` : 'Welcome back'}</Text>
+          <Text style={styles.name}>{userName ? `${t.welcomeBack}, ${userName.split(' ')[0]}` : t.welcomeBack}</Text>
         </View>
       </Animated.View>
 
@@ -197,18 +201,21 @@ export default function HomeScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} colors={[colors.blue]} />
+        }
       >
-        <View key={contentKey}>
+        <View>
 
           <FadeUpItem delay={200}>
           <TouchableOpacity style={styles.streakCard} onPress={() => router.push('/consistency')} activeOpacity={0.9}>
               <View style={styles.streakLeft}>
                 <Text style={styles.streakNumber}>{streak}</Text>
-                <Text style={styles.streakLabel}>day streak</Text>
+                <Text style={styles.streakLabel}>{t.dayStreak}</Text>
               </View>
               <View style={styles.streakDivider} />
               <View style={styles.streakRight}>
-                <Text style={styles.streakWeekLabel}>This week</Text>
+                <Text style={styles.streakWeekLabel}>{t.thisWeek}</Text>
                 <View style={styles.streakDots}>
                 {DAY_KEYS.map((day, index) => {
                   const isTrainingDayDot = trainingDays.includes(day);
@@ -233,7 +240,7 @@ export default function HomeScreen() {
                   else if (isPast && isTrainingDayDot && !isCompleted) dotStyle = styles.streakDotMissed;
                   else if (isTrainingDayDot) dotStyle = styles.streakDotPending;
                   
-                    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                    const labels = [t.mon, t.tue, t.wed, t.thu, t.fri, t.sat, t.sun];
 
                     return (
                       <View key={index} style={styles.streakDayContainer}>
@@ -249,51 +256,51 @@ export default function HomeScreen() {
 
           <FadeUpItem delay={300}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Today's workout</Text>
+              <Text style={styles.sectionTitle}>{t.todaysWorkout}</Text>
               <TouchableOpacity onPress={() => router.navigate('/(tabs)/workouts')}>
-                <Text style={styles.sectionLink}>See all</Text>
+                <Text style={styles.sectionLink}>{t.seeAll}</Text>
               </TouchableOpacity>
             </View>
 
             {isTrainingDay ? (
-              // Single tappable card — its whole appearance changes based on completion.
-              // Tapping always navigates into the workout screen, whether to start it
-              // fresh or to review what was already done.
+              // Training day: completed or not-yet-started
               <TouchableOpacity
                 style={[styles.workoutCard, isCompletedToday && styles.workoutCardCompleted]}
                 activeOpacity={0.85}
-                onPress={() => todaySession && router.push({
-                  pathname: '/workout/[id]',
-                  params: {
-                    id: todayKey,
-                    sessionData: JSON.stringify(todaySession),
-                    workoutName: todaySession?.session_type || "Today's Workout",
+                onPress={() => {
+                  if (todaySession) {
+                    router.push({
+                      pathname: '/workout/[id]',
+                      params: {
+                        id: todayKey,
+                        sessionData: JSON.stringify(todaySession),
+                        workoutName: todaySession?.session_type || "Today's Workout",
+                      }
+                    });
+                  } else {
+                    router.navigate('/(tabs)/workouts');
                   }
-                })}
+                }}
               >
                 {isCompletedToday ? (
                   // ── COMPLETED STATE ──────────────────────────────
-                  // A calmer, rewarding layout — no countdown pressure,
-                  // just confirmation that today's work is done.
                   <>
                     <View style={styles.completedTopRow}>
                       <View style={styles.completedIconCircle}>
                         <Feather name="check" size={20} color={'#FFFFFF'} />
                       </View>
                       <View style={styles.completedTextBlock}>
-                        <Text style={styles.completedTitle}>Workout complete</Text>
+                        <Text style={styles.completedTitle}>{t.workoutComplete}</Text>
                         <Text style={styles.completedSubtitle}>
-                          {todaySession?.session_type || 'Today\'s session'} · {todaySession?.exercises?.length || 0} exercises
+                          {todaySession?.session_type || t.todaysSession} · {todaySession?.exercises?.length || 0} {t.exercises}
                         </Text>
                       </View>
                     </View>
-
                     <Text style={styles.completedMessage}>
-                      Nice work today. Your streak is locked in — rest well and come back stronger.
+                      {t.completedMessage}
                     </Text>
-
                     <View style={styles.viewWorkoutButton}>
-                      <Text style={styles.viewWorkoutText}>View workout</Text>
+                      <Text style={styles.viewWorkoutText}>{t.viewWorkout}</Text>
                       <Feather name="arrow-right" size={14} color="#059669" />
                     </View>
                   </>
@@ -303,31 +310,32 @@ export default function HomeScreen() {
                     <View style={styles.workoutStat}>
                       <Feather name="clock" size={12} color={colors.grey} />
                       <Text style={styles.workoutStatText}>
-                        {todaySession ? `${todaySession.exercises?.length || 0} exercises` : 'Loading...'}
+                        {todaySession ? `${todaySession.exercises?.length || 0} ${t.exercises}` : t.loading}
                       </Text>
                     </View>
                     <View style={styles.workoutStat}>
                       <Feather name="activity" size={12} color={colors.grey} />
                       <Text style={styles.workoutStatText}>
-                        {todaySession?.session_type || 'Your workout'}
+                        {todaySession?.session_type || t.yourWorkout}
                       </Text>
                     </View>
                     <View style={styles.startButton}>
-                      <Text style={styles.startButtonText}>Start workout</Text>
+                      <Text style={styles.startButtonText}>{t.startWorkout}</Text>
                       <Feather name="arrow-right" size={14} color={'#FFFFFF'} />
                     </View>
                   </View>
                 )}
               </TouchableOpacity>
             ) : (
+              // ── REST DAY (not a training day, nothing completed) ─────────
               <View style={styles.restDayCard}>
                 <View style={styles.restDayIcon}>
                   <Feather name="moon" size={24} color={colors.blue} />
                 </View>
                 <View style={styles.restDayContent}>
-                  <Text style={styles.restDayTitle}>Rest day</Text>
+                  <Text style={styles.restDayTitle}>{t.restDay}</Text>
                   <Text style={styles.restDaySub}>
-                    Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
+                    {t.recoveryMessage} {nextTrainingDay}.
                   </Text>
                 </View>
               </View>
@@ -336,9 +344,9 @@ export default function HomeScreen() {
 
           <FadeUpItem delay={400}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Nutrition & Meals</Text>
+              <Text style={styles.sectionTitle}>{t.nutritionMeals}</Text>
               <TouchableOpacity onPress={() => router.push('/nutrition/details')}>
-                <Text style={styles.sectionLink}>Details</Text>
+                <Text style={styles.sectionLink}>{t.details}</Text>
               </TouchableOpacity>
             </View>
 
@@ -352,7 +360,7 @@ export default function HomeScreen() {
               <View style={styles.nutritionGrid}>
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{nutritionTargets.calories}</Text>
-                  <Text style={styles.nutritionLabel}>Calories</Text>
+                  <Text style={styles.nutritionLabel}>{t.calories}</Text>
                   <View style={[styles.nutritionBar, { backgroundColor: '#FEF3C7' }]}>
                     <View style={[styles.nutritionBarFill, { backgroundColor: '#D97706', width: '60%' }]} />
                   </View>
@@ -360,7 +368,7 @@ export default function HomeScreen() {
                 <View style={styles.nutritionDivider} />
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{nutritionTargets.protein}g</Text>
-                  <Text style={styles.nutritionLabel}>Protein</Text>
+                  <Text style={styles.nutritionLabel}>{t.protein}</Text>
                   <View style={[styles.nutritionBar, { backgroundColor: colors.blueLight }]}>
                     <View style={[styles.nutritionBarFill, { backgroundColor: colors.blue, width: '40%' }]} />
                   </View>
@@ -368,7 +376,7 @@ export default function HomeScreen() {
                 <View style={styles.nutritionDivider} />
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{nutritionTargets.carbs}g</Text>
-                  <Text style={styles.nutritionLabel}>Carbs</Text>
+                  <Text style={styles.nutritionLabel}>{t.carbs}</Text>
                   <View style={[styles.nutritionBar, { backgroundColor: '#D1FAE5' }]}>
                     <View style={[styles.nutritionBarFill, { backgroundColor: '#059669', width: '70%' }]} />
                   </View>
@@ -376,7 +384,7 @@ export default function HomeScreen() {
                 <View style={styles.nutritionDivider} />
                 <View style={styles.nutritionItem}>
                   <Text style={styles.nutritionValue}>{nutritionTargets.fats}g</Text>
-                  <Text style={styles.nutritionLabel}>Fats</Text>
+                  <Text style={styles.nutritionLabel}>{t.fats}</Text>
                   <View style={[styles.nutritionBar, { backgroundColor: '#FEE2E2' }]}>
                     <View style={[styles.nutritionBarFill, { backgroundColor: '#DC2626', width: '30%' }]} />
                   </View>
@@ -396,8 +404,8 @@ export default function HomeScreen() {
                 <MaterialCommunityIcons name="noodles" size={20} color={colors.blue} />
               </View>
               <View style={styles.mealPlanText}>
-                <Text style={styles.mealPlanTitle}>Your meal plan</Text>
-                <Text style={styles.mealPlanSub}>Tap to view today's meals</Text>
+                <Text style={styles.mealPlanTitle}>{t.mealPlan}</Text>
+                <Text style={styles.mealPlanSub}>{t.todaysMeals}</Text>
               </View>
               <View style={styles.mealPlanArrow}>
                 <Feather name="arrow-right" size={16} color={colors.blue} />
@@ -407,15 +415,15 @@ export default function HomeScreen() {
 
           <FadeUpItem delay={500}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Community</Text>
+              <Text style={styles.sectionTitle}>{t.community}</Text>
               <TouchableOpacity onPress={() => router.navigate('/(tabs)/community')}>
-                <Text style={styles.sectionLink}>See all</Text>
+                <Text style={styles.sectionLink}>{t.seeAll}</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.communityCard}>
               {recentPosts.length === 0 ? (
                 <View style={styles.communityEmpty}>
-                  <Text style={styles.communityEmptyText}>No posts yet — be the first!</Text>
+                  <Text style={styles.communityEmptyText}>{t.noPosts}</Text>
                 </View>
               ) : (
                 recentPosts.map((post, index) => (
@@ -446,7 +454,7 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
       <FloatingCoachButton />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -455,8 +463,8 @@ function makeStyles(c, dark) {
   const isDark = dark || false;
   return StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.white },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: 24, paddingTop: 120, paddingBottom: 120 },
+  scroll: { flex: 1, marginTop: 120 },
+  content: { paddingHorizontal: 24, paddingTop: 0, paddingBottom: 120 },
   greeting: { fontSize: 14, color: colors.grey, fontWeight: '300', marginBottom: 4 },
   name: { fontSize: 24, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
   fixedHeader: {
@@ -489,7 +497,7 @@ function makeStyles(c, dark) {
   streakDayLabel: { fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: '500' },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },
-  sectionLink: { fontSize: 14, color: colors.blue, fontWeight: '500' },
+  sectionLink: { fontSize: 14, color: colors.blueText, fontWeight: '500' },
 
   workoutCard: {
     backgroundColor: colors.white, borderRadius: 20, padding: 20, marginBottom: 20,
@@ -565,7 +573,7 @@ function makeStyles(c, dark) {
     shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3, gap: 16,
   },
   nutritionExplanation: { flexDirection: 'row', gap: 8, alignItems: 'flex-start', backgroundColor: colors.blueLight, padding: 12, borderRadius: 12 },
-  nutritionExplanationText: { fontSize: 13, color: colors.blue, lineHeight: 18, flex: 1, fontWeight: '300' },
+  nutritionExplanationText: { fontSize: 13, color: colors.blueText, lineHeight: 18, flex: 1, fontWeight: '300' },
   nutritionGrid: { flexDirection: 'row', alignItems: 'center' },
   nutritionItem: { flex: 1, alignItems: 'center', gap: 4 },
   nutritionValue: { fontSize: 20, fontWeight: '700', color: colors.black, letterSpacing: -0.5 },

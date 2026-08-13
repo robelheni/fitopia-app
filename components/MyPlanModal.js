@@ -906,7 +906,7 @@ function makeStyles(colors) {
       color: colors.black,
     },
     prefLabelSelected: {
-      color: colors.blue,
+      color: colors.blueText,
     },
     prefDesc: {
       fontSize: 12,

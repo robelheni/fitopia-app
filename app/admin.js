@@ -7,7 +7,10 @@ import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import { lightColors } from '../constants/colors';
-import { getAdminOverview, getAdminUsers, toggleUserPro, logout, createChallenge } from '../services/api';
+import {
+  getAdminOverview, getAdminUsers, toggleUserPro, logout, createChallenge,
+  toggleUserBan, toggleUserAdmin, createAnnouncement, getTrainerApplications, getCurrentUser,
+} from '../services/api';
 
 const CHALLENGE_COLORS = [
     { name: 'Blue', value: '#2563EB' },
@@ -29,10 +32,12 @@ export default function AdminScreen() {
   const colors = theme ? theme.colors : lightColors;
   const styles = makeStyles(colors);
 
+  const [currentUser, setCurrentUser] = useState(null);
   const [overview, setOverview] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingApplicationsCount, setPendingApplicationsCount] = useState(0);
 
   const [createChallengeVisible, setCreateChallengeVisible] = useState(false);
   const [challengeName, setChallengeName] = useState('');
@@ -40,17 +45,29 @@ export default function AdminScreen() {
   const [challengeColor, setChallengeColor] = useState('#2563EB');
   const [creatingChallenge, setCreatingChallenge] = useState(false);
 
+  const [announcementVisible, setAnnouncementVisible] = useState(false);
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [sendingAnnouncement, setSendingAnnouncement] = useState(false);
+
   useFocusEffect(
     useCallback(() => {
       async function fetchData() {
         try {
           setLoading(true);
-          const [overviewData, usersData] = await Promise.all([
+          const [overviewData, usersData, meData, appsData] = await Promise.all([
             getAdminOverview(),
             getAdminUsers(),
+            getCurrentUser(),
+            getTrainerApplications(),
           ]);
           setOverview(overviewData);
           setUsers(usersData);
+          setCurrentUser(meData);
+          const pending = Array.isArray(appsData)
+            ? appsData.filter(a => a.status === 'pending').length
+            : 0;
+          setPendingApplicationsCount(pending);
         } catch (err) {
           console.log('Admin fetch error:', err.message);
         } finally {
@@ -94,6 +111,47 @@ export default function AdminScreen() {
       Alert.alert('Error', err.message);
     } finally {
       setCreatingChallenge(false);
+    }
+  }
+
+  async function handleToggleBan(userId, isActive) {
+    try {
+      const result = await toggleUserBan(userId);
+      setUsers(prev => prev.map(u =>
+        u.id === userId ? { ...u, is_active: result.is_active } : u
+      ));
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
+  }
+
+  async function handleToggleAdmin(userId, isAdmin) {
+    try {
+      const result = await toggleUserAdmin(userId);
+      setUsers(prev => prev.map(u =>
+        u.id === userId ? { ...u, is_admin: result.is_admin } : u
+      ));
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    }
+  }
+
+  async function handleSendAnnouncement() {
+    if (!announcementTitle.trim() || !announcementMessage.trim()) {
+      Alert.alert('Missing fields', 'Please fill in both title and message.');
+      return;
+    }
+    try {
+      setSendingAnnouncement(true);
+      await createAnnouncement(announcementTitle.trim(), announcementMessage.trim());
+      setAnnouncementTitle('');
+      setAnnouncementMessage('');
+      setAnnouncementVisible(false);
+      Alert.alert('Sent', 'Announcement created successfully.');
+    } catch (err) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setSendingAnnouncement(false);
     }
   }
 
@@ -179,6 +237,54 @@ export default function AdminScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Trainer Applications */}
+        <Text style={styles.sectionTitle}>Trainer Applications</Text>
+        <View style={styles.adminNavCard}>
+          {pendingApplicationsCount > 0 && (
+            <View style={styles.pendingBadge}>
+              <Text style={styles.pendingBadgeText}>{pendingApplicationsCount} pending</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.adminNavButton}
+            onPress={() => router.push('/admin-trainer-applications')}
+          >
+            <Feather name="user-check" size={16} color="#FFFFFF" />
+            <Text style={styles.adminNavButtonText}>Review Applications</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Trainers */}
+        <Text style={styles.sectionTitle}>Trainers</Text>
+        <TouchableOpacity
+          style={styles.adminNavButton}
+          onPress={() => router.push('/admin-trainers')}
+        >
+          <Feather name="users" size={16} color="#FFFFFF" />
+          <Text style={styles.adminNavButtonText}>Manage Trainers</Text>
+        </TouchableOpacity>
+
+        {/* Reported Posts */}
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Reported Posts</Text>
+        <TouchableOpacity
+          style={[styles.adminNavButton, { backgroundColor: '#DC2626' }]}
+          onPress={() => router.push('/admin-reported-posts')}
+        >
+          <Feather name="flag" size={16} color="#FFFFFF" />
+          <Text style={styles.adminNavButtonText}>Review Reports</Text>
+        </TouchableOpacity>
+
+        {/* Announcements */}
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Announcements</Text>
+        <TouchableOpacity
+          style={[styles.adminNavButton, { backgroundColor: '#D97706' }]}
+          onPress={() => setAnnouncementVisible(true)}
+        >
+          <Feather name="megaphone" size={16} color="#FFFFFF" />
+          <Text style={styles.adminNavButtonText}>Create Announcement</Text>
+        </TouchableOpacity>
+
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Users</Text>
         <View style={styles.searchBar}>
           <Feather name="search" size={16} color={colors.greyLight} />
           <TextInput
@@ -213,12 +319,72 @@ export default function AdminScreen() {
                     {u.is_pro ? 'Pro' : 'Free'}
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.proToggle, !u.is_active && styles.banToggleActive]}
+                  onPress={() => handleToggleBan(u.id, u.is_active)}
+                >
+                  <Text style={[styles.proToggleText, !u.is_active && styles.banToggleText]}>
+                    {u.is_active ? 'Ban' : 'Unban'}
+                  </Text>
+                </TouchableOpacity>
+                {currentUser?.id === 1 && u.id !== currentUser?.id && (
+                  <TouchableOpacity
+                    style={[styles.proToggle, u.is_admin && styles.adminToggleActive]}
+                    onPress={() => handleToggleAdmin(u.id, u.is_admin)}
+                  >
+                    <Text style={[styles.proToggleText, u.is_admin && styles.adminToggleText]}>
+                      {u.is_admin ? '−Admin' : '+Admin'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           ))}
         </View>
 
       </ScrollView>
+
+      {/* Announcement Modal */}
+      <Modal
+        visible={announcementVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setAnnouncementVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHandle} />
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setAnnouncementVisible(false)}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>New Announcement</Text>
+            <TouchableOpacity onPress={handleSendAnnouncement} disabled={sendingAnnouncement}>
+              <Text style={[styles.modalSave, sendingAnnouncement && { opacity: 0.4 }]}>
+                {sendingAnnouncement ? 'Sending...' : 'Send'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            <Text style={styles.fieldLabel}>Title</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={announcementTitle}
+              onChangeText={setAnnouncementTitle}
+              placeholder="e.g. New feature launched!"
+              placeholderTextColor={colors.greyLight}
+            />
+            <Text style={styles.fieldLabel}>Message</Text>
+            <TextInput
+              style={[styles.fieldInput, styles.descriptionInput]}
+              value={announcementMessage}
+              onChangeText={setAnnouncementMessage}
+              placeholder="Write your announcement here..."
+              placeholderTextColor={colors.greyLight}
+              multiline
+            />
+          </ScrollView>
+        </View>
+      </Modal>
 
       {/* Create Challenge Modal */}
       <Modal
@@ -383,7 +549,7 @@ function makeStyles(colors) {
     },
 
     challengeActionButtonTextSecondary: {
-      color: colors.blue,
+      color: colors.blueText,
     },
 
     searchBar: {
@@ -426,7 +592,7 @@ function makeStyles(colors) {
       borderRadius: 100,
     },
 
-    adminBadgeText: { fontSize: 10, fontWeight: '600', color: colors.blue },
+    adminBadgeText: { fontSize: 10, fontWeight: '600', color: colors.blueText },
 
     proToggle: {
       paddingHorizontal: 12,
@@ -440,6 +606,26 @@ function makeStyles(colors) {
     proToggleText: { fontSize: 12, fontWeight: '600', color: colors.grey },
     proToggleTextActive: { color: '#059669' },
 
+    banToggleActive: { backgroundColor: '#FEE2E2' },
+    banToggleText: { color: '#DC2626' },
+
+    adminToggleActive: { backgroundColor: colors.blueLight },
+    adminToggleText: { color: colors.blueText },
+
+    adminNavCard: { gap: 8, marginBottom: 8 },
+    adminNavButton: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      backgroundColor: colors.blue, paddingVertical: 14, paddingHorizontal: 20,
+      borderRadius: 100, marginBottom: 16,
+    },
+    adminNavButtonText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+
+    pendingBadge: {
+      alignSelf: 'flex-start', backgroundColor: '#FEF3C7',
+      paddingHorizontal: 12, paddingVertical: 5, borderRadius: 100, marginBottom: 8,
+    },
+    pendingBadgeText: { fontSize: 12, fontWeight: '600', color: '#B45309' },
+
     modalContainer: { flex: 1, backgroundColor: colors.white, paddingTop: 12 },
     modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.greyBorder, alignSelf: 'center', marginBottom: 8 },
 
@@ -451,7 +637,7 @@ function makeStyles(colors) {
 
     modalCancel: { fontSize: 16, color: colors.grey },
     modalTitle: { fontSize: 17, fontWeight: '600', color: colors.black },
-    modalSave: { fontSize: 16, fontWeight: '600', color: colors.blue },
+    modalSave: { fontSize: 16, fontWeight: '600', color: colors.blueText },
     modalContent: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 60 },
 
     fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.grey, marginBottom: 8, marginTop: 16 },

@@ -1,14 +1,16 @@
 import { useFocusEffect } from 'expo-router';
 import FloatingCoachButton from '../../components/FloatingCoachButton';
 
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { lightColors } from '../../constants/colors';
+import { getTabTranslation } from '../../constants/tabTranslations';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import MyPlanModal from '../../components/MyPlanModal';
@@ -23,6 +25,8 @@ import { getWorkoutPlan, getStreak, getCurrentUser } from "../../services/api";
 // Expandable weekly plan card
 function WeeklyPlanCard({ item, isExpanded, onToggle }) {
     const theme = useTheme();
+    const { language } = useLanguage();
+    const t = getTabTranslation(language);
     const isDark = theme ? theme.isDark : false;
     const colors = theme ? theme.colors : lightColors;
     const styles = makeStyles(colors, isDark);
@@ -46,7 +50,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 </Text>
                 {item.isToday && (
                 <View style={styles.todayBadge}>
-                    <Text style={styles.todayBadgeText}>Today</Text>
+                    <Text style={styles.todayBadgeText}>{t.today}</Text>
                 </View>
                 )}
             </View>
@@ -61,7 +65,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                     styles.statusBadgeText,
                     item.completed ? styles.statusBadgeTextCompleted : styles.statusBadgeTextMissed
                 ]}>
-                    {item.completed ? 'Completed' : 'Missed'}
+                    {item.completed ? t.completed : t.missed}
                 </Text>
                 </View>
             ) : (
@@ -97,7 +101,7 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
                 })}
 >
                 <Text style={[styles.weeklyStartText, item.isToday && styles.weeklyStartTextActive]}>
-                {item.isPast ? 'View workout' : `Start ${item.workout}`}
+                {item.isPast ? t.viewWorkout : `${t.startWorkout}: ${item.workout}`}
                 </Text>
                 <Feather
                     name="arrow-right"
@@ -114,14 +118,15 @@ function WeeklyPlanCard({ item, isExpanded, onToggle }) {
 
 export default function WorkoutsScreen() {
     const theme = useTheme();
+    const { language } = useLanguage();
+    const t = getTabTranslation(language);
     const isDark = theme ? theme.isDark : false;
     const colors = theme ? theme.colors : lightColors;
 
-    const [contentKey, setContentKey] = useState(0);
     const [activeFilter, setActiveFilter] = useState('forYou');
     const [myPlanVisible, setMyPlanVisible] = useState(false);
-    const opacity = useSharedValue(0);
-    const translateY = useSharedValue(8);
+    const [refreshing, setRefreshing] = useState(false);
+    const refreshRef = useRef(null);
     const [expandedDay, setExpandedDay] = useState(null);
     const [userInitials, setUserInitials] = useState('');
     const [userName, setUserName] = useState('');
@@ -140,11 +145,11 @@ export default function WorkoutsScreen() {
   const [planLoading, setPlanLoading] = useState(true);
 
   const filters = [
-    { key: 'forYou', label: 'For You' },
-    { key: 'home', label: 'Home' },
-    { key: 'gym', label: 'Gym' },
-    { key: 'fasting', label: 'Fasting' },
-    { key: 'all', label: 'Library' },
+    { key: 'forYou', label: t.forYou },
+    { key: 'home', label: t.home },
+    { key: 'gym', label: t.gym },
+    { key: 'fasting', label: t.fasting },
+    { key: 'all', label: t.library },
   ];
     
 
@@ -177,15 +182,6 @@ export default function WorkoutsScreen() {
 
       useFocusEffect(
         useCallback(() => {
-            // Force remount of all FadeUpItem components
-            setContentKey(prev => prev + 1);
-            opacity.value = 0;
-            translateY.value = 8;
-            requestAnimationFrame(() => {
-                opacity.value = withTiming(1, { duration: 300 });
-                translateY.value = withTiming(0, { duration: 300 });
-            });
-    
             // Fetch user data for initials and name
             async function fetchUser(currentUser) {
               try {
@@ -215,17 +211,17 @@ export default function WorkoutsScreen() {
                   const completedDays = streakData.completed_days;
             
                   const sessionNames = {
-                      push:       'Push Day',
-                      pull:       'Pull Day',
-                      legs:       'Leg Day',
-                      upper:      'Upper Body',
-                      lower:      'Lower Body',
-                      full_body:  'Full Body',
+                      push:       t.push,
+                      pull:       t.pull,
+                      legs:       t.legs,
+                      upper:      t.upper,
+                      lower:      t.lower,
+                      full_body:  t.fullBody,
                   };
             
                   const dayDisplayNames = {
-                      mon: 'Mon', tue: 'Tue', wed: 'Wed',
-                      thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+                      mon: t.mon, tue: t.tue, wed: t.wed,
+                      thu: t.thu, fri: t.fri, sat: t.sat, sun: t.sun,
                   };
             
                   const dayOrder = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -293,15 +289,26 @@ export default function WorkoutsScreen() {
               fetchUser(currentUser);
               fetchPlan(currentUser);
             }
+            refreshRef.current = init;
             init();
     
-        }, [])
+        }, [language])
     );
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      if (refreshRef.current) await refreshRef.current();
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   // Day order and today calculation
 // Used to determine if today is a training day
 // and what the next training day is
 const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const dayNames = [t.monday, t.tuesday, t.wednesday, t.thursday, t.friday, t.saturday, t.sunday];
 const todayIndex = new Date().getDay();
 const reorderedIndex = todayIndex === 0 ? 6 : todayIndex - 1;
 const todayKey = dayKeys[reorderedIndex];
@@ -319,27 +326,23 @@ const nextTrainingDay = (() => {
             return dayNames[nextIndex];
         }
     }
-    return 'soon';
+    return t.soon;
 })();
 
 // Get today's session from the plan if it exists
 // Used to populate the featured card with real workout data
 const todaySession = weeklyPlanItems.find(item => item.isToday);
 
-const animatedStyle = useAnimatedStyle(() => ({
-  opacity: opacity.value,
-  transform: [{ translateY: translateY.value }],
-}));    
 
     const styles = makeStyles(colors, isDark);
 
     return (
-        <Animated.View style={[styles.container, animatedStyle]}>
+        <View style={styles.container}>
         <BackgroundCircles variant="topLeft" />
 
         
         <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
-          <Text style={styles.title}>Workouts</Text>
+          <Text style={styles.title}>{t.workouts}</Text>
           
           <View style={styles.headerRight}>
               {/* Saved exercises button */}
@@ -359,7 +362,7 @@ const animatedStyle = useAnimatedStyle(() => ({
                   <View style={styles.myPlanInitials}>
                     <Text style={styles.myPlanInitialsText}>{userInitials}</Text>
                   </View>
-                  <Text style={styles.myPlanText}>My Plan</Text>
+                  <Text style={styles.myPlanText}>{t.myPlan}</Text>
                   <Feather name="chevron-right" size={14} color={colors.grey} />
               </TouchableOpacity>
           </View>
@@ -374,9 +377,12 @@ const animatedStyle = useAnimatedStyle(() => ({
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} colors={[colors.blue]} />
+            }
         >
             {/* key forces all FadeUpItems to remount and replay on focus */}
-            <View key={contentKey}>
+            <View>
 
             
             <FadeUpItem delay={100}>
@@ -404,7 +410,7 @@ const animatedStyle = useAnimatedStyle(() => ({
                 <FadeUpItem delay={200}>
 
                     <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Today's pick</Text>
+                    <Text style={styles.sectionTitle}>{t.todaysPick}</Text>
                     </View>
 
                     {isTrainingDay ? (
@@ -425,20 +431,20 @@ const animatedStyle = useAnimatedStyle(() => ({
                                 <Feather name="zap" size={22} color={'#FFFFFF'} />
                             </View>
                             <View style={styles.featuredBadge}>
-                                <Text style={styles.featuredBadgeText}>Crafted for you</Text>
+                                <Text style={styles.featuredBadgeText}>{t.craftedForYou}</Text>
                             </View>
                         </View>
 
                         {/* Show real workout name from backend or loading state */}
                         <Text style={styles.featuredName}>
-                            {planLoading ? 'Loading...' : todaySession ? todaySession.workout : 'Rest Day'}
+                            {planLoading ? t.loading : todaySession ? todaySession.workout : t.restDay}
                         </Text>
 
                         <View style={styles.featuredStats}>
                             <View style={styles.featuredStat}>
                                 <Feather name="activity" size={12} color="rgba(255,255,255,0.7)" />
                                 <Text style={styles.featuredStatText}>
-                                    {planLoading ? '...' : todaySession ? `${todaySession.exercises.length} exercises` : ''}
+                                    {planLoading ? '...' : todaySession ? `${todaySession.exercises.length} ${t.exercises}` : ''}
                                 </Text>
                             </View>
                             <View style={styles.featuredStat}>
@@ -451,7 +457,7 @@ const animatedStyle = useAnimatedStyle(() => ({
 
                         <View style={styles.featuredStartButton}>
                             <Text style={styles.featuredStartText}>
-                                {planLoading ? 'Loading plan...' : 'Start workout'}
+                                {planLoading ? t.loadingPlan : t.startWorkout}
                             </Text>
                             <Feather name="arrow-right" size={16} color={colors.blue} />
                         </View>
@@ -462,9 +468,9 @@ const animatedStyle = useAnimatedStyle(() => ({
                             <Feather name="moon" size={24} color={colors.blue} />
                         </View>
                         <View style={styles.restDayContent}>
-                            <Text style={styles.restDayTitle}>Rest day</Text>
+                            <Text style={styles.restDayTitle}>{t.restDay}</Text>
                             <Text style={styles.restDaySub}>
-                                Recovery is part of the plan. Your next workout is on {nextTrainingDay}.
+                                {t.recoveryMessage} {nextTrainingDay}.
                             </Text>
                         </View>
                     </View>
@@ -490,20 +496,20 @@ const animatedStyle = useAnimatedStyle(() => ({
             {activeFilter === 'home' && (
               <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Home workouts</Text>
-                  <Text style={styles.sectionSub}>No gym needed</Text>
+                  <Text style={styles.sectionTitle}>{t.homeWorkouts}</Text>
+                  <Text style={styles.sectionSub}>{t.noGym}</Text>
                 </View>
                 <View style={styles.categoryGrid}>
                   {[
-                    { name: 'Full Body',   icon: 'user',          color: '#059669', bg: '#D1FAE5', categoryKey: 'full-body-home' },
-                    { name: 'Upper Body',  icon: 'trending-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'upper-body-home' },
-                    { name: 'Lower Body',  icon: 'trending-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'lower-body-home' },
-                    { name: 'Core',        icon: 'target',        color: '#D97706', bg: '#FEF3C7', categoryKey: 'core-home' },
-                    { name: 'Biceps',      icon: 'activity',      color: '#DC2626', bg: '#FEE2E2', categoryKey: 'biceps-home' },
-                    { name: 'Triceps',     icon: 'zap',           color: '#0891B2', bg: '#CFFAFE', categoryKey: 'triceps-home' },
-                    { name: 'Cardio',      icon: 'heart',         color: '#059669', bg: '#D1FAE5', categoryKey: 'cardio-home' },
+                    { name: t.fullBody,   icon: 'user',          color: '#059669', bg: '#D1FAE5', categoryKey: 'full-body-home' },
+                    { name: t.upperBody,  icon: 'trending-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'upper-body-home' },
+                    { name: t.lowerBody,  icon: 'trending-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'lower-body-home' },
+                    { name: t.core,        icon: 'target',        color: '#D97706', bg: '#FEF3C7', categoryKey: 'core-home' },
+                    { name: t.biceps,      icon: 'activity',      color: '#DC2626', bg: '#FEE2E2', categoryKey: 'biceps-home' },
+                    { name: t.triceps,     icon: 'zap',           color: '#0891B2', bg: '#CFFAFE', categoryKey: 'triceps-home' },
+                    { name: t.cardio,      icon: 'heart',         color: '#059669', bg: '#D1FAE5', categoryKey: 'cardio-home' },
                     { 
-                      name: 'Intense Cardio', 
+                      name: t.intenseCardio,
                       icon: 'zap', 
                       color: '#DC2626', 
                       bg: '#FEE2E2', 
@@ -531,21 +537,21 @@ const animatedStyle = useAnimatedStyle(() => ({
             {activeFilter === 'gym' && (
               <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Gym workouts</Text>
-                  <Text style={styles.sectionSub}>Full equipment</Text>
+                  <Text style={styles.sectionTitle}>{t.gymWorkouts}</Text>
+                  <Text style={styles.sectionSub}>{t.fullEquipment}</Text>
                 </View>
                 <View style={styles.categoryGrid}>
                   {[
-                    { name: 'Chest',     icon: 'chevrons-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'chest-gym' },
-                    { name: 'Back',      icon: 'chevrons-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'back-gym' },
-                    { name: 'Shoulders', icon: 'trending-up',   color: '#D97706', bg: '#FEF3C7', categoryKey: 'shoulders-gym' },
-                    { name: 'Triceps',   icon: 'zap',           color: '#DC2626', bg: '#FEE2E2', categoryKey: 'triceps-gym' },
-                    { name: 'Biceps',    icon: 'activity',      color: '#059669', bg: '#D1FAE5', categoryKey: 'biceps-gym' },
-                    { name: 'Legs',      icon: 'trending-down', color: '#0891B2', bg: '#CFFAFE', categoryKey: 'legs-gym' },
-                    { name: 'Core',      icon: 'target',        color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-gym' },
-                    { name: 'Cardio',    icon: 'heart',         color: '#DC2626', bg: '#FEE2E2', categoryKey: 'cardio-gym' },
+                    { name: t.chest,     icon: 'chevrons-up',   color: '#2563EB', bg: '#EFF6FF', categoryKey: 'chest-gym' },
+                    { name: t.backMuscle,      icon: 'chevrons-down', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'back-gym' },
+                    { name: t.shoulders, icon: 'trending-up',   color: '#D97706', bg: '#FEF3C7', categoryKey: 'shoulders-gym' },
+                    { name: t.triceps,   icon: 'zap',           color: '#DC2626', bg: '#FEE2E2', categoryKey: 'triceps-gym' },
+                    { name: t.biceps,    icon: 'activity',      color: '#059669', bg: '#D1FAE5', categoryKey: 'biceps-gym' },
+                    { name: t.legsCategory,      icon: 'trending-down', color: '#0891B2', bg: '#CFFAFE', categoryKey: 'legs-gym' },
+                    { name: t.core,      icon: 'target',        color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-gym' },
+                    { name: t.cardio,    icon: 'heart',         color: '#DC2626', bg: '#FEE2E2', categoryKey: 'cardio-gym' },
                     { 
-                      name: 'Intense Cardio', 
+                      name: t.intenseCardio,
                       icon: 'zap', 
                       color: '#DC2626', 
                       bg: '#FEE2E2', 
@@ -574,14 +580,14 @@ const animatedStyle = useAnimatedStyle(() => ({
             {activeFilter === 'fasting' && (
               <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Fasting workouts</Text>
-                  <Text style={styles.sectionSub}>Low intensity, high benefit</Text>
+                  <Text style={styles.sectionTitle}>{t.fastingWorkouts}</Text>
+                  <Text style={styles.sectionSub}>{t.lowIntensity}</Text>
                 </View>
                 <View style={styles.categoryGrid}>
                   {[
-                    { name: 'Light Full Body',      icon: 'sun',    color: '#D97706', bg: '#FEF3C7', categoryKey: 'light-full-body' },
-                    { name: 'Core and Balance',     icon: 'target', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-and-balance' },
-                    { name: 'Low Intensity Cardio', icon: 'heart',  color: '#DC2626', bg: '#FEE2E2', categoryKey: 'low-intensity-cardio' },
+                    { name: t.lightFullBody,      icon: 'sun',    color: '#D97706', bg: '#FEF3C7', categoryKey: 'light-full-body' },
+                    { name: t.coreBalance,     icon: 'target', color: '#7C3AED', bg: '#EDE9FE', categoryKey: 'core-and-balance' },
+                    { name: t.lowIntensityCardio, icon: 'heart',  color: '#DC2626', bg: '#FEE2E2', categoryKey: 'low-intensity-cardio' },
                   ].map((cat, index) => (
                     <TouchableOpacity key={index} style={styles.categoryCard}
                       onPress={() => router.push({ pathname: '/workout/library', params: { category: cat.categoryKey } })}>
@@ -599,15 +605,15 @@ const animatedStyle = useAnimatedStyle(() => ({
             {activeFilter === 'all' && (
               <FadeUpItem delay={200}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Exercise Library</Text>
-                  <Text style={styles.sectionSub}>Discover New Exercises</Text>
+                  <Text style={styles.sectionTitle}>{t.exerciseLibrary}</Text>
+                  <Text style={styles.sectionSub}>{t.discoverExercises}</Text>
                 </View>
                 <TouchableOpacity
                   style={styles.libraryButton}
                   onPress={() => router.push({ pathname: '/workout/library', params: { category: 'all' } })}
                 >
                   <Feather name="search" size={20} color={colors.blue} />
-                  <Text style={styles.libraryButtonText}>Browse all exercises</Text>
+                  <Text style={styles.libraryButtonText}>{t.browseExercises}</Text>
                   <Feather name="chevron-right" size={16} color={colors.greyLight} />
                 </TouchableOpacity>
               </FadeUpItem>
@@ -621,7 +627,7 @@ const animatedStyle = useAnimatedStyle(() => ({
             onClose={() => setMyPlanVisible(false)}
         />
         <FloatingCoachButton />
-        </Animated.View>
+        </View>
     );
 }
 
@@ -630,8 +636,8 @@ function makeStyles(c, dark) {
   const isDark = dark || false;
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.white },
-    scroll: { flex: 1 },
-    content: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 120 },
+    scroll: { flex: 1, marginTop: 60 },
+    content: { paddingHorizontal: 24, paddingTop: 0, paddingBottom: 120 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     title: { fontSize: 28, fontWeight: '700', color: colors.black, letterSpacing: -1 },
     myPlanButton: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.greyCard, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 100 },
@@ -655,7 +661,7 @@ function makeStyles(c, dark) {
     featuredStat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     featuredStatText: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '300' },
     featuredStartButton: { backgroundColor: '#FFFFFF', borderRadius: 100, paddingVertical: 14, paddingHorizontal: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-    featuredStartText: { fontSize: 15, fontWeight: '600', color: colors.blue },
+    featuredStartText: { fontSize: 15, fontWeight: '600', color: colors.blueText },
     workoutCount: { fontSize: 13, color: colors.grey, fontWeight: '300' },
     grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     workoutCard: { width: '47.5%', backgroundColor: colors.white, borderRadius: 20, padding: 16, borderWidth: 1, borderColor: colors.greyBorder, shadowColor: colors.black, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
@@ -666,7 +672,7 @@ function makeStyles(c, dark) {
     typeBadge: { backgroundColor: colors.blueLight, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 100 },
     typeBadgeFasting: { backgroundColor: '#EDE9FE' },
     typeBadgeHome: { backgroundColor: '#D1FAE5' },
-    typeBadgeText: { fontSize: 10, color: colors.blue, fontWeight: '500' },
+    typeBadgeText: { fontSize: 10, color: colors.blueText, fontWeight: '500' },
     typeBadgeTextFasting: { color: '#7C3AED' },
     typeBadgeTextHome: { color: '#059669' },
     cardName: { fontSize: 15, fontWeight: '700', color: colors.black, letterSpacing: -0.3, marginBottom: 4 },
@@ -861,7 +867,7 @@ function makeStyles(c, dark) {
       },
       
       weeklyStartTextActive: {
-        color: colors.blue,
+        color: colors.blueText,
       },
 
       fixedHeader: {

@@ -1,4 +1,3 @@
-import { useFocusEffect } from 'expo-router';
 import FloatingCoachButton from '../../components/FloatingCoachButton';
 
 import Animated, {
@@ -8,25 +7,33 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { lightColors } from '../../constants/colors';
+import { getTabTranslation } from '../../constants/tabTranslations';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import { FadeUpItem } from '../../components/ScreenWrapper';
 import { useTabBar } from '../../context/TabBarContext';
-import { useCallback, useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { router } from 'expo-router';
 import { Alert } from 'react-native';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share } from 'react-native';
+import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Share, RefreshControl } from 'react-native';
 import { getCommunityPosts, togglePostLike, getCurrentUser, reportPost, getChallenges } from '../../services/api';
 
 
 
 
 // Converts a raw timestamp like "2026-06-12T11:23:00" into "2h ago"
-function timeAgo(isoString) {
+function timeAgo(isoString, isAmharic) {
   const now = new Date();
   const date = new Date(isoString);
   const seconds = Math.floor((now - date) / 1000);
 
+  if (isAmharic) {
+    if (seconds < 60) return 'አሁን';
+    if (seconds < 3600) return `ከ${Math.floor(seconds / 60)} ደቂቃ በፊት`;
+    if (seconds < 86400) return `ከ${Math.floor(seconds / 3600)} ሰዓት በፊት`;
+    return `ከ${Math.floor(seconds / 86400)} ቀን በፊት`;
+  }
   if (seconds < 60) return 'Just now';
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -35,16 +42,17 @@ function timeAgo(isoString) {
 
 export default function CommunityScreen() {
   const theme = useTheme();
+  const { language } = useLanguage();
+  const isAmharic = language === 'Amharic';
+  const t = getTabTranslation(language);
   const isDark = theme ? theme.isDark : false;
   const colors = theme ? theme.colors : lightColors;
 
-  const [contentKey, setContentKey] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  const opacity = useSharedValue(0);
-  const translateY = useSharedValue(8);
   const { setCollapsed } = useTabBar();
   const lastScrollY = useRef(0);
   const headerOpacity = useSharedValue(1);
@@ -53,56 +61,37 @@ export default function CommunityScreen() {
   const [challenges, setChallenges] = useState([]);
 
   const filters = [
-    { key: 'all', label: 'All' },
-    { key: 'general', label: 'General' },
-    { key: 'progress', label: 'Progress' },
-    { key: 'questions', label: 'Questions' },
-    { key: 'challenges', label: 'Challenges' },
+    { key: 'all', label: t.all },
+    { key: 'general', label: t.general },
+    { key: 'progress', label: t.progress },
+    { key: 'questions', label: t.questions },
+    { key: 'challenges', label: t.challenges },
   ];
 
   const filteredPosts = activeFilter === 'all'
     ? posts
     : posts.filter(p => p.tag === activeFilter);
 
-  useFocusEffect(
-    useCallback(() => {
-      setContentKey(prev => prev + 1);
-      opacity.value = 0;
-      translateY.value = 8;
-      requestAnimationFrame(() => {
-        opacity.value = withTiming(1, { duration: 300 });
-        translateY.value = withTiming(0, { duration: 300 });
-      });
-
-      //fetch real posts from the backend every time his scren comes into focus
-      async function fetchPosts(){
-        try {
-          setLoading(true);
-          setError(null);
-          const data = await getCommunityPosts();
-          setPosts(data);
-          const challengesData = await getChallenges();
-          setChallenges(challengesData);
-    
-          // We need to know who the logged-in user is so we can decide
-          // whether to show "Delete" (own post) or "Report" (someone else's)
-          const user = await getCurrentUser();
-          setCurrentUserId(user.id);
-    
-        } catch(err){
-          setError('could not load posts');
-        } finally {
-          setLoading(false);
-        }
+  async function fetchPosts() {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCommunityPosts();
+      setPosts(data);
+      const challengesData = await getChallenges();
+      setChallenges(challengesData);
+      const user = await getCurrentUser();
+      setCurrentUserId(user.id);
+    } catch (err) {
+      setError('load');
+    } finally {
+      setLoading(false);
     }
-      fetchPosts();
-    }, [])
-  );
+  }
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  useEffect(() => { fetchPosts(); }, []);
+
+
   const headerAnimStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
     transform: [{ translateY: headerTranslateY.value }],
@@ -122,6 +111,22 @@ export default function CommunityScreen() {
       headerTranslateY.value = withTiming(0, { duration: 200 });
     }
     lastScrollY.current = currentY;
+  }
+
+  async function onRefresh() {
+    setRefreshing(true);
+    try {
+      const data = await getCommunityPosts();
+      setPosts(data);
+      const challengesData = await getChallenges();
+      setChallenges(challengesData);
+      const user = await getCurrentUser();
+      setCurrentUserId(user.id);
+    } catch (err) {
+      console.log('Community refresh error:', err.message);
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   async function toggleLike(postId) {
@@ -144,7 +149,7 @@ export default function CommunityScreen() {
     // that aren't your own, since reporting yourself makes no sense
     const buttons = [
       {
-        text: 'Share',
+        text: t.share,
         onPress: async () => {
           try {
             await Share.share({
@@ -156,10 +161,10 @@ export default function CommunityScreen() {
         },
       },
       {
-        text: 'Save',
+        text: t.save,
         // Placeholder — does nothing yet, feature coming later
         onPress: () => {
-          Alert.alert('Coming soon', 'Saving posts will be available in a future update.');
+          Alert.alert(t.comingSoon, t.savePostsMessage);
         },
       },
     ];
@@ -167,38 +172,38 @@ export default function CommunityScreen() {
     // Only add Report if this isn't the user's own post
     if (!isOwnPost) {
       buttons.push({
-        text: 'Report',
+        text: t.report,
         style: 'destructive',
         onPress: async () => {
           try {
             await reportPost(post.id);
-            Alert.alert('Reported', 'Thanks — we\'ll review this post.');
+            Alert.alert(t.reported, t.reportThanks);
           } catch (err) {
-            Alert.alert('Error', err.message);
+            Alert.alert(t.error, err.message);
           }
         },
       });
     }
   
-    buttons.push({ text: 'Cancel', style: 'cancel' });
+    buttons.push({ text: t.cancel, style: 'cancel' });
   
-    Alert.alert('Post options', null, buttons);
+    Alert.alert(t.postOptions, null, buttons);
   }
   const styles = makeStyles(colors, isDark);
 
   return (
-    <Animated.View style={[styles.container, animatedStyle]}>
+    <View style={styles.container}>
       <BackgroundCircles variant="bottomRight" />
 
       <Animated.View style={[styles.fixedHeader, headerAnimStyle]}>
-        <Text style={styles.title}>Community</Text>
+        <Text style={styles.title}>{t.community}</Text>
         <View style={styles.headerButtons}>
             <TouchableOpacity
             style={styles.trainersButton}
             onPress={() => router.push('/trainers')}
             >
             <Feather name="users" size={14} color={colors.blue} />
-            <Text style={styles.trainersButtonText}>Trainers</Text>
+            <Text style={styles.trainersButtonText}>{t.trainers}</Text>
             </TouchableOpacity>
             <TouchableOpacity
             style={styles.composeButton}
@@ -222,8 +227,11 @@ export default function CommunityScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} colors={[colors.blue]} />
+        }
       >
-        <View key={contentKey}>
+        <View>
 
           {/* Show spinner while posts are loading */}
           {loading && (
@@ -235,22 +243,22 @@ export default function CommunityScreen() {
           {/* Show error message if fetch failed */}
           {error && (
             <View style={styles.centered}>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorText}>{error === 'load' ? t.couldNotLoadPosts : error}</Text>
             </View>
           )}
 
           {/* Active challenges */}
           <FadeUpItem delay={100}>
             <View style={styles.challengesSectionHeader}>
-              <Text style={styles.sectionTitle}>Challenges</Text>
+              <Text style={styles.sectionTitle}>{t.challenges}</Text>
               <TouchableOpacity onPress={() => router.push('/challenges')}>
-                <Text style={styles.seeAllText}>See all</Text>
+                <Text style={styles.seeAllText}>{t.seeAll}</Text>
               </TouchableOpacity>
             </View>
 
             {challenges.length === 0 ? (
               <View style={styles.noChallengesCard}>
-                <Text style={styles.noChallengesText}>No challenges yet</Text>
+                <Text style={styles.noChallengesText}>{t.noChallenges}</Text>
               </View>
             ) : (
               <ScrollView
@@ -268,10 +276,10 @@ export default function CommunityScreen() {
                     })}
                   >
                     <Text style={styles.challengeName}>{challenge.name}</Text>
-                    <Text style={styles.challengeMembers}>{challenge.post_count} posts</Text>
+                    <Text style={styles.challengeMembers}>{challenge.post_count} {t.posts}</Text>
                     <View style={styles.challengeFooter}>
                       <View style={styles.joinButton}>
-                        <Text style={styles.joinButtonText}>View</Text>
+                        <Text style={styles.joinButtonText}>{t.view}</Text>
                       </View>
                     </View>
                   </TouchableOpacity>
@@ -341,12 +349,12 @@ export default function CommunityScreen() {
                     >
                       <Text style={styles.postName}>{post.name}</Text>
                     </TouchableOpacity>
-                    <Text style={styles.postLocation}>{timeAgo(post.created_at)}</Text>
+                    <Text style={styles.postLocation}>{timeAgo(post.created_at, isAmharic)}</Text>
                   </View>
 
                   <View style={[styles.postTag, post.tag === 'questions' && styles.postTagQuestion, post.tag === 'challenges' && styles.postTagChallenge]}>
                     <Text style={[styles.postTagText, post.tag === 'questions' && styles.postTagTextQuestion, post.tag === 'challenges' && styles.postTagTextChallenge]}>
-                      {post.tag}
+                      {post.tag === 'progress' ? t.progress : post.tag === 'questions' ? t.questions : post.tag === 'challenges' ? t.challenges : post.tag === 'general' ? t.general : post.tag}
                     </Text>
                   </View>
 
@@ -429,7 +437,7 @@ export default function CommunityScreen() {
         </View>
       </ScrollView>
       <FloatingCoachButton />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -443,6 +451,7 @@ function makeStyles(c, dark) {
   },
   scroll: {
     flex: 1,
+    marginTop: 120,
   },
   header: {
     flexDirection: 'row',
@@ -672,7 +681,7 @@ function makeStyles(c, dark) {
   
   content: {
     paddingHorizontal: 24,
-    paddingTop: 120,
+    paddingTop: 0,
     paddingBottom: 120,
   },
   postPhoto: {
@@ -710,7 +719,7 @@ function makeStyles(c, dark) {
   trainersButtonText: {
     fontSize: 13,
     fontWeight: '500',
-    color: colors.blue,
+    color: colors.blueText,
   },
   centered: {
     paddingVertical: 48,
@@ -741,7 +750,7 @@ function makeStyles(c, dark) {
   },
   
   seeAllText: {
-    fontSize: 14, color: colors.blue, fontWeight: '500',
+    fontSize: 14, color: colors.blueText, fontWeight: '500',
   },
   
   noChallengesCard: {

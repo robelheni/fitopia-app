@@ -3,7 +3,31 @@
     "allow": [
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(xcrun simctl *)",
+      "Bash(npx expo *)",
+      "Bash(echo \"Expo launch PID: $!\")",
+      "Bash(git commit -m ' *)",
+      "Read(//Users/macbook/fitopia-backend/**)",
+      "Bash(pip install *)",
+      "Bash(pip3 install *)",
+      "Bash(echo -e \"\\\\ncloudinary==1.45.0\\\\npython-multipart==0.0.32\")",
+      "Bash(python3 -c \"from app.routers.upload import router; print\\('upload router OK'\\)\")",
+      "Bash(git commit -m 'Add profile picture upload, floating coach button, community profile pictures *)",
+      "Bash(git commit -m 'Include profile_picture in comments GET and POST responses *)",
+      "Bash(python migrate_post_image.py)",
+      "Bash(python3 migrate_post_image.py)",
+      "Bash(railway --version)",
+      "Bash(railway run *)",
+      "Bash(railway status *)",
+      "Bash(railway list *)",
+      "Bash(railway link *)",
+      "Bash(railway variables *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('DATABASE_PUBLIC_URL',''\\)\\)\")",
+      "Bash(railway up *)",
+      "Bash(/usr/local/bin/railway status *)",
+      "Bash(git *)",
+      "Bash(xargs perl -pi -e 's/\\(?<![a-zA-Z]\\)color: colors\\\\.blue\\(?!Light|Dark|Text\\)/color: colors.blueText/g')"
     ]
   }
 }

@@ -1,16 +1,25 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
-import { colors } from '../../constants/colors';
+import { useTheme } from '../../context/ThemeContext';
+import { lightColors } from '../../constants/colors';
+import { makeOnboardingStyles } from '../../components/onboardingStyles';
 import ProgressBar from '../../components/ProgressBar';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { useState } from 'react';
-import { onboardingStyles as styles } from '../../components/onboardingStyles';
 import { Feather } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import BackgroundCircles from '../../components/BackgroundCircles';
 import ScreenWrapper, { FadeUpItem } from '../../components/ScreenWrapper';
+import { useLanguage } from '../../context/LanguageContext';
+import { getTabTranslation } from '../../constants/tabTranslations';
 
 export default function Step5() {
+    const theme = useTheme();
+    const colors = theme ? theme.colors : lightColors;
+    const styles = makeOnboardingStyles(colors);
+
+    const { language } = useLanguage();
+    const t = getTabTranslation(language);
     const [selected, setSelected] = useState(null);
     const { updateAnswer } = useOnboarding();
 
@@ -26,106 +35,69 @@ export default function Step5() {
 
             <ProgressBar currentStep={5} totalSteps={8} />
 
-            <Text style={styles.question}>What equipment do you have?</Text>
-            <Text style={styles.subtitle}>We'll build your plan around what you have access to.</Text>
+            <Text style={styles.question}>{t.equipmentQuestion}</Text>
+            <Text style={styles.subtitle}>{t.equipmentSub}</Text>
 
             <View style={styles.options}>
                 <FadeUpItem delay={150}>
                     <TouchableOpacity
-                    style={[styles.option, selected === 'gym' && styles.optionSelected]}
-                    onPress={() => setSelected('gym')}
+                        style={[styles.option, selected === 'gym' && styles.optionSelected]}
+                        onPress={() => setSelected('gym')}
                     >
-                    <View style={[
-                        styles.optionIconContainer,
-                        selected === 'gym' && styles.optionIconContainerSelected
-                    ]}>
-                        <MaterialCommunityIcons
-                            name="weight-lifter"
-                            size={20}
-                            color={selected === 'gym' ? '#FFFFFF' : colors.grey}
-                        />
-                    </View>
-                    <View>
-                        <Text style={[styles.optionTitle, selected === 'gym' && styles.optionTitleSelected]}>
-                        Full gym access
-                        </Text>
-                        <Text style={styles.optionSub}>All equipment available</Text>
-                    </View>
+                        <View style={[styles.optionIconContainer, selected === 'gym' && styles.optionIconContainerSelected]}>
+                            <MaterialCommunityIcons name="weight-lifter" size={20} color={selected === 'gym' ? '#FFFFFF' : colors.grey} />
+                        </View>
+                        <View>
+                            <Text style={[styles.optionTitle, selected === 'gym' && styles.optionTitleSelected]}>{t.fullGym}</Text>
+                            <Text style={styles.optionSub}>{t.fullGymSub}</Text>
+                        </View>
                     </TouchableOpacity>
                 </FadeUpItem>
 
                 <FadeUpItem delay={250}>
                     <TouchableOpacity
-                    style={[styles.option, selected === 'dumbbells' && styles.optionSelected]}
-                    onPress={() => setSelected('dumbbells')}
+                        style={[styles.option, selected === 'dumbbells' && styles.optionSelected]}
+                        onPress={() => setSelected('dumbbells')}
                     >
-                    <View style={[
-                        styles.optionIconContainer,
-                        selected === 'dumbbells' && styles.optionIconContainerSelected
-                    ]}>
-                        <MaterialCommunityIcons
-                            name="dumbbell"
-                            size={20}
-                            color={selected === 'dumbbells' ? '#FFFFFF' : colors.grey}
-                        />
-                    </View>
-                    <View>
-                        <Text style={[styles.optionTitle, selected === 'dumbbells' && styles.optionTitleSelected]}>
-                        Dumbbells at home
-                        </Text>
-                        <Text style={styles.optionSub}>Home setup with weights</Text>
-                    </View>
+                        <View style={[styles.optionIconContainer, selected === 'dumbbells' && styles.optionIconContainerSelected]}>
+                            <MaterialCommunityIcons name="dumbbell" size={20} color={selected === 'dumbbells' ? '#FFFFFF' : colors.grey} />
+                        </View>
+                        <View>
+                            <Text style={[styles.optionTitle, selected === 'dumbbells' && styles.optionTitleSelected]}>{t.dumbbellsHome}</Text>
+                            <Text style={styles.optionSub}>{t.dumbbellsHomeSub}</Text>
+                        </View>
                     </TouchableOpacity>
                 </FadeUpItem>
 
                 <FadeUpItem delay={350}>
                     <TouchableOpacity
-                    style={[styles.option, selected === 'bodyweight' && styles.optionSelected]}
-                    onPress={() => setSelected('bodyweight')}
+                        style={[styles.option, selected === 'bodyweight' && styles.optionSelected]}
+                        onPress={() => setSelected('bodyweight')}
                     >
-                    <View style={[
-                        styles.optionIconContainer,
-                        selected === 'bodyweight' && styles.optionIconContainerSelected
-                    ]}>
-                        <Feather
-                        name="user"
-                        size={20}
-                        color={selected === 'bodyweight' ? '#FFFFFF' : colors.grey}
-                        />
-                    </View>
-                    <View>
-                        <Text style={[styles.optionTitle, selected === 'bodyweight' && styles.optionTitleSelected]}>
-                        No equipment
-                        </Text>
-                        <Text style={styles.optionSub}>Bodyweight only</Text>
-                    </View>
+                        <View style={[styles.optionIconContainer, selected === 'bodyweight' && styles.optionIconContainerSelected]}>
+                            <Feather name="user" size={20} color={selected === 'bodyweight' ? '#FFFFFF' : colors.grey} />
+                        </View>
+                        <View>
+                            <Text style={[styles.optionTitle, selected === 'bodyweight' && styles.optionTitleSelected]}>{t.noEquipment}</Text>
+                            <Text style={styles.optionSub}>{t.noEquipmentSub}</Text>
+                        </View>
                     </TouchableOpacity>
                 </FadeUpItem>
 
                 <FadeUpItem delay={450}>
                     <TouchableOpacity
-                    style={[styles.option, selected === 'both' && styles.optionSelected]}
-                    onPress={() => setSelected('both')}
+                        style={[styles.option, selected === 'both' && styles.optionSelected]}
+                        onPress={() => setSelected('both')}
                     >
-                    <View style={[
-                        styles.optionIconContainer,
-                        selected === 'both' && styles.optionIconContainerSelected
-                    ]}>
-                        <Feather
-                        name="shuffle"
-                        size={20}
-                        color={selected === 'both' ? '#FFFFFF' : colors.grey}
-                        />
-                    </View>
-                    <View>
-                        <Text style={[styles.optionTitle, selected === 'both' && styles.optionTitleSelected]}>
-                        Both gym and home
-                        </Text>
-                        <Text style={styles.optionSub}>I switch between both</Text>
-                    </View>
+                        <View style={[styles.optionIconContainer, selected === 'both' && styles.optionIconContainerSelected]}>
+                            <Feather name="shuffle" size={20} color={selected === 'both' ? '#FFFFFF' : colors.grey} />
+                        </View>
+                        <View>
+                            <Text style={[styles.optionTitle, selected === 'both' && styles.optionTitleSelected]}>{t.gymHome}</Text>
+                            <Text style={styles.optionSub}>{t.gymHomeSub}</Text>
+                        </View>
                     </TouchableOpacity>
                 </FadeUpItem>
-
             </View>
 
             <FadeUpItem delay={350}>
@@ -133,14 +105,13 @@ export default function Step5() {
                     style={[styles.button, !selected && styles.buttonDisabled]}
                     onPress={handleContinue}
                 >
-                    <Text style={styles.buttonText}>Continue</Text>
+                    <Text style={styles.buttonText}>{t.continue}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Text style={styles.backText}>Back</Text>
+                    <Text style={styles.backText}>{t.back}</Text>
                 </TouchableOpacity>
             </FadeUpItem>
-
         </ScreenWrapper>
     );
-    }
+}

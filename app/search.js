@@ -51,7 +51,7 @@ export default function SearchScreen() {
 
   function getAvatarColor(gender) {
     if (gender === 'female') return { bg: '#EDE9FE', color: '#7C3AED' };
-    if (gender === 'male') return { bg: colors.blueLight, color: colors.blue };
+    if (gender === 'male') return { bg: colors.blueLight, color: colors.blueText };
     return { bg: colors.greyCard, color: colors.grey };
   }
 

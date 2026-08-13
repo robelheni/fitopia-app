@@ -334,7 +334,7 @@ function makeStyles(c, dark) {
 
     tagText: {
         fontSize: 12,
-        color: colors.blue,
+        color: colors.blueText,
         fontWeight: '500',
     },
 
@@ -470,7 +470,7 @@ function makeStyles(c, dark) {
     instructionNumberText: {
         fontSize: 12,
         fontWeight: '700',
-        color: colors.blue,
+        color: colors.blueText,
     },
 
     instructionText: {

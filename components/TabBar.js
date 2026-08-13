@@ -1,4 +1,4 @@
-import { View, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Dimensions, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -6,24 +6,25 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
-  interpolate,
-  useDerivedValue,
 } from 'react-native-reanimated';
 import { Feather } from '@expo/vector-icons';
 import { lightColors } from '../constants/colors';
 import { useTheme } from '../context/ThemeContext';
 import { useTabBar } from '../context/TabBarContext';
+import { useNotifications } from '../context/NotificationContext';
 import { useEffect } from 'react';
 
 const { width } = Dimensions.get('window');
 const TAB_BAR_WIDTH = width - 48;
-const TAB_WIDTH = TAB_BAR_WIDTH / 4;
+const NUM_TABS = 5;
+const TAB_WIDTH = TAB_BAR_WIDTH / NUM_TABS;
 
 const tabs = [
-  { name: 'index', icon: 'home' },
-  { name: 'workouts', icon: 'activity' },
-  { name: 'community', icon: 'users' },
-  { name: 'profile', icon: 'user' },
+  { name: 'index',         icon: 'home'      },
+  { name: 'workouts',      icon: 'activity'  },
+  { name: 'community',     icon: 'users'     },
+  { name: 'notifications', icon: 'bell'      },
+  { name: 'profile',       icon: 'user'      },
 ];
 
 export default function TabBar({ state, navigation }) {
@@ -31,6 +32,7 @@ export default function TabBar({ state, navigation }) {
   const isDark = theme ? theme.isDark : false;
   const colors = theme ? theme.colors : lightColors;
   const { collapsed } = useTabBar();
+  const { unreadCount, refreshUnreadCount } = useNotifications();
 
   const bubbleX = useSharedValue(state.index * TAB_WIDTH);
   const bubbleWidth = useSharedValue(TAB_WIDTH - 16);
@@ -42,7 +44,15 @@ export default function TabBar({ state, navigation }) {
   const pressScale1 = useSharedValue(1);
   const pressScale2 = useSharedValue(1);
   const pressScale3 = useSharedValue(1);
-  const pressScales = [pressScale0, pressScale1, pressScale2, pressScale3];
+  const pressScale4 = useSharedValue(1);
+  const pressScales = [pressScale0, pressScale1, pressScale2, pressScale3, pressScale4];
+
+  // Poll unread count every 30 seconds while the tab bar is mounted
+  useEffect(() => {
+    refreshUnreadCount();
+    const interval = setInterval(refreshUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (collapsed) {
@@ -68,7 +78,6 @@ export default function TabBar({ state, navigation }) {
       });
     });
 
-    // Bubble stretches toward target
     bubbleWidth.value = withSpring(
       TAB_WIDTH - 16 + distance * 0.12,
       { damping: 8, stiffness: 120 }
@@ -111,7 +120,10 @@ export default function TabBar({ state, navigation }) {
   const iconStyle1 = useAnimatedStyle(() => ({ transform: [{ scale: pressScales[1].value }] }));
   const iconStyle2 = useAnimatedStyle(() => ({ transform: [{ scale: pressScales[2].value }] }));
   const iconStyle3 = useAnimatedStyle(() => ({ transform: [{ scale: pressScales[3].value }] }));
-  const iconStyles = [iconStyle0, iconStyle1, iconStyle2, iconStyle3];
+  const iconStyle4 = useAnimatedStyle(() => ({ transform: [{ scale: pressScales[4].value }] }));
+  const iconStyles = [iconStyle0, iconStyle1, iconStyle2, iconStyle3, iconStyle4];
+
+  const badgeCount = Math.min(unreadCount, 99);
 
   return (
     <Animated.View style={[styles.wrapper, wrapperBounceStyle]}>
@@ -145,19 +157,12 @@ export default function TabBar({ state, navigation }) {
           style={StyleSheet.absoluteFill}
         />
 
-        {/* Layer 3 — Very subtle mid glass tint */}
         <View style={styles.glassMid} />
-
-        {/* Layer 4 — Glass edge border */}
         <View style={styles.glassBorder} />
-
-        {/* Layer 5 — Top shine edge */}
         <View style={styles.topShine} />
-
-        {/* Layer 6 — Bottom depth */}
         <View style={styles.bottomDepth} />
 
-        {/* Active pill — glass not blue */}
+        {/* Active pill */}
         <Animated.View style={[styles.bubble, bubbleStyle, isDark && styles.bubbleDark]}>
           <LinearGradient
             colors={isDark ? [
@@ -176,6 +181,7 @@ export default function TabBar({ state, navigation }) {
         {/* Tabs */}
         {tabs.map((tab, index) => {
           const isFocused = state.index === index;
+          const isNotification = tab.name === 'notifications';
           if (collapsed && !isFocused) return null;
           return (
             <TouchableOpacity
@@ -184,12 +190,18 @@ export default function TabBar({ state, navigation }) {
               onPress={() => handlePress(index, tab.name)}
               activeOpacity={1}
             >
-              <Animated.View style={iconStyles[index]}>
+              <Animated.View style={[iconStyles[index], styles.iconWrap]}>
                 <Feather
                   name={tab.icon}
                   size={22}
                   color={isFocused ? colors.blue : isDark ? 'rgba(180,180,190,0.55)' : 'rgba(90,90,100,0.5)'}
                 />
+                {/* Red badge on bell icon */}
+                {isNotification && badgeCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{badgeCount}</Text>
+                  </View>
+                )}
               </Animated.View>
             </TouchableOpacity>
           );
@@ -205,7 +217,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 40,
     left: 24,
-    // Layered shadow — Apple style
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.12,
@@ -222,14 +233,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.3)',
   },
 
-  // Very subtle mid tint — keeps it from looking milky
   glassMid: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 32,
   },
 
-  // Glass edge
   glassBorder: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 32,
@@ -237,7 +246,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.75)',
   },
 
-  // Light catching top edge
   topShine: {
     position: 'absolute',
     top: 0,
@@ -249,7 +257,6 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
-  // Depth at bottom
   bottomDepth: {
     position: 'absolute',
     bottom: 0,
@@ -261,7 +268,6 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
 
-  // Active tab pill — glass not blue
   bubble: {
     position: 'absolute',
     height: 44,
@@ -283,6 +289,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: '100%',
     zIndex: 4,
+  },
+
+  iconWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  badge: {
+    position: 'absolute',
+    top: -6,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
+  },
+
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 11,
   },
 
   bubbleDark: {
