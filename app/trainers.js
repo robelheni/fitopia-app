@@ -1,16 +1,17 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  View, Text, Image, ScrollView, StyleSheet, TouchableOpacity,
   ActivityIndicator, Modal, TextInput, Alert, KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
 import { lightColors } from '../constants/colors';
 import { FadeUpItem } from '../components/ScreenWrapper';
 import BackgroundCircles from '../components/BackgroundCircles';
-import { getTrainers, submitTrainerApplication } from '../services/api';
+import { getTrainers, submitTrainerApplication, uploadPostImage } from '../services/api';
 
 // ── Static placeholder trainers shown until real ones are loaded ──────────────
 const PLACEHOLDER_TRAINERS = [
@@ -128,8 +129,10 @@ function matchesFilter(location, key) {
 
 const EMPTY_FORM = {
   full_name: '', email: '', speciality: '', location: '',
-  languages: '', years_experience: '', certifications: '',
+  languages: '', years_experience: '', clients_trained: '', certifications: '',
   hourly_rate: '', instagram: '', whatsapp: '', bio: '',
+  profile_picture: '',
+  transformation_pictures: '',
 };
 
 export default function TrainersScreen() {
@@ -143,6 +146,11 @@ export default function TrainersScreen() {
   const [applyVisible, setApplyVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  // Local image URIs (before upload)
+  const [profilePicUri, setProfilePicUri] = useState(null);
+  const [transformationUris, setTransformationUris] = useState([null, null, null, null]);
+  const [uploadingPic, setUploadingPic] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -160,6 +168,31 @@ export default function TrainersScreen() {
 
   function setField(key, value) {
     setForm(prev => ({ ...prev, [key]: value }));
+  }
+
+  async function pickProfilePicture() {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      setProfilePicUri(result.assets[0].uri);
+    }
+  }
+
+  async function pickTransformationPhoto(index) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets?.[0]) {
+      const updated = [...transformationUris];
+      updated[index] = result.assets[0].uri;
+      setTransformationUris(updated);
+    }
   }
 
   // Merge: real API trainers first, then placeholders
@@ -194,13 +227,36 @@ export default function TrainersScreen() {
     }
     try {
       setSubmitting(true);
+
+      // Upload profile picture if picked
+      let profilePicUrl = '';
+      if (profilePicUri) {
+        const res = await uploadPostImage(profilePicUri);
+        profilePicUrl = res.url || '';
+      }
+
+      // Upload transformation photos that were picked
+      const uploadedTransformations = await Promise.all(
+        transformationUris.map(async uri => {
+          if (!uri) return null;
+          const res = await uploadPostImage(uri);
+          return res.url || null;
+        })
+      );
+      const transformationUrls = uploadedTransformations.filter(Boolean).join(',');
+
       await submitTrainerApplication({
         ...form,
         years_experience: form.years_experience ? parseInt(form.years_experience) : null,
         hourly_rate: form.hourly_rate ? parseFloat(form.hourly_rate) : null,
+        profile_picture: profilePicUrl || null,
+        transformation_pictures: transformationUrls || null,
       });
+
       setApplyVisible(false);
       setForm(EMPTY_FORM);
+      setProfilePicUri(null);
+      setTransformationUris([null, null, null, null]);
       Alert.alert('Application submitted!', "We'll review it shortly and get back to you.");
     } catch (err) {
       Alert.alert('Error', err.message);
@@ -385,16 +441,31 @@ export default function TrainersScreen() {
               contentContainerStyle={styles.modalContent}
               keyboardShouldPersistTaps="handled"
             >
+              {/* Profile picture */}
+              <Text style={styles.fieldLabel}>Profile picture</Text>
+              <TouchableOpacity style={styles.profilePicPicker} onPress={pickProfilePicture}>
+                {profilePicUri ? (
+                  <Image source={{ uri: profilePicUri }} style={styles.profilePicPreview} />
+                ) : (
+                  <View style={styles.profilePicPlaceholder}>
+                    <Feather name="camera" size={28} color={colors.greyLight} />
+                    <Text style={styles.profilePicPlaceholderText}>Tap to add photo</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Text fields */}
               {[
-                { label: 'Full name *',     key: 'full_name',         placeholder: 'Your full name' },
-                { label: 'Email *',         key: 'email',             placeholder: 'your@email.com', keyboard: 'email-address' },
-                { label: 'Speciality',      key: 'speciality',        placeholder: 'e.g. Muscle Building' },
-                { label: 'Location',        key: 'location',          placeholder: 'e.g. London, UK' },
-                { label: 'Languages',       key: 'languages',         placeholder: 'e.g. English, Amharic' },
-                { label: 'Years experience', key: 'years_experience', placeholder: '0', keyboard: 'numeric' },
-                { label: 'Hourly rate (£)', key: 'hourly_rate',       placeholder: '0.00', keyboard: 'decimal-pad' },
-                { label: 'Instagram',       key: 'instagram',         placeholder: '@handle' },
-                { label: 'WhatsApp',        key: 'whatsapp',          placeholder: '+44 7000 000000', keyboard: 'phone-pad' },
+                { label: 'Full name *',      key: 'full_name',         placeholder: 'Your full name' },
+                { label: 'Email *',          key: 'email',             placeholder: 'your@email.com', keyboard: 'email-address' },
+                { label: 'Speciality',       key: 'speciality',        placeholder: 'e.g. Muscle Building' },
+                { label: 'Location',         key: 'location',          placeholder: 'e.g. London, UK' },
+                { label: 'Languages',        key: 'languages',         placeholder: 'e.g. English, Amharic' },
+                { label: 'Years experience', key: 'years_experience',  placeholder: '0', keyboard: 'numeric' },
+                { label: 'Clients trained',  key: 'clients_trained',   placeholder: '0', keyboard: 'numeric' },
+                { label: 'Hourly rate (£)',  key: 'hourly_rate',       placeholder: '0.00', keyboard: 'decimal-pad' },
+                { label: 'Instagram',        key: 'instagram',         placeholder: '@handle' },
+                { label: 'WhatsApp',         key: 'whatsapp',          placeholder: '+44 7000 000000', keyboard: 'phone-pad' },
               ].map(({ label, key, placeholder, keyboard }) => (
                 <View key={key}>
                   <Text style={styles.fieldLabel}>{label}</Text>
@@ -429,6 +500,36 @@ export default function TrainersScreen() {
                 placeholderTextColor={colors.greyLight}
                 multiline
               />
+
+              {/* Transformation photos */}
+              <Text style={styles.fieldLabel}>Transformation photos</Text>
+              <Text style={styles.fieldSubLabel}>Before and after client results (up to 4 photos)</Text>
+              <View style={styles.transformationGrid}>
+                {transformationUris.map((uri, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.transformationBox}
+                    onPress={() => pickTransformationPhoto(i)}
+                  >
+                    {uri ? (
+                      <Image source={{ uri }} style={styles.transformationPreview} />
+                    ) : (
+                      <>
+                        <Feather name="image" size={22} color={colors.greyLight} />
+                        <Text style={styles.transformationBoxLabel}>Add photo</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Reviews placeholder info */}
+              <View style={styles.reviewsNote}>
+                <Feather name="star" size={16} color="#D97706" />
+                <Text style={styles.reviewsNoteText}>
+                  Client reviews will appear on your profile once you start working with clients through Fitopia.
+                </Text>
+              </View>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -541,10 +642,40 @@ function makeStyles(colors, isDark) {
     modalSave: { fontSize: 16, fontWeight: '600', color: colors.blue },
     modalContent: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 60 },
     fieldLabel: { fontSize: 13, fontWeight: '600', color: colors.grey, marginBottom: 8, marginTop: 16 },
+    fieldSubLabel: { fontSize: 12, color: colors.greyLight, marginBottom: 10, marginTop: -4 },
     fieldInput: {
       borderWidth: 1.5, borderColor: colors.greyBorder, borderRadius: 12,
       paddingHorizontal: 16, paddingVertical: 14, fontSize: 15, color: colors.black,
     },
     multilineInput: { minHeight: 80, textAlignVertical: 'top' },
+
+    // Profile picture picker
+    profilePicPicker: { alignSelf: 'center', marginBottom: 8 },
+    profilePicPreview: { width: 100, height: 100, borderRadius: 50 },
+    profilePicPlaceholder: {
+      width: 100, height: 100, borderRadius: 50,
+      backgroundColor: colors.greyCard, borderWidth: 1.5,
+      borderColor: colors.greyBorder, borderStyle: 'dashed',
+      alignItems: 'center', justifyContent: 'center', gap: 4,
+    },
+    profilePicPlaceholderText: { fontSize: 11, color: colors.greyLight, fontWeight: '500' },
+
+    // Transformation grid
+    transformationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 8 },
+    transformationBox: {
+      width: '47%', aspectRatio: 1,
+      backgroundColor: colors.greyCard, borderRadius: 14,
+      borderWidth: 1.5, borderColor: colors.greyBorder, borderStyle: 'dashed',
+      alignItems: 'center', justifyContent: 'center', gap: 6, overflow: 'hidden',
+    },
+    transformationPreview: { width: '100%', height: '100%' },
+    transformationBoxLabel: { fontSize: 11, color: colors.greyLight, fontWeight: '500' },
+
+    // Reviews note
+    reviewsNote: {
+      flexDirection: 'row', alignItems: 'flex-start', gap: 10,
+      backgroundColor: '#FEF3C7', borderRadius: 12, padding: 14, marginTop: 16,
+    },
+    reviewsNoteText: { flex: 1, fontSize: 13, color: '#B45309', lineHeight: 18 },
   });
 }
